@@ -1,0 +1,5 @@
+# Local-only self-signed certificate. localhost-key.pem is a PRIVATE KEY —
+# never commit it, never upload it to a host. Regenerate with the openssl
+# command in the README if you need it again.
+localhost-key.pem
+localhost-cert.pem

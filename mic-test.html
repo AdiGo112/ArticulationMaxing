@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speakeasy — transcription diagnostic</title>
+<style>
+  body{margin:0;padding:28px;background:#100C0A;color:#F4EDE5;
+    font:15px/1.6 ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  main{max-width:760px;margin:0 auto}
+  h1{font-size:26px;margin:0 0 6px}
+  p.sub{color:#A99C92;margin:0 0 24px}
+  .env{border:1px solid #3D302A;border-radius:12px;padding:14px 16px;margin-bottom:18px;background:#211A17}
+  .env div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;
+    font-family:ui-monospace,Menlo,monospace;font-size:13px}
+  .env span:first-child{color:#A99C92}
+  .ok{color:#63E6C0}.bad{color:#FF6A47}.warn{color:#F0A93F}
+  h2{font-size:16px;margin:22px 0 8px}
+  .note{color:#A99C92;font-size:14px;margin:0 0 10px}
+  button{font:inherit;font-weight:600;background:#F0A93F;color:#180F03;border:0;
+    border-radius:999px;padding:11px 20px;cursor:pointer;margin:0 8px 8px 0}
+  button.sec{background:transparent;color:#F4EDE5;border:1px solid #3D302A}
+  button:disabled{opacity:.4;cursor:default}
+  #log{border:1px solid #3D302A;border-radius:12px;background:#161110;padding:14px 16px;
+    font-family:ui-monospace,Menlo,monospace;font-size:12.5px;line-height:1.75;
+    height:300px;overflow:auto;white-space:pre-wrap;margin-top:14px}
+  #verdict{border:1px solid #3D302A;border-radius:12px;padding:14px 16px;margin-top:14px;
+    background:#211A17;display:none}
+  #verdict.on{display:block}
+  code{background:#00000040;padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+<main>
+<h1>Transcription diagnostic</h1>
+<p class="sub">Speakeasy uses the browser's speech recogniser. This page tests it in isolation,
+so we can tell whether the API is failing for you or whether the app is using it wrongly.</p>
+
+<div class="env" id="env"></div>
+
+<h2>Test 1 — recogniser on its own</h2>
+<p class="note">Nothing else touches the microphone. If this fails, the problem is your browser
+or network, not Speakeasy.</p>
+<button id="t1">Run test 1</button>
+
+<h2>Test 2 — recogniser while the mic is already open</h2>
+<p class="note">Speakeasy holds the microphone for the level meter and the recording. This checks
+whether that second claim is what breaks it.</p>
+<button id="t2" class="sec">Run test 2</button>
+
+<h2>Test 3 — continuous mode</h2>
+<p class="note">Speakeasy needs continuous mode for long answers. Some builds fail only here.</p>
+<button id="t3" class="sec">Run test 3</button>
+
+<div id="verdict"></div>
+<div id="log">Ready. Run test 1, then say a sentence out loud.
+</div>
+</main>
+
+<script>
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const $ = id => document.getElementById(id);
+const log = (m, cls) => {
+  const t = new Date().toISOString().slice(11,19);
+  $("log").innerHTML += `\n<span class="${cls||""}">${t}  ${m}</span>`;
+  $("log").scrollTop = $("log").scrollHeight;
+};
+const row = (k, v, cls) => `<div><span>${k}</span><span class="${cls||""}">${v}</span></div>`;
+
+$("env").innerHTML =
+  row("Speech API present", SR ? "yes" : "no", SR ? "ok" : "bad") +
+  row("Secure context", isSecureContext ? "yes" : "no", isSecureContext ? "ok" : "bad") +
+  row("Origin", location.origin, location.protocol === "https:" ? "ok" : "warn") +
+  row("Online", navigator.onLine ? "yes" : "no", navigator.onLine ? "ok" : "bad") +
+  row("Browser", (navigator.userAgentData?.brands || [])
+      .map(b => b.brand + " " + b.version).join(", ") || navigator.userAgent.slice(0, 60), "");
+
+const results = {};
+function verdict(){
+  const v = $("verdict");
+  let html = "<b>What this means</b><br>";
+  if (results.t1 === "ok")
+    html += "The recogniser works on its own. ";
+  if (results.t1 === "network")
+    html += "The recogniser cannot reach Google's speech service even with nothing else running. " +
+      "This is outside Speakeasy. Most common causes: an ad-blocking or privacy extension, " +
+      "a VPN or corporate proxy, or a Chromium build without Google's API keys (use real Chrome or Edge). " +
+      "Try an Incognito window with extensions disabled.";
+  if (results.t1 === "not-allowed")
+    html += "Microphone permission is denied for this origin. Allow it via the padlock in the address bar.";
+  if (results.t1 === "ok" && results.t2 && results.t2 !== "ok")
+    html += "<br><br><b>But it fails when the mic is already open</b> — that is Speakeasy's fault, " +
+      "and it means the level meter and recorder are competing for the device. Tell me and I will " +
+      "stop them competing.";
+  if (results.t1 === "ok" && results.t3 && results.t3 !== "ok")
+    html += "<br><br><b>But continuous mode fails</b> — Speakeasy relies on it. Tell me and I will " +
+      "switch to restarting single-shot recognition instead.";
+  if (results.t1 === "ok" && results.t2 === "ok" && results.t3 === "ok")
+    html += "Everything passed here, so the failure is intermittent — most likely a dropped " +
+      "connection to the speech service mid-session.";
+  v.innerHTML = html; v.classList.add("on");
+}
+
+function run(id, opts){
+  return new Promise(res => {
+    if (!SR) { log("No Speech API in this browser.", "bad"); return res("unsupported"); }
+    const r = new SR();
+    r.continuous = !!opts.continuous;
+    r.interimResults = true;
+    r.lang = "en-US";
+    let got = false, done = false;
+    const finish = out => { if (done) return; done = true; results[id] = out; verdict(); res(out); };
+
+    r.onstart       = () => log("  onstart — recogniser started");
+    r.onaudiostart  = () => log("  onaudiostart — microphone open");
+    r.onspeechstart = () => log("  onspeechstart — speech detected", "ok");
+    r.onresult = e => {
+      got = true;
+      const txt = [...e.results].map(x => x[0].transcript).join("");
+      log('  onresult — "' + txt + '"', "ok");
+    };
+    r.onerror = e => {
+      log("  onerror — " + e.error, e.error === "no-speech" ? "warn" : "bad");
+      if (e.error !== "no-speech" && e.error !== "aborted") finish(e.error);
+    };
+    r.onend = () => {
+      log("  onend");
+      finish(got ? "ok" : (results[id] || "silent"));
+      if (got) log("RESULT: working", "ok");
+      else if (!results[id] || results[id] === "silent")
+        log("RESULT: no error, but nothing was transcribed", "warn");
+    };
+    try { r.start(); } catch (err) { log("  start() threw: " + err.message, "bad"); finish("threw"); }
+    setTimeout(() => { try { r.stop(); } catch (e) {} }, 7000);
+  });
+}
+
+$("t1").onclick = async () => {
+  log("\n=== TEST 1: recogniser alone (7s) — say something ===");
+  await run("t1", {});
+};
+
+$("t2").onclick = async () => {
+  log("\n=== TEST 2: mic held open, then recogniser (7s) — say something ===");
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+    log("  getUserMedia — microphone acquired", "ok");
+    const rec = new MediaRecorder(stream);
+    rec.start(250);
+    log("  MediaRecorder — recording", "ok");
+    await run("t2", {});
+    rec.stop();
+  } catch (e) {
+    log("  getUserMedia failed: " + e.name + " — " + e.message, "bad");
+  } finally {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+  }
+};
+
+$("t3").onclick = async () => {
+  log("\n=== TEST 3: continuous mode (7s) — say two sentences ===");
+  await run("t3", { continuous:true });
+};
+</script>
+</body>
+</html>
