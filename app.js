@@ -198,6 +198,305 @@ const ECHOES = [
   "We can do it properly, or we can do it Friday. Not both."
 ];
 
+/* Extended practice bank: enough variation to keep repeat sessions useful. */
+PROMPTS.push(
+  "What is a small expense that is worth paying for, and why?",
+  "Describe a time a simple plan solved a complicated problem.",
+  "What makes someone easy to work with? Give a real example.",
+  "If you could change one rule at school or work, what would it be?",
+  "Explain a belief you hold that took you a long time to form.",
+  "Describe the last time you changed your mind after hearing someone out.",
+  "What should people prepare before a difficult conversation?",
+  "Make the case for taking a walk without your phone.",
+  "What is a problem people try to solve too quickly?",
+  "Describe a routine that saves you time or energy.",
+  "What makes a meeting useful instead of exhausting?",
+  "Tell the story of a purchase you researched carefully.",
+  "What is one local change that would improve your neighbourhood?",
+  "Explain why a first impression can be misleading.",
+  "Describe an event that looked minor but changed your plans.",
+  "What is the difference between being busy and making progress?",
+  "Argue for writing things down instead of trusting memory.",
+  "Describe a time you had to ask for help and what happened.",
+  "What is a useful thing you learned from a bad job or project?",
+  "Explain how you decide whether advice is worth taking.",
+  "What is an everyday skill that deserves more respect?",
+  "Describe your ideal way to spend a free evening.",
+  "What does a fair disagreement look like?",
+  "Tell the story of an unexpected delay and how you handled it.",
+  "What is something you would improve about public spaces?",
+  "Make a case for leaving some decisions until tomorrow.",
+  "Describe a person who is very good at explaining things.",
+  "What is the best way to recover after a disappointing day?",
+  "Explain a choice that seemed small but had a large consequence.",
+  "What should a new team member learn in their first week?",
+  "Describe an old habit you are trying to replace.",
+  "What is a question people should ask before making a big purchase.",
+  "Argue that curiosity is more useful than confidence.",
+  "Describe a moment when being patient paid off.",
+  "What makes a promise trustworthy?",
+  "Explain how you would welcome someone new to your city."
+);
+
+READINGS.push(
+  {t:"A useful beginning",s:"",x:"The first sentence does not need to be clever. | It needs to be clear. | Tell the room where you are going, | give them one reason to come with you, | and begin walking. | A plain start creates trust. | Once people trust the direction, | they can enjoy the scenery."},
+  {t:"Choosing the next step",s:"",x:"When every option feels important, | choose the one that creates information. | A small test is often better than a long debate. | It tells you what the argument cannot: | what happens when an idea meets the real world. | Then make the next decision | with less imagination | and more evidence."},
+  {t:"A good question",s:"",x:"A good question does not perform intelligence. | It makes thinking easier. | It removes one assumption, | names one uncertainty, | or gives the other person somewhere useful to begin. | The best questions leave a little space after them. | Do not fill that space. | Let the answer arrive."},
+  {t:"The value of revision",s:"",x:"Most clear writing begins as unclear writing. | The same is true of speech. | Your first explanation shows you what you think. | Your second explanation shows another person. | Revision is not evidence that you failed. | It is the ordinary work | of making an idea fit through a doorway."},
+  {t:"Attention",s:"",x:"Attention is a vote you cast with your day. | Every notification asks for one. | Every interruption spends one. | You do not need perfect discipline. | You need a few protected minutes | in which the important thing | is allowed to become difficult | before you abandon it."},
+  {t:"A clear apology",s:"",x:"A useful apology has no maze in it. | Name what you did. | Name the cost of it. | Say what you will change. | Then stop asking the other person | to make you feel better. | Repair begins when the explanation ends | and the next action is visible."},
+  {t:"Small improvements",s:"",x:"Improvement rarely arrives as a dramatic change. | It arrives as a better question, | a cleaner first draft, | or one fewer excuse at the end of the day. | Small gains are easy to dismiss | because they are easy to repeat. | That is precisely their strength."},
+  {t:"The room",s:"",x:"Before you speak, | notice the room you are in. | Is it hurried, uncertain, tired, or curious? | The same sentence lands differently | in each of those rooms. | Good communication is not changing your point. | It is choosing the door | through which your point can enter."},
+  {t:"Make the trade",s:"",x:"Every decision trades one good thing for another. | Speed trades against care. | Flexibility trades against certainty. | A mature answer does not pretend | the trade is absent. | It names the cost, | chooses it deliberately, | and takes responsibility for it."},
+  {t:"Starting before ready",s:"",x:"You can prepare forever | and still feel unready. | At some point, preparation becomes a polite name for delay. | Begin with the smallest honest version. | Send the draft. | Ask the question. | Make the call. | Momentum is not confidence. | It is evidence that you moved."},
+  {t:"What evidence does",s:"",x:"Evidence does not remove judgment. | It gives judgment something solid to stand on. | A number can be incomplete. | A story can be biased. | Together, they can still teach you more | than a strong opinion | repeated with confidence."},
+  {t:"A calmer pace",s:"",x:"Speaking slowly is not the same as speaking vaguely. | A calm pace gives each idea | enough room to be heard. | It lets you choose the next word | instead of chasing the last one. | Slow down at the important point. | The listener will follow."}
+);
+
+TWISTERS.push(
+  {x:"Rory the warrior and Roger the worrier were reared wrongly in a rural brewery.",f:"r / w"},
+  {x:"Black back bat, black back bat, black back bat.",f:"bl / b"},
+  {x:"Crisp crusts crackle and crunch.",f:"kr / k"},
+  {x:"Toy boat, toy boat, toy boat.",f:"t / b"},
+  {x:"The thirty-three thieves thought that they thrilled the throne throughout Thursday.",f:"th / r"},
+  {x:"Fred fed Ted bread and Ted fed Fred bread.",f:"fr / br"},
+  {x:"Seven savvy swamis swiftly swept snow.",f:"s / sw"},
+  {x:"Clive cleans clever clams with clean cloths.",f:"kl / cl"},
+  {x:"Brave blue birds blinked beneath bright branches.",f:"br / bl"},
+  {x:"Dense drums drummed during dawn.",f:"d / dr"},
+  {x:"Five frantic frogs fled from fifty fierce fish.",f:"f / fr"},
+  {x:"Greg grabbed green grapes greedily.",f:"gr / g"},
+  {x:"Tiny trains travel through three thorny tunnels.",f:"tr / th"},
+  {x:"Quick queens quietly question quirky quails.",f:"kw / k"},
+  {x:"Bright brass bells buzzed beside blue buses.",f:"br / bz"},
+  {x:"Nina neatly numbered ninety-nine narrow notebooks.",f:"n"},
+  {x:"Vivid violet violets vanish very violently.",f:"v"},
+  {x:"Zoe's zesty zebra zigzagged through the zoo.",f:"z"},
+  {x:"Paul packed polished plates in plain paper.",f:"p / pl"},
+  {x:"Shy sheep should share shiny shells.",f:"sh / s"}
+);
+
+WORDS.push(
+  {w:"adapt",d:"to change your approach to fit new conditions",e:"We need to adapt the plan to the new deadline."},
+  {w:"advocate",d:"to publicly support an idea or cause",e:"She will advocate for a simpler process."},
+  {w:"allocate",d:"to assign a limited resource for a purpose",e:"We should allocate more time to testing."},
+  {w:"anticipate",d:"to expect something and prepare for it",e:"I anticipate questions about the cost."},
+  {w:"assess",d:"to judge a situation carefully",e:"Let us assess the risk before we commit."},
+  {w:"clarify",d:"to make something easier to understand",e:"Could you clarify what success looks like?"},
+  {w:"collaborate",d:"to work together toward a shared result",e:"The two teams need to collaborate earlier."},
+  {w:"constraint",d:"a limit that shapes what is possible",e:"Budget is our main constraint this quarter."},
+  {w:"credible",d:"believable because it has good support",e:"We need a credible explanation for the delay."},
+  {w:"criteria",d:"standards used to judge a choice",e:"Let us agree on the criteria before comparing options."},
+  {w:"decisive",d:"able to settle an issue or produce a result",e:"The customer interview was decisive evidence."},
+  {w:"defer",d:"to postpone something until later",e:"We can defer that decision until Friday."},
+  {w:"derive",d:"to get something from a source or process",e:"The estimate was derived from last year's data."},
+  {w:"differentiate",d:"to show how one thing differs from another",e:"We need to differentiate the product clearly."},
+  {w:"diligent",d:"careful and persistent in your work",e:"She was diligent about documenting every change."},
+  {w:"evaluate",d:"to examine value or quality",e:"We should evaluate the pilot before expanding it."},
+  {w:"feasible",d:"possible to do with the resources available",e:"The proposal is ambitious but feasible."},
+  {w:"friction",d:"an unnecessary difficulty in a process",e:"That extra form adds friction for new users."},
+  {w:"incentive",d:"something that encourages a choice or action",e:"The bonus creates an incentive to finish early."},
+  {w:"initiative",d:"the ability to act without being told",e:"He showed initiative by solving the issue first."},
+  {w:"iterate",d:"to improve through repeated versions",e:"We will iterate on the design after feedback."},
+  {w:"justify",d:"to give a good reason for something",e:"Can we justify the extra expense?"},
+  {w:"mitigate",d:"to make a risk or harm less severe",e:"A backup supplier would mitigate the risk."},
+  {w:"objective",d:"a clear goal or aim",e:"Our objective is to reduce the response time."},
+  {w:"perceive",d:"to notice or understand something",e:"Customers may perceive the change as unfair."},
+  {w:"prioritize",d:"to decide what deserves attention first",e:"We need to prioritize the issues affecting users."},
+  {w:"resilient",d:"able to recover after difficulty",e:"The system needs to be resilient during outages."},
+  {w:"resolve",d:"to settle a problem or disagreement",e:"We can resolve this with one clear decision."},
+  {w:"sustain",d:"to keep something going over time",e:"The pace is useful only if we can sustain it."},
+  {w:"validate",d:"to confirm that something is sound or true",e:"The trial will validate our assumption."}
+);
+
+ECHOES.push(
+  "I can explain the trade-off, but I cannot make it disappear.",
+  "The question is not whether we can do it; it is whether we should.",
+  "I want to separate what we know from what we are guessing.",
+  "That solution is fast, but it creates work for someone else.",
+  "If we change the deadline, we should say what we are protecting.",
+  "I understand the urgency, and I still think we need one more day.",
+  "The problem became smaller when we stated it precisely.",
+  "I am not asking for perfection; I am asking for a clear next step.",
+  "We should hear the objection before we congratulate ourselves.",
+  "The plan is simple enough to explain, which makes it easier to trust.",
+  "I made an assumption there, and it deserves to be checked.",
+  "The most expensive option is not always the one with the largest price.",
+  "I would rather give you a careful answer than an immediate one.",
+  "This is uncomfortable because the choice has a real cost.",
+  "We have a decision to make, not another meeting to schedule.",
+  "The detail matters because it changes the conclusion.",
+  "I can support that approach if we define the boundary first.",
+  "Nothing improves until someone is willing to name the problem.",
+  "The evidence is incomplete, but it is not meaningless.",
+  "Let us make the smallest decision that moves us forward.",
+  "I hear two separate concerns, and they need two separate answers.",
+  "The useful part of feedback is the part we can act on.",
+  "We do not need more ideas; we need to choose one and test it.",
+  "A clear no is more helpful than a vague maybe.",
+  "The risk is real, but so is the cost of doing nothing.",
+  "I want to be accurate before I try to be persuasive.",
+  "This is the point where a short pause will help us think.",
+  "The goal is not agreement at any cost; it is a workable decision.",
+  "We can disagree about the method and still agree about the outcome.",
+  "The answer changed when we looked at the actual constraint."
+);
+
+PROMPTS.push(
+  "What is one thing people misunderstand about your work or studies?",
+  "Describe a risk you would take only after preparing carefully.",
+  "What makes an apology convincing?",
+  "Tell the story of a day when a plan changed at the last minute.",
+  "What should be measured before a team decides it is improving?",
+  "Describe a place that feels different at two times of day.",
+  "Make a case for learning a practical skill by hand.",
+  "What is a better response to criticism than becoming defensive?",
+  "Explain how you would choose between two equally good opportunities.",
+  "Describe a small act of kindness you still remember.",
+  "What would make your commute or daily travel better?",
+  "Argue for fewer choices in one part of daily life.",
+  "Describe a time you noticed you were overcomplicating something.",
+  "What is a good reason to say no to an opportunity?",
+  "Explain the difference between a preference and a principle.",
+  "Tell the story of a time you had to start again.",
+  "What makes a recommendation genuinely useful?",
+  "Describe a useful object you would take on a long trip.",
+  "What is one decision you would make differently with more information?",
+  "Explain how you know when a task is finished.",
+  "What does good customer service or hospitality look like?",
+  "Describe a teacher, coach, or manager who made you improve.",
+  "Make a case for keeping a physical notebook.",
+  "What is a problem that gets worse when people avoid it?",
+  "Describe the first hour of a memorable day.",
+  "What should people do when they realize they were wrong?",
+  "Explain a simple rule you use to make decisions faster.",
+  "Describe a time you were proud of someone else.",
+  "What makes a room feel welcoming?",
+  "Argue for taking breaks before you feel exhausted.",
+  "Describe something you learned by watching another person work.",
+  "What does a strong ending to a conversation sound like?",
+  "Explain why details can matter more than big ideas.",
+  "Describe a challenge you would happily do again.",
+  "What is worth doing even when you are not naturally good at it?",
+  "Tell the story of a time you had to be more direct than usual.",
+  "What would you improve about how people give instructions?",
+  "Explain what makes you trust a source of information.",
+  "Describe a hobby you would recommend to a busy person.",
+  "What is one change that would make tomorrow easier?"
+);
+
+READINGS.push(
+  {t:"The next question",s:"",x:"When an answer is unclear, | do not make it louder. | Ask a better question. | A better question narrows the subject | without shrinking the person. | It says, | show me where this began, | tell me what changed, | help me see the part that matters."},
+  {t:"Enough detail",s:"",x:"Details build trust, | but too many can bury the point. | Give the listener one fact they can picture, | one reason it matters, | and one next step. | If they need more, | they will ask. | Clarity is not withholding. | It is arranging."},
+  {t:"The handover",s:"",x:"A good handover does not say, | everything is in the folder. | It says, | here is where we are, | here is what could go wrong, | and here is the first thing to do tomorrow. | The person receiving the work | should not have to reconstruct the story."},
+  {t:"A useful boundary",s:"",x:"A boundary is not a punishment. | It is information about what you can sustain. | Say what you can do, | say what you cannot do, | and say it early enough | for the other person to plan. | Resentment often begins | where a boundary was never spoken."},
+  {t:"Being specific",s:"",x:"Specific language is generous. | It saves people from guessing | what you meant, | what you need, | and what happens next. | Instead of saying soon, | name the day. | Instead of saying better, | name the difference. | Precision is a form of care."},
+  {t:"The quiet signal",s:"",x:"Not every important signal is loud. | A customer who stops replying, | a teammate who asks fewer questions, | or a project that needs more reminders | may be telling you something early. | Notice the small change. | It is often easier to address | than the large failure that follows."},
+  {t:"A fair summary",s:"",x:"Before you disagree, | try to state the other person's view | in a way they would recognize. | If they say yes, | you have earned the right to respond. | If they say no, | you have learned that the argument | was never about the thing you thought."},
+  {t:"Useful uncertainty",s:"",x:"It is possible to be uncertain | without being unhelpful. | Say what you know, | say what you do not know, | and name the step that will reduce the gap. | People can work with uncertainty. | What they cannot work with | is a confident guess | wearing the clothes of fact."},
+  {t:"The first draft",s:"",x:"The first draft has one job: | to exist. | Do not ask it to be elegant, | complete, | and unafraid at the same time. | Put the parts on the table. | Then return with better questions | and make the shape visible."},
+  {t:"A slower answer",s:"",x:"Some questions deserve a pause | before they deserve an answer. | The pause is not weakness. | It is the moment you refuse | to trade accuracy for speed. | A careful answer may take longer, | but it saves everyone | from cleaning up a careless one later."}
+);
+
+TWISTERS.push(
+  {x:"Slippery slimy snails slid slowly seaward.",f:"sl / s"},
+  {x:"Silly Sally swiftly shooed seven silly sheep.",f:"s / sh"},
+  {x:"Thirteen thirsty thinkers thanked Theo thoroughly.",f:"th"},
+  {x:"Blue blooming blossoms blew beneath the bridge.",f:"bl / br"},
+  {x:"Craig's crisp crackers crumbled quickly.",f:"kr / k"},
+  {x:"Frank freely fried fresh French fries.",f:"fr"},
+  {x:"Loud loyal lions lounged lazily in London.",f:"l"},
+  {x:"Molly mixed many mellow mangoes.",f:"m"},
+  {x:"Nine nimble nurses neatly knit new napkins.",f:"n"},
+  {x:"Proud printers promptly printed purple posters.",f:"pr / p"},
+  {x:"Quiet queens quickly quilt quirky quilts.",f:"kw"},
+  {x:"Rough red roses rarely rise rapidly.",f:"r"},
+  {x:"Silver snakes silently slide through sand.",f:"s / sl"},
+  {x:"Twelve tiny turtles tiptoed toward town.",f:"t"},
+  {x:"Walter wisely washed white winter wool.",f:"w"},
+  {x:"Yellow yachts yawned yearly in York.",f:"y"},
+  {x:"Zany zebras zipped past zigzagging zones.",f:"z"},
+  {x:"Breezy brown branches brushed bright bricks.",f:"br"},
+  {x:"Charming children cheerfully chased cheese.",f:"ch"},
+  {x:"Daring drivers drove down dusty drives.",f:"dr / d"}
+);
+
+WORDS.push(
+  {w:"accurate",d:"correct and free from mistakes",e:"The report is accurate enough to share."},
+  {w:"ambiguous",d:"open to more than one meaning",e:"That instruction is ambiguous, so people may interpret it differently."},
+  {w:"approximate",d:"close to the true amount but not exact",e:"The approximate cost is lower than we expected."},
+  {w:"assumption",d:"something accepted as true without proof",e:"Our forecast depends on one major assumption."},
+  {w:"benchmark",d:"a standard used for comparison",e:"Last quarter gives us a useful benchmark."},
+  {w:"capacity",d:"the maximum amount someone or something can handle",e:"We do not have the capacity to take on both projects."},
+  {w:"coincide",d:"to happen at the same time",e:"The launch will coincide with the annual event."},
+  {w:"compatible",d:"able to work well together",e:"The two systems are not compatible yet."},
+  {w:"comprehensive",d:"including all important parts",e:"We need a comprehensive view before deciding."},
+  {w:"concurrent",d:"happening at the same time",e:"Three concurrent deadlines made the week difficult."},
+  {w:"consistent",d:"reliable and the same over time",e:"The results have been consistent for months."},
+  {w:"context",d:"the circumstances that give something meaning",e:"That comment sounds different in context."},
+  {w:"contradict",d:"to say the opposite of something",e:"The new evidence does not contradict the earlier finding."},
+  {w:"contribute",d:"to add something that helps produce a result",e:"Several small issues contributed to the delay."},
+  {w:"conventional",d:"based on what is usually done",e:"The conventional approach may be too slow here."},
+  {w:"crucial",d:"extremely important to the outcome",e:"Clear ownership is crucial at this stage."},
+  {w:"cumulative",d:"increasing through repeated additions",e:"The cumulative effect is larger than one mistake."},
+  {w:"decline",d:"to become less or refuse an offer",e:"We should decline the request if the timing is wrong."},
+  {w:"define",d:"to state the exact meaning or limits of something",e:"Please define what you mean by complete."},
+  {w:"demonstrate",d:"to show clearly using evidence or an example",e:"The trial should demonstrate whether the change works."},
+  {w:"desirable",d:"worth having or aiming for",e:"Fast feedback is desirable, but not at any cost."},
+  {w:"disclose",d:"to reveal information that was previously private",e:"We should disclose the limitation early."},
+  {w:"distinct",d:"clearly different from something else",e:"These are two distinct problems."},
+  {w:"diverse",d:"including many different kinds",e:"A diverse group will notice different risks."},
+  {w:"durable",d:"able to last a long time",e:"We need a durable solution, not a quick patch."},
+  {w:"emerge",d:"to become visible or known",e:"A pattern began to emerge after the interviews."},
+  {w:"enhance",d:"to improve quality or value",e:"A short guide would enhance the onboarding process."},
+  {w:"equivalent",d:"equal in value or meaning",e:"Those two outcomes are not equivalent."},
+  {w:"ethical",d:"morally right and responsible",e:"We need an ethical way to use the data."},
+  {w:"exceed",d:"to be greater than a limit or expectation",e:"The cost could exceed our original estimate."},
+  {w:"exclude",d:"to leave someone or something out",e:"The summary should not exclude the main risk."},
+  {w:"expand",d:"to become larger or more detailed",e:"We can expand the program once the pilot succeeds."},
+  {w:"facilitate",d:"to make an action easier",e:"The template will facilitate faster reviews."},
+  {w:"fundamental",d:"forming the basic foundation of something",e:"Trust is fundamental to good collaboration."},
+  {w:"generate",d:"to produce or create something",e:"The workshop should generate several practical ideas."},
+  {w:"illustrate",d:"to explain with an example",e:"One short story can illustrate the problem."},
+  {w:"implement",d:"to put a plan into action",e:"We can implement the first step this week."},
+  {w:"indicate",d:"to show or point to something",e:"The results indicate that users are confused."},
+  {w:"inevitable",d:"certain to happen",e:"Some change is inevitable as the team grows."},
+  {w:"interpret",d:"to explain the meaning of something",e:"Different people may interpret the message differently."}
+);
+
+ECHOES.push(
+  "I do not need to solve everything today; I need to solve the next thing well.",
+  "The strongest argument is the one that survives a fair question.",
+  "We should be honest about what this decision will require.",
+  "I can see why that option is appealing, and I still would not choose it.",
+  "The situation is changing, so the plan should be allowed to change too.",
+  "Let us put the important fact at the beginning, where no one can miss it.",
+  "The concern is reasonable, but it does not change the next step.",
+  "We will learn more from one real attempt than from another hour of speculation.",
+  "I want to leave this conversation with a decision, an owner, and a date.",
+  "The message should be simple enough to repeat without changing.",
+  "There is no benefit in pretending this part will be easy.",
+  "I have heard the feedback, and I can explain what I will do with it.",
+  "The plan becomes credible when the first action is concrete.",
+  "We need a response that works on an ordinary Tuesday, not only on a good day.",
+  "I would not call that a failure until we understand what it taught us.",
+  "The decision is reversible, which means we can move with more confidence.",
+  "We are using the same word, but we mean two different things by it.",
+  "The better choice may be less exciting, but it will be easier to maintain.",
+  "I can make the case clearly, even if the answer is not popular.",
+  "The value of this idea depends on what happens after the meeting.",
+  "We should make room for the person closest to the problem to speak first.",
+  "I want the outcome to be clear before we debate the process.",
+  "A useful plan includes the signal that tells us when to stop.",
+  "The point is not to remove every risk; it is to understand the important ones.",
+  "This is a good moment to slow down and check the assumption.",
+  "We can be direct without being careless with each other.",
+  "The first version is allowed to be small if it is honest.",
+  "I have one recommendation, and I can explain the reason behind it.",
+  "The easier answer is not always the more responsible one.",
+  "We should not confuse activity with evidence of progress."
+);
+
 /* Hard fillers are always wrong. Crutch words are legitimate in moderation
    and only count against you when repeated. */
 const HARD = ["um","umm","uh","uhh","er","erm","ah","ahh","hmm","mmm","mm"];
@@ -642,6 +941,201 @@ function buildRun(id){
     cd:"Listen first" };
 }
 
+/* ══ 6a. LOCAL LANGUAGE ANALYSIS ═════════════════════════════════════
+   Deterministic, offline, instant, and in every browser. Not a model —
+   it looks for specific habits that weaken spoken English and quotes your
+   own words back. This is the floor: whatever else is available, this runs.  */
+
+const HEDGE = ["i think","i guess","i suppose","maybe","perhaps","probably","sort of","kind of",
+  "a bit","a little","i feel like","i would say","more or less","or something","i mean",
+  "not sure","might be","could be","in my opinion","to be honest"];
+const VAGUE = ["thing","things","stuff","something","someone","somebody","somewhere","anything",
+  "everything","a lot","lots","some","various","certain","whatever"];
+const INTENSIFIER = ["very","really","so","super","extremely","incredibly","totally","completely",
+  "absolutely","quite","pretty","actually","literally","definitely","obviously"];
+
+const countPhrases = (text, list) => {
+  const t = " " + norm(text) + " ";
+  const found = {};
+  list.forEach(p => {
+    // word-boundary safe without lookbehind: pad and match with spaces
+    let i = 0, n = 0, needle = " " + p + " ";
+    while((i = t.indexOf(needle, i)) !== -1){ n++; i += needle.length - 1; }
+    if(n) found[p] = n;
+  });
+  return found;
+};
+const totalOf = o => Object.values(o).reduce((a,b)=>a+b, 0);
+const topOf = (o, k) => Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0, k||3).map(e=>e[0]);
+
+/* Findings are ordered by how much they cost you, worst first. */
+function analyseLanguage(text, opts){
+  opts = opts || {};
+  const ws = words(text), n = ws.length;
+  const out = [];
+  if(n < 12) return out;                       // too little to say anything honest about
+  // floor the denominator and require more than one occurrence: in a 30-word
+  // answer a single "someone" would otherwise cross a per-100 threshold and
+  // get reported as a habit, which it isn't
+  const per100 = c => (c / Math.max(n, 50)) * 100;
+  const push = (id, weight, title, detail) => out.push({ id, weight, title, detail });
+
+  const hedges = countPhrases(text, HEDGE), hCount = totalOf(hedges);
+  if(hCount >= 2 && per100(hCount) >= 2.2)
+    push("hedge", per100(hCount), "You are hedging",
+      `${hCount} hedging phrase${hCount>1?"s":""} — ${topOf(hedges).map(w=>`“${w}”`).join(", ")}. ` +
+      `Each one quietly tells the listener not to fully believe you. Say the claim, then defend it if challenged.`);
+
+  const vague = countPhrases(text, VAGUE), vCount = totalOf(vague);
+  if(vCount >= 2 && per100(vCount) >= 3)
+    push("vague", per100(vCount), "Too many placeholder words",
+      `${vCount} vague word${vCount>1?"s":""} — ${topOf(vague).map(w=>`“${w}”`).join(", ")}. ` +
+      `Every one is a slot where a specific noun would have been stronger.`);
+
+  const ints = countPhrases(text, INTENSIFIER), iCount = totalOf(ints);
+  if(iCount >= 2 && per100(iCount) >= 3.5)
+    push("intense", per100(iCount) * .8, "Intensifiers are doing the work",
+      `${iCount} of them — ${topOf(ints).map(w=>`“${w}”`).join(", ")}. ` +
+      `“Very important” is weaker than “essential”. Pick the stronger word instead of propping up a weak one.`);
+
+  // a content word leaned on far more than the rest
+  const content = ws.filter(w => !STOP.has(w) && w.length > 3);
+  if(content.length >= 15){
+    const freq = {};
+    content.forEach(w => freq[w] = (freq[w]||0) + 1);
+    const [word, count] = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
+    if(count >= 4 && count/content.length >= 0.05)
+      push("repeat", count * 1.6, "One word is carrying too much",
+        `You said “${word}” ${count} times. Reaching for a synonym forces a sharper thought, ` +
+        `not just a different sound.`);
+  }
+
+  // starting clause after clause the same way
+  const openers = {};
+  ws.forEach((w, i) => { if(i === 0 || ["and","but","so","then","because"].includes(ws[i-1])) openers[w] = (openers[w]||0)+1; });
+  const topOpen = Object.entries(openers).sort((a,b)=>b[1]-a[1])[0];
+  if(topOpen && topOpen[1] >= 4)
+    push("opener", topOpen[1], "Your clauses all start the same way",
+      `${topOpen[1]} of them begin with “${topOpen[0]}”. Vary the entry point and the whole answer stops sounding like a list.`);
+
+  // opened on a hedge instead of a position
+  const first = ws.slice(0, 6).join(" ");
+  if(HEDGE.some(h => first.includes(h)) || HARD.includes(ws[0]))
+    push("open", 6, "Weak opening",
+      `You started with “${ws.slice(0, 5).join(" ")}…”. The first sentence is the one they remember — ` +
+      `lead with the position and put the caveat after it.`);
+
+  // frameworks ask for a reason and an example; both leave linguistic traces
+  if(opts.framework){
+    const t = " " + norm(text) + " ";
+    if(!/(^| )(because|since|the reason|that is why|which is why)( |$)/.test(t))
+      push("reason", 5, "No reason given",
+        `The ${opts.framework} shape asks you to say why. Nothing in this answer signals a reason — ` +
+        `one “because” changes an assertion into an argument.`);
+    if(!/(^| )(for example|for instance|such as|like when|once |last week|last year)( |$)/.test(t))
+      push("example", 5.5, "No concrete example",
+        `Nothing here points at a specific occasion. One real example is worth three more sentences of theory.`);
+  }
+
+  return out.sort((a,b) => b.weight - a.weight);
+}
+
+/* ══ 6b. THE DAILY SESSION ══════════════════════════════════════════
+   Landing on six drills and having to choose is where a daily habit dies.
+   A plan is three drills picked from your own weakest metrics, so the
+   decision is already made and the practice is aimed at what is worst.  */
+
+/* Which drill trains which weakness. Several metrics point at the same drill,
+   which is fine — the plan takes the first three DISTINCT drills. */
+const METRIC_DRILL = {
+  filler: "filler",    // um, uh, crutch words
+  pace:   "pace",      // too fast or too slow
+  pause:  "pace",      // not pausing deliberately
+  acc:    "diction",   // consonants not landing
+  cover:  "diction",   // not getting through the text
+  var:    "word",      // recycling the same words
+  proj:   "echo"       // under-projecting, flat delivery
+};
+const METRIC_NAME = {
+  filler:"fillers", pace:"pace", pause:"pausing", acc:"diction",
+  cover:"reading through", var:"word variety", proj:"projection"
+};
+
+/* Average each component over recent sessions. Older sessions have no `parts`,
+   so they are simply skipped rather than treated as zeros. */
+function metricAverages(sessions, window){
+  const sum = {}, n = {};
+  sessions.slice(-(window || 10)).forEach(s => {
+    if(!s.parts) return;
+    for(const k in s.parts){
+      if(typeof s.parts[k] !== "number") continue;
+      sum[k] = (sum[k] || 0) + s.parts[k]; n[k] = (n[k] || 0) + 1;
+    }
+  });
+  const out = {};
+  for(const k in sum) out[k] = Math.round(sum[k]/n[k]);
+  return out;
+}
+
+/* Three drills, worst weakness first. Falls back to the least-practised drills
+   when there is not enough history to know what is weak yet. */
+function buildPlan(sessions, size){
+  size = size || 3;
+  const avg = metricAverages(sessions);
+  const ranked = Object.keys(avg).sort((a,b) => avg[a] - avg[b]);
+  const drills = [], why = {};
+  for(const k of ranked){
+    const d = METRIC_DRILL[k];
+    if(!d || drills.includes(d)) continue;
+    drills.push(d); why[d] = { metric:k, score:avg[k] };
+    if(drills.length === size) break;
+  }
+  if(drills.length < size){
+    // not enough data: favour whatever has been practised least
+    const count = {};
+    DRILLS.forEach(d => count[d.id] = 0);
+    sessions.forEach(s => { if(count[s.drill] != null) count[s.drill]++; });
+    DRILLS.slice().sort((a,b) => count[a.id] - count[b.id]).forEach(d => {
+      if(drills.length < size && !drills.includes(d.id)) drills.push(d.id);
+    });
+  }
+  return { drills, why };
+}
+
+/* Per-metric trend. One composite score can't tell you that your pace is
+   improving while your fillers are not — which is exactly the thing worth
+   knowing. Compares the recent half of a series against the earlier half. */
+function trendFor(sessions, key){
+  const v = sessions.filter(s => s.parts && typeof s.parts[key] === "number")
+                    .map(s => s.parts[key]);
+  if(v.length < 3) return null;                 // too few points to claim a direction
+  const half = Math.floor(v.length/2);
+  const mean = a => a.reduce((x,y)=>x+y,0)/a.length;
+  return { values:v, now:v[v.length-1], n:v.length,
+           delta: Math.round(mean(v.slice(half)) - mean(v.slice(0, half))) };
+}
+
+const todayKey = () => dayKey(Date.now());
+
+/* The plan is regenerated once a day and remembers what you have finished. */
+function readPlan(){
+  const d = store.read(), p = d.plan;
+  if(p && p.day === todayKey()) return p;
+  const built = buildPlan(d.sessions || []);
+  const fresh = { day: todayKey(), drills: built.drills, why: built.why, done: [] };
+  store.set("plan", fresh);
+  return fresh;
+}
+function markPlanDone(drill){
+  const p = readPlan();
+  if(p.drills.includes(drill) && !p.done.includes(drill)){
+    p.done = p.done.concat(drill);
+    store.set("plan", p);
+  }
+  return p;
+}
+const nextInPlan = p => p.drills.find(d => !p.done.includes(d)) || null;
+
 /* ══ 7. SCORING ══════════════════════════════════════════════════════ */
 
 const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
@@ -860,11 +1354,20 @@ const S = {
   flashUntil:0, lastFillers:0, wEls:[], coachAt:0, playhead:null, audioURL:null
 };
 
+/* A report can keep playing after its view is hidden, so every view change
+   explicitly stops it rather than relying on the browser to pause hidden media. */
+function stopPlayback(){
+  const playback = $("playback");
+  if(!playback) return;
+  playback.pause();
+  playback.currentTime = 0;
+}
+
 function view(name){
+  stopPlayback();
   ["practice","progress","guide","booth","report"].forEach(v=>$("v-"+v).classList.toggle("on", v===name));
   const isHome = name === "practice";
   document.querySelector(".layout").classList.toggle("is-home", isHome);
-  $("menuBtn").hidden = true;
   document.querySelectorAll("[data-nav]").forEach(link => {
     const current = link.dataset.nav === name;
     link.toggleAttribute("aria-current", current);
@@ -1227,7 +1730,11 @@ async function finish(){
            display: S.run.display || null,
            framework: S.run.framework ? S.run.framework.name : null }
   };
-  store.add({at:sess.at, drill:sess.drill, name:sess.name, score, wpm:m.wpm, fillers:f.total});
+  // keep the component scores, not just the total: the plan picks your weakest
+  // metric from these, and Progress trends each one separately
+  store.add({ at:sess.at, drill:sess.drill, name:sess.name, score, wpm:m.wpm, fillers:f.total,
+    parts: Object.fromEntries(parts.map(p => [p.k, p.v])) });
+  markPlanDone(sess.drill);
   showReport(sess);
 }
 
@@ -1292,7 +1799,19 @@ function showReport(sess){
   $("r-said")._cur = undefined;
   renderRead(sess);
   renderSaid(sess);
-  paintAI(readKey() ? "ready" : "needkey");
+
+  // if this drill was part of today's session, hand them straight to the next one
+  const plan = readPlan(), nxt = nextInPlan(plan), inPlan = plan.drills.includes(sess.drill);
+  const nextBtn = $("planNextBtn");
+  nextBtn.hidden = !(inPlan && nxt);
+  $("againBtn").className = nextBtn.hidden ? "btn primary" : "btn";
+  if(!nextBtn.hidden) nextBtn.textContent = "Next: " + drillById(nxt).name;
+  if(inPlan) $("r-kicker").textContent += nxt
+    ? ` · ${plan.done.length} of ${plan.drills.length} done today`
+    : " · today's session complete";
+
+  renderLocalFindings(sess);
+  paintTiers();
 }
 
 /* ══ 10b. UI PRIMITIVES ══════════════════════════════════════════════
@@ -1509,6 +2028,45 @@ function keepVisible(box, el){
    is judge whether the answer was actually well made — structure, hedging,
    vagueness, whether you answered the question. That is what this asks. */
 
+/* ══ ON-DEVICE MODEL ═════════════════════════════════════════════════
+   Chrome ships a small language model that runs locally. No key, no request,
+   nothing leaves the machine — which fits this app better than any API can.
+   It is not always provisioned, so every call is feature-detected and any
+   failure is reported rather than swallowed. */
+const onDevice = {
+  get supported(){ return typeof LanguageModel !== "undefined"; },
+  state: null,
+  /* availability() can hang on some machines, so it races a timeout — a probe
+     that never settles must not leave the panel empty forever. */
+  async check(){
+    if(!this.supported) return (this.state = "unsupported");
+    try{
+      this.state = await Promise.race([
+        LanguageModel.availability(),
+        new Promise(r => setTimeout(() => r("unavailable"), 3000))
+      ]);
+    }catch(e){ this.state = "unavailable"; }
+    return this.state;
+  },
+  async ask(system, prompt, onProgress){
+    const opts = { initialPrompts: [{ role:"system", content: system }] };
+    if(onProgress) opts.monitor = m =>
+      m.addEventListener("downloadprogress", e => onProgress(Math.round((e.loaded||0)*100)));
+    const session = await LanguageModel.create(opts);
+    try{ return (await session.prompt(prompt)).trim(); }
+    finally{ try{ session.destroy(); }catch(e){} }
+  }
+};
+
+/* Small models do better with a narrow brief than a long one. */
+const ONDEVICE_SYSTEM =
+`You are a speaking coach. You are given a transcript of someone practising a spoken answer.
+The transcript is from speech recognition: ignore punctuation, capitalisation and spelling entirely.
+Judge only the content and structure of what they said.
+Reply with exactly three short bullets, each starting with "- ", each under 25 words.
+Bullet 1: what worked. Bullet 2: the single biggest weakness. Bullet 3: one concrete rewrite of their weakest sentence.
+Be specific and quote their words. No preamble, no headings, no encouragement.`;
+
 const AI_KEY = "speakeasy.anthropicKey";
 const readKey  = () => { try{ return localStorage.getItem(AI_KEY) || ""; }catch(e){ return ""; } };
 const writeKey = k => { try{ localStorage.setItem(AI_KEY, k); }catch(e){} };
@@ -1586,7 +2144,85 @@ function renderCoach(md){
   }).join("");
 }
 
-function paintAI(state, payload){
+/* The always-on tier: runs instantly, offline, in every browser, no model. */
+function renderLocalFindings(sess){
+  const box = $("localFindings");
+  const found = analyseLanguage(sess.text || "",
+    { framework: sess.run && sess.run.framework, target: sess.run && sess.run.target });
+
+  if(!(sess.text || "").trim()){
+    box.innerHTML = `<p class="note">No transcript to read, so there is nothing to analyse.</p>`;
+    return;
+  }
+  if(!found.length){
+    box.innerHTML = `<p class="note"><b>Nothing weak enough to flag.</b> No hedging, padding or
+      repetition worth mentioning in what you said. Read the transcript above and see whether it
+      says what you meant it to.</p>`;
+    return;
+  }
+  box.innerHTML = `<p class="eyebrow" style="margin-bottom:10px">Read on this device · ${found.length}
+    ${found.length === 1 ? "habit" : "habits"} worth breaking</p>
+    <ul class="notes">` +
+    found.slice(0, 4).map(f => `<li><b>${esc(f.title)}.</b> ${esc(f.detail)}</li>`).join("") +
+    `</ul>`;
+}
+
+/* Offer whichever deeper review this browser can actually do.
+   Renders immediately from what is already known, then re-renders once the
+   on-device probe answers — so a slow or hanging probe never leaves a blank. */
+function paintTiers(){
+  drawTiers();
+  if(onDevice.supported && onDevice.state === null)
+    onDevice.check().then(() => { if($("aiBody")) drawTiers(); });
+}
+
+function drawTiers(){
+  const box = $("aiBody"), state = onDevice.state;
+  const local = state === "available" || state === "downloadable" || state === "downloading";
+  const hasKey = !!readKey();
+
+  const onDeviceBtn = !local ? "" :
+    `<button class="btn ${hasKey ? "" : "primary"}" id="aiLocalGo">${
+      state === "available" ? "Ask the on-device model" : "Download the on-device model"
+    }</button>`;
+  const apiBtn = hasKey
+    ? `<button class="btn primary" id="aiGo">Ask Claude</button>
+       <button class="btn" id="aiForget">Forget key</button>`
+    : `<button class="btn" id="aiKeyBtn">Use Claude instead…</button>`;
+
+  const blurb = local
+    ? `Your browser has a language model built in. It runs <b>on this device</b> — no key, no account,
+       and nothing sent anywhere.${state !== "available" ? " It needs a one-off download first." : ""}`
+    : state === null && onDevice.supported
+      ? `Checking whether this browser can run a model on-device…`
+      : `This browser has no on-device model available. Claude gives a sharper read, but it does send
+         your transcript — the only thing here that leaves your device.`;
+
+  box.innerHTML = `
+    <p class="note" style="margin:14px 0 12px">${blurb}</p>
+    <div class="airow">${onDeviceBtn}${apiBtn}</div>`;
+
+  if($("aiLocalGo")) $("aiLocalGo").onclick = runLocalModel;
+  if($("aiGo")) $("aiGo").onclick = runCoach;
+  if($("aiForget")) $("aiForget").onclick = () => { writeKey(""); paintTiers(); };
+  if($("aiKeyBtn")) $("aiKeyBtn").onclick = () => paintAI("needkey");
+}
+
+async function runLocalModel(){
+  const sess = S.lastSession;
+  if(!sess || !sess.text || words(sess.text).length < 8)
+    return paintAI("error", "There is no transcript to review.");
+  paintAI("working", "Thinking on this device…");
+  try{
+    const reply = await onDevice.ask(ONDEVICE_SYSTEM, coachPrompt(sess),
+      pct => paintAI("working", `Downloading the model… ${pct}%`));
+    paintAI("done", reply, "on-device");
+  }catch(e){
+    paintAI("error", (e && e.message) || "The on-device model could not run.");
+  }
+}
+
+function paintAI(state, payload, engine){
   const box = $("aiBody");
   if(state === "needkey"){
     box.innerHTML = `
@@ -1597,6 +2233,7 @@ function paintAI(state, payload){
         <label class="sr" for="aiKey">Anthropic API key</label>
         <input id="aiKey" type="password" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
         <button class="btn" id="aiSave">Save key</button>
+        <button class="btn" id="aiCancelKey">Cancel</button>
       </div>
       <p class="note"><b>This is the one thing here that leaves your device.</b> Your key is stored only in
         this browser, and the transcript is sent to Anthropic when you press the button — never automatically,
@@ -1605,38 +2242,28 @@ function paintAI(state, payload){
     $("aiSave").onclick = () => {
       const k = $("aiKey").value.trim();
       if(!k) return;
-      writeKey(k); paintAI("ready");
+      writeKey(k); paintTiers();
     };
     $("aiKey").onkeydown = e => { if(e.key === "Enter") $("aiSave").click(); };
-    return;
-  }
-  if(state === "ready"){
-    box.innerHTML = `
-      <p class="note" style="margin-bottom:12px">Sends this session’s transcript to Claude for feedback on
-        structure and word choice. Your audio stays here.</p>
-      <div class="airow">
-        <button class="btn primary" id="aiGo">Review what I said</button>
-        <button class="btn" id="aiForget">Forget key</button>
-      </div>`;
-    $("aiGo").onclick = runCoach;
-    $("aiForget").onclick = () => { writeKey(""); paintAI("needkey"); };
+    $("aiCancelKey").onclick = () => paintTiers();
     return;
   }
   if(state === "working"){
-    box.innerHTML = `<p class="working">Reading your transcript…</p>`;
+    box.innerHTML = `<p class="working">${esc(payload || "Reading your transcript…")}</p>`;
     return;
   }
   if(state === "error"){
-    box.innerHTML = `<div class="banner err"><b>Coaching failed.</b> ${esc(payload)}</div>
-      <div class="airow"><button class="btn" id="aiRetry">Try again</button>
-      <button class="btn" id="aiForget">Change key</button></div>`;
-    $("aiRetry").onclick = runCoach;
-    $("aiForget").onclick = () => { writeKey(""); paintAI("needkey"); };
+    box.innerHTML = `<div class="banner err"><b>Review failed.</b> ${esc(payload)}</div>
+      <div class="airow"><button class="btn" id="aiBack">Back</button></div>`;
+    $("aiBack").onclick = () => paintTiers();
     return;
   }
-  box.innerHTML = renderCoach(payload) +
+  box.innerHTML =
+    `<p class="eyebrow" style="margin:14px 0 10px">${engine === "on-device"
+      ? "Read by the model on this device" : "Read by Claude"}</p>` +
+    renderCoach(payload) +
     `<div class="airow" style="margin-top:16px"><button class="btn" id="aiAgain">Ask again</button></div>`;
-  $("aiAgain").onclick = runCoach;
+  $("aiAgain").onclick = () => paintTiers();
 }
 
 async function runCoach(){
@@ -1690,12 +2317,41 @@ function renderHome(){
     stat(wpm||"—", "Recent pace");
   requestAnimationFrame(()=>drawHistory(ss));
 
-  const done = new Set(ss.slice(-3).map(s=>s.drill));
-  const next = DRILLS.find(x=>!done.has(x.id)) || DRILLS[0];
-  $("quickStart").dataset.drill = next.id;
-  $("quickNote").textContent = ss.length
-    ? `Up next: ${next.name} · ${next.tag.toLowerCase()}`
-    : "10 minutes · one drill · a score you can chase";
+  renderPlan();
+}
+
+/* Today's session: three drills aimed at your weakest metrics, so the choice
+   is already made. The strip doubles as progress through the day. */
+function renderPlan(){
+  const p = readPlan(), next = nextInPlan(p), box = $("planStrip");
+  const done = p.done.length, total = p.drills.length;
+
+  $("quickStart").dataset.drill = next || p.drills[0];
+  $("quickStart").querySelector(".lbl").textContent =
+    !next ? "Done today" : done ? "Continue" : "Start today";
+  $("quickStart").classList.toggle("complete", !next);
+
+  $("quickNote").textContent = !next
+    ? "All three done today. Come back tomorrow, or pick any drill below."
+    : `${total - done} of ${total} left · about ${(total - done) * 3} minutes`;
+
+  box.innerHTML = p.drills.map((id, i) => {
+    const d = drillById(id);
+    if(!d) return "";
+    const isDone = p.done.includes(id), isNext = id === next;
+    const why = p.why && p.why[id];
+    const reason = why
+      ? "weakest: " + esc(METRIC_NAME[why.metric] || why.metric) + " · " + why.score
+      : esc(d.tag.toLowerCase());
+    return `<button class="planstep${isDone ? " done" : ""}${isNext ? " next" : ""}"
+        data-drill="${id}" style="--accent:${d.accent}">
+      <span class="pnum">${isDone ? "&#10003;" : i + 1}</span>
+      <span class="pbody">
+        <span class="pname">${esc(d.name)}</span>
+        <span class="pwhy">${reason}</span>
+      </span>
+    </button>`;
+  }).join("");
 }
 
 /* ══ 12. WIRING ══════════════════════════════════════════════════════ */
@@ -1703,6 +2359,72 @@ function renderHome(){
 function bestFor(sessions, id){
   const scores = sessions.filter(s => s.drill === id).map(s => s.score);
   return scores.length ? Math.max(...scores) : null;
+}
+
+/* A sparkline as inline SVG — no canvas, so it needs no repaint on theme change. */
+function sparkline(values, colour){
+  const w = 132, h = 34, pad = 3;
+  const lo = Math.min(...values), hi = Math.max(...values), span = hi - lo || 1;
+  const pts = values.map((v,i) => {
+    const x = pad + (i/(values.length-1 || 1)) * (w - pad*2);
+    const y = h - pad - ((v - lo)/span) * (h - pad*2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const last = pts[pts.length-1].split(",");
+  return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true">
+    <polyline points="${pts.join(" ")}" fill="none" stroke="${colour}" stroke-width="1.8"
+      stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>
+    <circle cx="${last[0]}" cy="${last[1]}" r="2.6" fill="${colour}"/>
+  </svg>`;
+}
+
+function renderTrends(){
+  const ss = store.read().sessions, box = $("trendWrap");
+  const keys = ["pace","filler","proj","acc","cover","var","pause"];
+  const rows = keys.map(k => ({ k, t: trendFor(ss, k) })).filter(r => r.t);
+
+  if(!rows.length){
+    box.innerHTML = `<div class="block"><p class="empty">Not enough history yet. After three
+      sessions this breaks your score into its parts, so you can see which one is moving.</p></div>`;
+    return;
+  }
+  box.innerHTML = `<div class="trends">` + rows.map(({k,t}) => {
+    const col = scoreColor(t.now);
+    const dir = t.delta > 2 ? "up" : t.delta < -2 ? "down" : "flat";
+    const arrow = dir === "up" ? "↑" : dir === "down" ? "↓" : "→";
+    const sign = t.delta > 0 ? "+" : "";
+    return `<div class="trend">
+      <div class="thead">
+        <span class="tname">${esc(METRIC_NAME[k] || k)}</span>
+        <span class="tdelta ${dir}">${arrow} ${sign}${t.delta}</span>
+      </div>
+      <div class="tnow" style="color:${col}">${t.now}</div>
+      ${sparkline(t.values, col)}
+      <div class="tfoot">${t.n} sessions</div>
+    </div>`;
+  }).join("") + `</div>`;
+}
+
+/* Recent sessions, newest first. The history chart shows the trend; this shows
+   the individual runs behind it, so a bad day is legible rather than just a dip. */
+function renderRecent(){
+  const ss = store.read().sessions.slice().reverse().slice(0, 25);
+  const box = $("recentWrap");
+  if(!ss.length){
+    box.innerHTML = `<div class="block"><p class="empty">Nothing here yet. Finish a drill and every run lands
+      in this list 2014 date, drill, score, pace and fillers.</p></div>`;
+    return;
+  }
+  const fmtWhen = new Intl.DateTimeFormat(undefined,
+    { day:"numeric", month:"short", hour:"numeric", minute:"2-digit" });
+  box.innerHTML = `<div class="block recent">` + ss.map(s => `
+    <div class="rrow">
+      <b class="rscore" style="color:${scoreColor(s.score)}">${s.score}</b>
+      <span class="rname">${esc(s.name)}</span>
+      <span class="rwhen">${esc(fmtWhen.format(new Date(s.at)))}</span>
+      <span class="rmeta">${s.wpm ? s.wpm + " wpm" : "2014"}</span>
+      <span class="rmeta">${s.fillers != null ? s.fillers + " filler" + (s.fillers === 1 ? "" : "s") : "2014"}</span>
+    </div>`).join("") + `</div>`;
 }
 
 function renderSidebar(){
@@ -1730,8 +2452,6 @@ function openMenu(){
   const side = $("side"), scrim = $("scrim"), layout = document.querySelector(".layout");
   if(!matchMedia("(max-width: 940px)").matches){
     layout.classList.remove("sidebar-collapsed");
-    $("menuBtn").setAttribute("aria-expanded", "true");
-    $("menuBtn").setAttribute("aria-label", "Hide sidebar");
     $("sideMenuBtn").setAttribute("aria-expanded", "true");
     $("sideMenuBtn").setAttribute("aria-label", "Hide sidebar");
     return;
@@ -1739,50 +2459,121 @@ function openMenu(){
   side.classList.add("open");
   scrim.hidden = false;
   requestAnimationFrame(() => scrim.classList.add("on"));
-  $("menuBtn").setAttribute("aria-expanded", "true");
-  $("menuBtn").setAttribute("aria-label", "Close menu");
 }
 
 function closeMenu(){
-  const side = $("side"), scrim = $("scrim"), menu = $("menuBtn"), layout = document.querySelector(".layout");
-  if(!side || !scrim || !menu) return;
+  const side = $("side"), scrim = $("scrim"), layout = document.querySelector(".layout");
+  if(!side || !scrim) return;
   if(!matchMedia("(max-width: 940px)").matches){
     layout.classList.add("sidebar-collapsed");
-    menu.setAttribute("aria-expanded", "false");
-    menu.setAttribute("aria-label", "Show sidebar");
     $("sideMenuBtn").setAttribute("aria-expanded", "false");
     $("sideMenuBtn").setAttribute("aria-label", "Show sidebar");
     return;
   }
   side.classList.remove("open");
   scrim.classList.remove("on");
-  menu.setAttribute("aria-expanded", "false");
-  menu.setAttribute("aria-label", "Open menu");
   if(!scrim.hidden) setTimeout(() => { if(!side.classList.contains("open")) scrim.hidden = true; }, 280);
 }
 
-function openDrill(id){ newRun(id); renderSidebar(); view("booth"); }
-/* view() first, then render — a canvas in a display:none view measures 0 wide */
-function goHome(){ audio.close(); view("practice"); renderHome(); renderSidebar(); reveal($("v-practice")); }
+/* Stop a run without scoring it. Used when the user navigates away mid-session:
+   they chose to leave, so the partial recording is discarded rather than saved
+   as a bad score. Mirrors finish()'s teardown, minus the report. */
+function abortRun(){
+  if(!S.running) return;
+  S.running = false;
+  cancelAnimationFrame(S.raf);
+  document.body.classList.remove("live");
+  document.documentElement.style.setProperty("--glow", 0);
+  listener.stop();
+  audio.stopRecording();
+  $("skipBtn").disabled = false;
+}
 
-document.querySelectorAll("[data-nav]").forEach(link => link.addEventListener("click", e => {
-  e.preventDefault();
-  const page = link.dataset.nav;
+function openDrill(id){ navigate("#" + DRILL_HASH + id); }
+/* view() first, then render — a canvas in a display:none view measures 0 wide */
+function goHome(){ navigate("#practice"); }
+
+/* ══ ROUTING ═════════════════════════════════════════════════════════
+   The three sections are real pages, so they live in the URL: deep links,
+   bookmarks and browser back all work. Drills and reports stay out of the
+   history — they are session state, not places. */
+const PAGES = ["practice","progress","guide"];
+
+const DRILL_HASH = "drill-";
+
+/* A drill is a place, not just state. It was previously invisible to history:
+   the URL still read #progress while the booth was open, so Back skipped the
+   drill and landed somewhere the user had never been. */
+function routeFromHash(){
+  const h = (location.hash || "").slice(1);
+  if(h.startsWith(DRILL_HASH)){
+    const id = h.slice(DRILL_HASH.length);
+    if(drillById(id)) return { kind:"drill", id };
+  }
+  return { kind:"page", page: PAGES.includes(h) ? h : "practice", bad: !!h && !PAGES.includes(h) };
+}
+
+function goPage(page){
   audio.close();
   view(page);
   if(page === "practice") renderHome();
-  if(page === "progress") repaint();
+  if(page === "progress"){ renderTrends(); renderRecent(); repaint(); }
   renderSidebar();
   reveal($("v-" + page));
+}
+
+/* Apply whatever the URL currently says. Never writes history itself, except to
+   correct a hash that points nowhere — replacing it rather than pushing, so a
+   bad link can't become a trap you have to press Back twice to escape. */
+function applyRoute(){
+  const r = routeFromHash();
+  if(S.running) abortRun();        // navigating away from a live run discards it
+
+  if(r.kind === "drill"){
+    // navigating to a drill always starts it fresh — including re-picking the
+    // one whose report you are looking at, which is the obvious intent
+    audio.close();
+    newRun(r.id);
+    renderSidebar();
+    view("booth");
+    return;
+  }
+  if(r.bad) history.replaceState(null, "", "#" + r.page);
+  goPage(r.page);
+}
+
+/* Setting the hash pushes an entry and fires hashchange, which does the work —
+   that is what makes Back and Forward correct. When the hash is already right
+   no event fires, so apply it directly. */
+function navigate(hash){
+  if(location.hash === hash) applyRoute();
+  else location.hash = hash;
+}
+
+addEventListener("hashchange", applyRoute);
+
+// re-clicking the section you are already on should still take you there
+document.querySelectorAll("[data-nav]").forEach(link => link.addEventListener("click", () => {
+  if(location.hash === "#" + link.dataset.nav) applyRoute();
 }));
 
-$("menuBtn").onclick = () => $("side").classList.contains("open") ? closeMenu() : openMenu();
 $("sideMenuBtn").onclick = () => {
   if(!matchMedia("(max-width: 940px)").matches)
     document.querySelector(".layout").classList.contains("sidebar-collapsed") ? openMenu() : closeMenu();
   else closeMenu();
 };
+$("menuBtn").onclick = () => {
+  const open = $("side").classList.contains("open");
+  open ? closeMenu() : openMenu();
+  $("menuBtn").setAttribute("aria-expanded", String(!open));
+};
 $("scrim").onclick = closeMenu;
+// Escape closes the drawer, and focus goes back to the control that opened it
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape" && $("side").classList.contains("open")){
+    closeMenu(); $("menuBtn").setAttribute("aria-expanded", "false"); $("menuBtn").focus();
+  }
+});
 
 document.addEventListener("click", e=>{
   const card = e.target.closest("[data-drill]");
@@ -1793,6 +2584,10 @@ $("skipBtn").onclick = () => { if(!S.running) newRun(S.drill.id); };
 $("exitBooth").onclick = () => { if(S.running) finish(); else goHome(); };
 $("homeBtn").onclick = goHome;
 $("againBtn").onclick = () => { newRun(S.drill.id); view("booth"); };
+$("planNextBtn").onclick = () => {
+  const nxt = nextInPlan(readPlan());
+  if(nxt) openDrill(nxt); else goHome();
+};
 
 document.addEventListener("keydown", e=>{
   if(e.target.matches("input,textarea")) return;
@@ -1838,8 +2633,7 @@ function repaint(){
   renderHome();
   renderSidebar();
   wireSpotlight();
-  view("practice");
-  reveal(document.getElementById("v-practice"));
+  applyRoute();                    // honour a deep link on first load
   // the idle wave is decorative: hold it still when the user asked for less motion
   (function spin(){
     if($("v-practice").classList.contains("on") && !reduced()) drawIdle();

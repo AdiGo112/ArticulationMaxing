@@ -156,16 +156,21 @@ a.brand{text-decoration:none; color:var(--chalk); flex:none}
 .nav a[aria-current="page"]{color:var(--chalk)}
 .nav a[aria-current="page"]::after{content:""; position:absolute; left:13px; right:13px; bottom:2px;
   height:2px; border-radius:2px; background:var(--tungsten)}
-.menu{display:grid}
+.menu{display:none}   /* drawer trigger: only where the sidebar is an overlay */
 
 /* ════ LAYOUT: sidebar + main ═══════════════════════════════════════ */
 .layout{max-width:var(--shell); margin:0 auto; display:grid; gap:0;
   grid-template-columns:216px minmax(0,1fr); align-items:start}
 .layout .shell{max-width:none; margin:0; padding-inline:0}   /* the layout owns the gutters now */
 #main{min-width:0; padding-inline:clamp(18px,3vw,34px) }
-.layout.is-home{display:block}
-.layout.is-home .side{display:none}
-.layout.is-home #main{padding-inline:0}
+/* On Practice the sidebar would duplicate the drill cards, so it steps aside —
+   but only where it is a column. Below 940px it is an overlay drawer and is the
+   only way to reach anything, so it must stay openable. */
+@media(min-width:941px){
+  .layout.is-home{display:block}
+  .layout.is-home .side{display:none}
+  .layout.is-home #main{padding-inline:0}
+}
 .layout.sidebar-collapsed{grid-template-columns:64px minmax(0,1fr)}
 .layout.sidebar-collapsed .side{display:block; padding:12px; min-height:calc(100dvh - 62px)}
 .layout.sidebar-collapsed .side > :not(.side-menuhead){display:none}
@@ -196,6 +201,7 @@ a.brand{text-decoration:none; color:var(--chalk); flex:none}
 
 @media(max-width:940px){
   .layout{grid-template-columns:minmax(0,1fr)}
+  .menu{display:grid}
   #main{padding-inline:max(var(--pad),env(safe-area-inset-left))}
   .nav{display:none}
   .side{position:fixed; top:0; bottom:0; left:0; width:270px; z-index:80; background:var(--ink-2);
@@ -490,6 +496,55 @@ kbd{font-family:var(--fm); font-size:10px; border:1px solid var(--edge); border-
   font-variation-settings:'opsz' 19; letter-spacing:-.01em}
 #readWrap .qd{margin-top:10px; font-size:14.5px; color:var(--dust); line-height:1.6}
 
+/* ── today's session plan ─────────────────────────────────────────── */
+.planstrip{display:flex; gap:10px; justify-content:center; flex-wrap:wrap;
+  margin:clamp(24px,4vw,34px) auto 0; max-width:660px}
+.planstep{display:flex; align-items:center; gap:11px; text-align:left; flex:1 1 190px;
+  border:1px solid var(--edge); border-radius:var(--r); background:var(--panel);
+  padding:11px 14px; box-shadow:var(--shadow);
+  transition:transform .24s var(--ease), border-color .24s var(--ease), opacity .24s var(--ease)}
+.planstep:hover{transform:translateY(-2px); border-color:color-mix(in srgb,var(--accent) 60%,var(--edge))}
+.planstep .pnum{width:24px; height:24px; border-radius:50%; flex:none; display:grid; place-items:center;
+  font-family:var(--fm); font-size:11.5px; color:var(--faint); border:1px solid var(--edge)}
+.planstep .pbody{display:flex; flex-direction:column; min-width:0}
+.planstep .pname{font-size:14.5px; font-weight:600; color:var(--chalk);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.planstep .pwhy{font-family:var(--fm); font-size:10.5px; letter-spacing:.05em; color:var(--faint);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.planstep.next{border-color:var(--accent)}
+.planstep.next .pnum{color:#180F03; background:var(--accent); border-color:var(--accent); font-weight:700}
+.planstep.done{opacity:.5}
+.planstep.done .pnum{color:var(--meter); border-color:var(--meter)}
+.ptt.complete .dot{background:var(--meter); box-shadow:0 0 30px -3px var(--meter)}
+
+/* ── per-metric trends ────────────────────────────────────────────── */
+.trends{display:grid; gap:12px; grid-template-columns:repeat(auto-fill,minmax(min(168px,100%),1fr))}
+.trend{border:1px solid var(--edge); border-radius:var(--r); background:var(--panel);
+  padding:14px 15px 11px; box-shadow:var(--shadow)}
+.thead{display:flex; align-items:baseline; justify-content:space-between; gap:8px}
+.tname{font-family:var(--fm); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint)}
+.tdelta{font-family:var(--fm); font-size:11px; font-weight:700; white-space:nowrap}
+.tdelta.up{color:var(--meter)} .tdelta.down{color:var(--live)} .tdelta.flat{color:var(--faint)}
+.tnow{font-family:var(--fd); font-size:29px; font-weight:700; letter-spacing:-.02em; line-height:1.1; margin:6px 0 2px}
+.trend svg{display:block; width:100%; height:34px; overflow:visible}
+.tfoot{font-family:var(--fm); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--faint); margin-top:6px}
+
+/* ── recent sessions list ─────────────────────────────────────────── */
+.recent{padding:8px 10px}
+.rrow{display:grid; grid-template-columns:44px 1fr auto auto auto; gap:14px; align-items:center;
+  padding:11px 12px; border-bottom:1px solid var(--edge-soft)}
+.rrow:last-child{border-bottom:0}
+.rscore{font-family:var(--fd); font-weight:700; font-size:21px; letter-spacing:-.01em; line-height:1}
+.rname{font-size:14.5px; color:var(--chalk); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.rwhen{font-family:var(--fm); font-size:11.5px; color:var(--faint); white-space:nowrap}
+.rmeta{font-family:var(--fm); font-size:11.5px; color:var(--dust); white-space:nowrap}
+@media(max-width:640px){
+  .rrow{grid-template-columns:40px 1fr auto; row-gap:4px}
+  .rwhen{grid-column:2/4}
+  .rmeta{grid-column:auto}
+}
+
 /* ── follow-along transcript ───────────────────────────────────────── */
 #saidWrap{margin-bottom:16px}
 .saidhead{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin-bottom:13px}
@@ -552,7 +607,7 @@ footer .shell{display:flex; gap:14px; flex-wrap:wrap; align-items:center; justif
 
 <header class="console">
   <div class="bar">
-    <button class="iconbtn menu" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="side" hidden aria-hidden="true" tabindex="-1">
+    <button class="iconbtn menu" id="menuBtn" aria-label="Show drills and sections" aria-expanded="false" aria-controls="side">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
     <a class="brand" href="#practice" data-nav="practice"><span class="onair" aria-hidden="true"></span>Speakeasy</a>
@@ -603,7 +658,8 @@ footer .shell{display:flex; gap:14px; flex-wrap:wrap; align-items:center; justif
         <span class="dot" aria-hidden="true"></span>
         <span class="lbl">Start today</span>
       </button>
-      <p class="note" id="quickNote" data-reveal style="--i:9">10 minutes · one drill · a score you can chase</p>
+      <div class="planstrip" id="planStrip" data-reveal style="--i:9"></div>
+      <p class="note" id="quickNote" data-reveal style="--i:10">Three drills, about ten minutes.</p>
     </div>
 
     <section class="sec">
@@ -628,6 +684,14 @@ footer .shell{display:flex; gap:14px; flex-wrap:wrap; align-items:center; justif
         <canvas id="history"></canvas>
         <div class="histfoot"><span id="histL">—</span><span id="histR">Clarity 0–100</span></div>
       </div>
+    </section>
+
+    <section class="sec">
+      <div class="sechead">
+        <h2>What is moving</h2>
+        <p>Each part of the score on its own. The arrow compares your recent half against your earlier half.</p>
+      </div>
+      <div id="trendWrap"></div>
     </section>
 
     <section class="sec">
@@ -764,11 +828,13 @@ footer .shell{display:flex; gap:14px; flex-wrap:wrap; align-items:center; justif
 
     <section class="block ai" id="aiBlock">
       <h3>Coach</h3>
+      <div id="localFindings"></div>
       <div id="aiBody"></div>
     </section>
 
     <div class="controls">
-      <button class="btn primary" id="againBtn">Run it again</button>
+      <button class="btn primary" id="planNextBtn" hidden>Next drill</button>
+      <button class="btn" id="againBtn">Run it again</button>
       <button class="btn" id="homeBtn">Back to drills</button>
     </div>
   </div>

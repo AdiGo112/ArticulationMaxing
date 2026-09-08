@@ -9,7 +9,7 @@ assert.ok(cut > 0, "section 8 marker missing — did app.js get restructured?");
 const mem = {};
 global.window = {};
 global.localStorage = { getItem:k=>mem[k]??null, setItem:(k,v)=>mem[k]=v };
-(0, eval)(src.slice(0, cut) + "\nglobal.X={countFillers,accuracy,variety,usedWord,scoreRun,streak,buildRun,band,DRILLS,verdict,coachNotes,isSpeechFrame,makeVAD,tokens,wordAt,READ_LAG,matchTarget,projFromRms,readStats,ramp,fillerRate};");
+(0, eval)(src.slice(0, cut) + "\nglobal.X={countFillers,accuracy,variety,usedWord,scoreRun,streak,buildRun,band,DRILLS,verdict,coachNotes,isSpeechFrame,makeVAD,tokens,wordAt,READ_LAG,matchTarget,projFromRms,readStats,ramp,fillerRate,buildPlan,metricAverages,trendFor,analyseLanguage};");
 const X = global.X;
 
 let n = 0;
@@ -440,6 +440,134 @@ t("ramp has no plateau, so improvement always shows", () => {
   assert.ok(X.ramp(80, 50, 96) > X.ramp(70, 50, 96));
   assert.strictEqual(X.ramp(200, 50, 96), 100, "must clamp above the top");
   assert.strictEqual(X.ramp(0, 50, 96), 0, "must clamp below the bottom");
+});
+
+/* ── today's session plan ─────────────────────────────────────────── */
+
+const withParts = (drill, parts) => ({ at:Date.now(), drill, name:drill, score:70, parts });
+
+t("the plan targets the weakest metric first", () => {
+  const ss = Array.from({length:6}, () =>
+    withParts("impromptu", { pace:92, filler:31, proj:88, var:85, pause:80 }));
+  const { drills, why } = X.buildPlan(ss);
+  assert.strictEqual(drills[0], "filler", "worst metric was fillers, got " + drills[0]);
+  assert.strictEqual(why.filler.metric, "filler");
+  assert.ok(why.filler.score < 40, "should report the weak average: " + why.filler.score);
+});
+
+t("the plan is three distinct drills, never a repeat", () => {
+  // pace and pause both map to the Pace & Pause drill — it must appear once
+  const ss = Array.from({length:5}, () =>
+    withParts("impromptu", { pace:20, pause:22, filler:40, var:60, proj:90 }));
+  const { drills } = X.buildPlan(ss);
+  assert.strictEqual(drills.length, 3);
+  assert.strictEqual(new Set(drills).size, 3, "duplicate drill in plan: " + drills.join(","));
+  assert.strictEqual(drills[0], "pace");
+});
+
+t("with no history the plan still returns three real drills", () => {
+  const { drills } = X.buildPlan([]);
+  assert.strictEqual(drills.length, 3);
+  assert.strictEqual(new Set(drills).size, 3);
+  drills.forEach(id => assert.ok(X.DRILLS.some(d => d.id === id), "not a real drill: " + id));
+});
+
+t("the plan favours least-practised drills when metrics are missing", () => {
+  // sessions from before component scores were stored have no `parts`
+  const ss = Array.from({length:8}, () => ({ at:Date.now(), drill:"impromptu", score:70 }));
+  const { drills } = X.buildPlan(ss);
+  assert.strictEqual(drills.length, 3);
+  assert.ok(!drills.includes("impromptu"), "should not pick the most-practised drill");
+});
+
+t("metric averages ignore sessions recorded before parts existed", () => {
+  const avg = X.metricAverages([
+    { drill:"a", score:50 },
+    withParts("a", { filler:40 }),
+    withParts("a", { filler:60 })
+  ]);
+  assert.strictEqual(avg.filler, 50, "a partless session was counted as zero");
+});
+
+/* ── per-metric trends ────────────────────────────────────────────── */
+
+t("a trend needs at least three points before it claims anything", () => {
+  const two = [withParts("a",{pace:50}), withParts("a",{pace:80})];
+  assert.strictEqual(X.trendFor(two, "pace"), null);
+  assert.strictEqual(X.trendFor([], "pace"), null);
+  assert.strictEqual(X.trendFor(two, "filler"), null, "absent metric must not trend");
+});
+
+t("improvement reads positive and decline reads negative", () => {
+  const mk = vals => vals.map(v => withParts("a", { pace:v }));
+  assert.ok(X.trendFor(mk([40,45,70,80]), "pace").delta > 0);
+  assert.ok(X.trendFor(mk([85,80,50,40]), "pace").delta < 0);
+  const flat = X.trendFor(mk([60,61,60,61]), "pace");
+  assert.strictEqual(flat.delta, 0, "steady scores should read flat, got " + flat.delta);
+});
+
+t("a trend reports the latest value, not the average", () => {
+  const t3 = X.trendFor([withParts("a",{var:20}), withParts("a",{var:30}), withParts("a",{var:90})], "var");
+  assert.strictEqual(t3.now, 90);
+  assert.strictEqual(t3.n, 3);
+});
+
+/* ── local language analysis (no model, no network) ───────────────── */
+
+const hedgy = "I think maybe this is sort of the kind of thing that I guess could be " +
+              "important but I'm not really sure and I feel like the stuff was very very good";
+const strong = "The deadline was arbitrary. I assumed it was fixed because nobody questioned it, " +
+               "and we lost three weeks. For example, last March we shipped early once someone asked who set it.";
+
+t("hedging is caught and the speaker's own words are quoted back", () => {
+  const f = X.analyseLanguage(hedgy, {});
+  const hedge = f.find(x => x.id === "hedge");
+  assert.ok(hedge, "hedging not detected: " + f.map(x=>x.id).join(","));
+  assert.ok(/i think|i guess|maybe/.test(hedge.detail), "should quote the actual phrases");
+});
+
+t("a clear, concrete answer is left alone", () => {
+  const f = X.analyseLanguage(strong, { framework:"PREP" });
+  assert.strictEqual(f.length, 0, "flagged a good answer: " + f.map(x=>x.title).join(" / "));
+});
+
+t("it stays silent when there is too little to judge", () => {
+  assert.deepStrictEqual(X.analyseLanguage("um yeah ok", {}), []);
+  assert.deepStrictEqual(X.analyseLanguage("", {}), []);
+});
+
+t("framework drills flag a missing reason and a missing example", () => {
+  const noEvidence = "The deadline was wrong and we should have moved it and that is my view on the matter here";
+  const f = X.analyseLanguage(noEvidence, { framework:"PREP" }).map(x => x.id);
+  assert.ok(f.includes("reason"), "missing 'because' not flagged: " + f.join(","));
+  assert.ok(f.includes("example"), "missing example not flagged: " + f.join(","));
+  // without a framework those two are not expected of the speaker
+  const free = X.analyseLanguage(noEvidence, {}).map(x => x.id);
+  assert.ok(!free.includes("reason") && !free.includes("example"),
+    "freeform speech should not be judged against a framework");
+});
+
+t("a word leaned on repeatedly is named", () => {
+  const repet = "The project project deadline was a project problem and the project team " +
+                "decided the project timeline needed another project review before launch";
+  const f = X.analyseLanguage(repet, {});
+  const rep = f.find(x => x.id === "repeat");
+  assert.ok(rep && /project/.test(rep.detail), "overused word not named: " + JSON.stringify(f.map(x=>x.id)));
+});
+
+t("findings are ranked worst-first", () => {
+  const f = X.analyseLanguage(hedgy, { framework:"PREP" });
+  assert.ok(f.length > 1);
+  for(let i = 1; i < f.length; i++)
+    assert.ok(f[i-1].weight >= f[i].weight, "findings are not ordered by weight");
+});
+
+t("phrase counting does not match inside longer words", () => {
+  // "sometimes" contains "some", "nothing" contains "thing"
+  const f = X.analyseLanguage(
+    "Sometimes nothing works and everybody somehow manages regardless of the situation at hand today", {});
+  const vague = f.find(x => x.id === "vague");
+  assert.ok(!vague, "matched a vague word inside a longer one: " + (vague && vague.detail));
 });
 
 console.log(`ok — ${n} checks passed`);

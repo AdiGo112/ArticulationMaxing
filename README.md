@@ -77,6 +77,57 @@ naming the cause. The three real ones:
 | `failed` + "was blocked" | Permission denied | Allow the mic via the padlock in the address bar |
 | `listening…` that never becomes `on` | The recogniser is running but hasn't understood anything | Move closer, or set mic sensitivity to **Quiet voice** |
 
+## Navigation and history
+
+Every place in the app is a URL, so Back and Forward behave the way they do
+anywhere else:
+
+| URL | Where you land |
+|---|---|
+| `#practice` | The drills and today's session |
+| `#progress` | Trends, history and recent sessions |
+| `#guide` | How to improve, and what the numbers mean |
+| `#drill-impromptu` | That drill, ready to start |
+
+Drills used to be invisible to history: the URL still read `#progress` while the
+booth was open, so Back skipped the drill entirely and landed on a page you had
+never visited. A drill is a place, and now has its own entry — Back from a drill
+returns you to wherever you opened it from, and Forward walks the same path in
+reverse.
+
+The router never writes history itself. Setting the hash pushes an entry and
+fires `hashchange`, which applies the route; that single path is what keeps the
+stack honest. The one exception is a hash pointing nowhere (`#nonsense`), which
+is *replaced* rather than pushed so a bad link can't become a trap you have to
+press Back twice to escape.
+
+Navigating away from a run in progress discards it rather than saving a partial
+score — you chose to leave, the same as abandoning a form.
+
+## Today's session
+
+Landing on six drills and having to choose is where a daily habit dies, so the
+Practice page opens with a plan: **three drills picked from your own weakest
+metrics.** Each step says why it was chosen — "weakest: fillers · 41" — so the
+practice is aimed rather than random.
+
+The plan is built once a day and remembers what you've finished. Complete a drill
+and the report hands you straight to the next one instead of dropping you back at
+the menu. With no history yet it falls back to whatever you've practised least.
+
+This is why the component scores are persisted with every session, not just the
+total: the plan reads them to find the weak spot.
+
+## What is moving
+
+The composite score can't tell you that your pace is improving while your
+projection is sliding — and that is exactly the thing worth knowing. The Progress
+page breaks the score into its parts and sparklines each one, with an arrow
+comparing your recent half against your earlier half.
+
+A trend needs three sessions before it claims a direction. Sessions recorded
+before component scores existed are skipped rather than counted as zeros.
+
 ## The drills
 
 | Drill | Trains | How it's scored |
@@ -119,7 +170,32 @@ than any fixed constant can cover, so there is a Strict / Normal / Quiet voice
 control next to the length picker. If quiet speech is being missed, loosen it; if
 your room is bleeding in, tighten it.
 
-## AI coaching (optional, off by default)
+## Coaching, in three tiers
+
+The report's Coach panel offers whatever the browser can actually do, strongest
+first, and always leaves something useful.
+
+**1. Local analysis — always on, no model, no network.** Deterministic checks for
+the habits that weaken spoken English: hedging, placeholder nouns, intensifiers
+propping up weak words, one content word carried too far, clauses that all start
+the same way, a weak opening, and — on framework drills — a missing reason or
+missing example. It quotes your own words back. It runs instantly, offline, in
+every browser, and stays silent when there is too little to judge honestly.
+
+Rates are floored at 50 words and need more than one occurrence before anything
+is flagged. Without that, a single "someone" in a thirty-word answer crosses a
+per-hundred threshold and gets reported as a habit.
+
+**2. The on-device model — no key, nothing sent.** Chrome ships a small language
+model that runs locally. Where it's available the panel offers it directly; where
+it needs a one-off download, it says so. Availability is probed with a timeout and
+the panel renders before the probe answers, so a slow or hanging check can never
+leave a blank space where the buttons should be.
+
+**3. Claude — sharpest, but it does send your transcript.** Unchanged, opt-in,
+your own key. Still the only thing here that leaves the device.
+
+## Sending your transcript to Claude (optional, off by default)
 
 The local metrics measure *how* you spoke. They cannot judge whether the answer
 was any good — whether it had a shape, whether you hedged, whether you actually
