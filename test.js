@@ -7,9 +7,17 @@ const cut = src.indexOf("/* ══ 8. CANVAS");
 assert.ok(cut > 0, "section 8 marker missing — did app.js get restructured?");
 
 const mem = {};
-global.window = {};
+/* Stand-in for Chrome's recogniser, so the restart and de-duplication logic
+   can be driven by hand. Records every instance the listener spins up. */
+const spun = [];
+function FakeSR(){ spun.push(this); }
+FakeSR.prototype.start = function(){ this.started = true; this.onstart && this.onstart(); };
+FakeSR.prototype.stop  = function(){ this.onend && this.onend(); };
+const res = (txt, isFinal) => ({ 0:{transcript:txt}, isFinal });
+global.window = { SpeechRecognition: FakeSR };
+global.spun = spun;
 global.localStorage = { getItem:k=>mem[k]??null, setItem:(k,v)=>mem[k]=v };
-(0, eval)(src.slice(0, cut) + "\nglobal.X={countFillers,accuracy,variety,usedWord,scoreRun,streak,buildRun,band,DRILLS,verdict,coachNotes,isSpeechFrame,makeVAD,tokens,wordAt,READ_LAG,matchTarget,projFromRms,readStats,ramp,fillerRate,buildPlan,metricAverages,trendFor,analyseLanguage};");
+(0, eval)(src.slice(0, cut) + "\nglobal.X={countFillers,accuracy,variety,usedWord,scoreRun,streak,buildRun,band,DRILLS,verdict,coachNotes,isSpeechFrame,makeVAD,tokens,wordAt,READ_LAG,matchTarget,projFromRms,readStats,ramp,fillerRate,buildPlan,metricAverages,trendFor,analyseLanguage,listener};");
 const X = global.X;
 
 let n = 0;
@@ -568,6 +576,58 @@ t("phrase counting does not match inside longer words", () => {
     "Sometimes nothing works and everybody somehow manages regardless of the situation at hand today", {});
   const vague = f.find(x => x.id === "vague");
   assert.ok(!vague, "matched a vague word inside a longer one: " + (vague && vague.detail));
+});
+
+t("a re-reported final is not appended twice", () => {
+  // Chrome re-fires results it already marked final, with resultIndex pointing
+  // back at them. Appending blind duplicated whole phrases in the transcript.
+  const L = X.listener, spun = global.spun;
+  spun.length = 0;
+  L.start();
+  const r = spun[0];
+  r.onresult({ resultIndex:0, results:[res("hello there", true)] });
+  assert.strictEqual(L.final.trim(), "hello there");
+  r.onresult({ resultIndex:0, results:[res("hello there", true), res(" world", false)] });
+  assert.strictEqual(L.final.trim(), "hello there", "final was appended a second time");
+  assert.strictEqual((L.text().match(/hello there/g)||[]).length, 1, "phrase appears twice");
+  L.stop();
+});
+
+t("speech still interim when the session ends is kept, not dropped", () => {
+  // Chrome ends sessions on its own and discards pending interim text — the
+  // words-vanish-mid-sentence case.
+  const L = X.listener, spun = global.spun;
+  spun.length = 0;
+  L.start();
+  const r = spun[0];
+  r.onresult({ resultIndex:0, results:[res("the tail end", false)] });
+  assert.strictEqual(L.final, "", "nothing final yet");
+  r.onend();
+  assert.strictEqual(L.final.trim(), "the tail end", "interim tail was thrown away");
+  assert.strictEqual(L.interim, "", "interim not cleared after the flush");
+  L.stop();
+});
+
+t("a start() that throws still recovers instead of dying silently", () => {
+  const L = X.listener, spun = global.spun;
+  spun.length = 0;
+  FakeSR.prototype.start = function(){ throw new Error("InvalidStateError"); };
+  L.start();
+  assert.strictEqual(spun.length, 1);
+  assert.ok(L.want, "gave up on a throw — transcription would stay dead all run");
+  L.stop();
+  FakeSR.prototype.start = function(){ this.started = true; this.onstart && this.onstart(); };
+});
+
+t("no-speech is not recorded as a fault", () => {
+  const L = X.listener, spun = global.spun;
+  spun.length = 0;
+  L.start();
+  spun[0].onerror({ error:"no-speech" });
+  assert.strictEqual(L.err, null, "a normal silence gap was reported as an error");
+  spun[0].onerror({ error:"network" });
+  assert.strictEqual(L.err, "network");
+  L.stop();
 });
 
 console.log(`ok — ${n} checks passed`);

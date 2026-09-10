@@ -324,8 +324,8 @@ elocution manuals:
 
 | Role | Face | Why |
 |---|---|---|
-| Display | **Bodoni Moda** | High-contrast Didone with an `opsz` axis, so hairlines stay right from 18px card titles up to the 140px score |
-| Body | **Jost** | The geometric sans Didones have been paired with since the fashion magazines; clean under a dramatic serif |
+| Display | **Fraunces** | Editorial serif with an `opsz` axis, low enough stroke contrast that thin diagonals — `A`, `y`, `4` — survive at every size from 16px headings to the 140px score |
+| Body | **Jost** | Geometric sans, clean and quiet under a display serif |
 | Labels & data | **IBM Plex Mono** | Sturdy enough for 10px uppercase meter labels, where a quirkier mono falls apart |
 
 Didones want the opposite tracking to a grotesque — the display sizes run

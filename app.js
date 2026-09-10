@@ -775,7 +775,11 @@ const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 const listener = {
   rec:null, want:false, final:"", interim:"", onUpdate:null, onError:null,
   supported: !!SR,
-  err: null, netFails: 0, gotAny: false, live: false, onStatus: null,
+  err: null, netFails: 0, gotAny: false, live: false, onStatus: null, lastSpin: 0,
+  /* en-US mangles other English accents badly. Follow the browser when it is
+     already set to some English; the drills are English-only, so anything else
+     falls back rather than transcribing English with a foreign model. */
+  lang: /^en\b/i.test(navigator.language || "") ? navigator.language : "en-US",
   start(){
     if(!SR) return false;
     this.want = true; this.final = ""; this.interim = "";
@@ -785,13 +789,19 @@ const listener = {
   },
   _spin(){
     const r = new SR();
-    r.continuous = true; r.interimResults = true; r.lang = "en-US"; r.maxAlternatives = 1;
-    r.onstart = () => { this.live = true; this.onStatus && this.onStatus(); };
+    r.continuous = true; r.interimResults = true; r.lang = this.lang; r.maxAlternatives = 1;
+    this.lastSpin = Date.now();
+    /* How many results of THIS session are already folded into final. Chrome
+       re-fires results it has already marked final (after a network blip, or
+       when it revises an earlier utterance), and resultIndex points back at
+       them — appending blind is what duplicates phrases in the transcript. */
+    let done = 0;
+    r.onstart = () => { this.live = true; this.err = null; this.onStatus && this.onStatus(); };
     r.onresult = e => {
       let iv = "";
-      for(let i=e.resultIndex;i<e.results.length;i++){
+      for(let i=Math.max(e.resultIndex, done); i<e.results.length; i++){
         const txt = e.results[i][0].transcript;
-        if(e.results[i].isFinal) this.final += txt + " "; else iv += txt;
+        if(e.results[i].isFinal){ this.final += txt + " "; done = i + 1; } else iv += txt;
       }
       this.interim = iv;
       this.gotAny = true; this.err = null; this.netFails = 0;
@@ -799,6 +809,9 @@ const listener = {
       this.onStatus && this.onStatus();
     };
     r.onerror = e => {
+      // no-speech and aborted are normal between utterances — recording them as
+      // errors makes a finished run report a fault that never happened
+      if(e.error === "no-speech" || e.error === "aborted"){ this.onStatus && this.onStatus(); return; }
       this.err = e.error;
       // fatal: retrying will never help, so stop and say why
       if(e.error === "not-allowed" || e.error === "service-not-allowed" || e.error === "audio-capture"){
@@ -808,12 +821,30 @@ const listener = {
       else if(e.error === "network" && ++this.netFails >= 3){
         this.want = false; this.onError && this.onError("network");
       }
-      // no-speech / aborted are normal between utterances
       this.onStatus && this.onStatus();
     };
-    r.onend = () => { if(this.want){ try{ this._spin(); }catch(e){} } };
+    r.onend = () => {
+      this.live = false;
+      /* Chrome ends a session on its own — a silence gap, or its own ~1 minute
+         cap — and throws away whatever was still interim. That is the "words
+         just vanish mid-sentence" case: keep the tail instead of dropping it. */
+      if(this.interim){ this.final += this.interim + " "; this.interim = ""; }
+      if(this.want) this._restart();
+    };
     this.rec = r;
-    try{ r.start(); }catch(e){}
+    /* start() throws if the previous session hasn't released the mic yet. The
+       old code swallowed that: no session, no onend, nothing left to retry, and
+       transcription was dead for the rest of the run while the chip said "on". */
+    try{ r.start(); }
+    catch(e){ setTimeout(() => { if(this.want) this._spin(); }, 250); }
+  },
+  /* Restart at once so the gap between sessions swallows as little speech as
+     possible — but back off if the session died instantly, or a mic that never
+     opens turns this into a spin loop. */
+  _restart(){
+    const quick = Date.now() - this.lastSpin < 500;
+    if(quick) setTimeout(() => { if(this.want) this._spin(); }, 300);
+    else this._spin();
   },
   stop(){ this.want = false; this.live = false; try{ this.rec && this.rec.stop(); }catch(e){} },
   text(){ return (this.final + " " + this.interim).trim(); }
@@ -1351,8 +1382,39 @@ const S = {
   vad:makeVAD(1), roomFrames:0, noiseFrames:0, wordTimes:[],
   voiced:false, silentSince:0, speakTime:0, lastFrame:0,
   levelSum:0, levelN:0, rmsSum:0, rmsN:0, goodPauses:0, longPause:0,
-  flashUntil:0, lastFillers:0, wEls:[], coachAt:0, playhead:null, audioURL:null
+  flashUntil:0, lastFillers:0, wEls:[], coachAt:0, playhead:null, audioURL:null,
+  /* Room calibration and the countdown run before the clock starts, so S.running
+     is still false through all of it. Everything else guards on S.running, which
+     left the whole prep phase wide open. */
+  arming:false, cdIv:null, cdDone:null, cdToken:0
 };
+
+/* The countdown is a modal, so nothing behind it should be reachable. aria-modal
+   is only a hint to screen readers — it doesn't stop a tab key or a click, which
+   is how Exit got pressed underneath and stranded the countdown over the home
+   screen. inert is the attribute that actually does it. */
+function cdShow(){
+  $("countdown").classList.add("on");
+  [...document.body.children].forEach(el =>
+    el.id !== "countdown" && el.toggleAttribute("inert", true));
+}
+function cdHide(){
+  $("countdown").classList.remove("on");
+  [...document.body.children].forEach(el => el.removeAttribute("inert"));
+}
+
+/* Abandon a run that hasn't started yet: stop the timers, drop the overlay, and
+   release whoever is awaiting the countdown so begin() can bail before start(). */
+function armCancel(){
+  if(!S.arming) return;
+  S.arming = false;
+  S.cdToken++;                       // orphan any timer or speech callback still pending
+  clearInterval(S.cdIv); S.cdIv = null;
+  try{ speechSynthesis.cancel(); }catch(e){}
+  cdHide();
+  const done = S.cdDone; S.cdDone = null;
+  done && done();
+}
 
 /* A report can keep playing after its view is hidden, so every view change
    explicitly stops it rather than relying on the browser to pause hidden media. */
@@ -1411,6 +1473,8 @@ function newRun(id){
 const fmt = s => Math.floor(s/60) + ":" + String(Math.floor(s%60)).padStart(2,"0");
 
 async function begin(){
+  if(S.running || S.arming) return;   // a second Space used to start a run on top of the first
+  S.arming = true;
   $("boothBanner").innerHTML = "";
   try{ await audio.open(); }
   catch(e){
@@ -1418,10 +1482,14 @@ async function begin(){
       `<div class="banner err"><b>No microphone.</b> Speakeasy needs mic access to give you feedback.
        Allow it in the address bar and press Start again. If you opened this file directly, serve it over
        http instead — browsers block microphones on <code>file://</code> in most cases.</div>`;
+    S.arming = false;
     return;
   }
   await calibrateRoom();
+  if(!S.arming) return;              // cancelled while the room was being measured
   await countdown();
+  if(!S.arming) return;              // cancelled mid-countdown
+  S.arming = false;
   start();
 }
 
@@ -1430,14 +1498,14 @@ async function begin(){
    mic — not to a constant that is wrong in most rooms. */
 function calibrateRoom(){
   return new Promise(res=>{
-    const box = $("countdown");
-    box.classList.add("on");
+    S.cdDone = res;
+    cdShow();
     $("cd-n").textContent = "···";
     $("cd-t").textContent = "Listening to your room";
     $("cd-p").textContent = "Stay quiet for a second — this is how it learns to tell you apart from the background.";
     S.vad.calib = [];
     const iv = setInterval(()=> S.vad.sample(audio.probe().rms), 40);
-    setTimeout(()=>{ clearInterval(iv); S.vad.commit(); updateRoomChip(); res(); }, 1100);
+    setTimeout(()=>{ clearInterval(iv); if(!S.arming) return; S.vad.commit(); updateRoomChip(); res(); }, 1100);
   });
 }
 
@@ -1477,10 +1545,14 @@ function updateRoomChip(){
 
 function countdown(){
   return new Promise(res=>{
-    const box = $("countdown");
-    let n = S.drill.prep, iv = null;   // declared up front: the Echo branch resolves without ever setting it
+    let n = S.drill.prep;
+    S.cdDone = res;                    // the Echo branch resolves without ever setting an interval
+    /* Echo speaks its line and finishes on a speech callback, with a timeout as
+       a backstop. Cancel mid-sentence and both are still queued — without this
+       they land inside the *next* run and tear down a countdown that just began. */
+    const tok = ++S.cdToken, live = () => tok === S.cdToken;
     $("cd-p").textContent = S.run.cd || "";
-    box.classList.add("on");
+    cdShow();
     if(S.run.speak && window.speechSynthesis){
       $("cd-t").textContent = "Listen";
       const u = new SpeechSynthesisUtterance(S.run.speak);
@@ -1488,20 +1560,23 @@ function countdown(){
       const v = speechSynthesis.getVoices().find(v=>/en-GB|en-US/.test(v.lang) && !/google/i.test(v.name));
       if(v) u.voice = v;
       speechSynthesis.cancel(); speechSynthesis.speak(u);
-      u.onend = () => { $("cd-n").textContent = "Go"; setTimeout(done, 550); };
-      setTimeout(()=>{ if(box.classList.contains("on")) done(); }, 9000);
+      u.onend = () => { if(!live()) return; $("cd-n").textContent = "Go"; setTimeout(done, 550); };
+      setTimeout(done, 9000);
       $("cd-n").textContent = "♪";
       return;
     }
     $("cd-t").textContent = n>6 ? "Think. Pick your last sentence." : "Get ready";
     $("cd-n").textContent = n;
-    iv = setInterval(()=>{
+    S.cdIv = setInterval(()=>{
       n--;
-      if(n<=0){ clearInterval(iv); done(); return; }
+      if(n<=0){ done(); return; }
       $("cd-n").textContent = n;
       if(n<=3) $("cd-t").textContent = "Breathe out";
     }, 1000);
-    function done(){ clearInterval(iv); box.classList.remove("on"); res(); }
+    function done(){
+      if(!live()) return;
+      S.cdToken++; clearInterval(S.cdIv); S.cdIv = null; cdHide(); res();
+    }
   });
 }
 
@@ -2528,6 +2603,7 @@ function goPage(page){
 function applyRoute(){
   const r = routeFromHash();
   if(S.running) abortRun();        // navigating away from a live run discards it
+  armCancel();                     // ...and away from one that hasn't started yet
 
   if(r.kind === "drill"){
     // navigating to a drill always starts it fresh — including re-picking the
@@ -2595,6 +2671,7 @@ document.addEventListener("keydown", e=>{
     e.preventDefault(); S.running ? finish() : begin();
   }
   if(e.key==="Escape" && S.running) finish();
+  else if(e.key==="Escape" && S.arming) armCancel();
   else if(e.key === "Escape") closeMenu();
 });
 
