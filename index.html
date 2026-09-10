@@ -26,7 +26,7 @@
     <button class="iconbtn menu" id="menuBtn" aria-label="Show drills and sections" aria-expanded="false" aria-controls="side">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
-    <a class="brand" href="#practice" data-nav="practice"><span class="onair" aria-hidden="true"></span>Speakeasy</a>
+    <a class="brand" href="#home" data-nav="home"><span class="onair" aria-hidden="true"></span>Speakeasy</a>
     <nav class="nav" id="nav" aria-label="Sections">
       <a href="#practice" data-nav="practice">Practice</a>
       <a href="#progress" data-nav="progress">Progress</a>
@@ -51,6 +51,7 @@
     </button>
   </div>
   <nav class="sidenav" aria-label="Pages">
+    <a href="#home" data-nav="home">Home</a>
     <a href="#practice" data-nav="practice">Practice</a>
     <a href="#progress" data-nav="progress">Progress</a>
     <a href="#guide" data-nav="guide">Guide</a>
@@ -64,7 +65,7 @@
 
 <main id="main">
 <!-- ══ HOME ═════════════════════════════════════════════════════════ -->
-<section class="view on" id="v-practice" aria-label="Practice">
+<section class="view on" id="v-home" aria-label="Home">
   <div class="shell">
     <div class="hero">
       <canvas id="idleWave" aria-hidden="true"></canvas>
@@ -77,8 +78,12 @@
       <div class="planstrip" id="planStrip" data-reveal style="--i:9"></div>
       <p class="note" id="quickNote" data-reveal style="--i:10">Three drills, about ten minutes.</p>
     </div>
+  </div>
+</section>
 
-    <section class="sec">
+<section class="view" id="v-practice" aria-label="Practice">
+  <div class="shell">
+    <section class="sec first">
       <div class="sechead">
         <h2>The drills</h2>
         <p>Each one isolates a single failure mode. Do the one you’re worst at.</p>

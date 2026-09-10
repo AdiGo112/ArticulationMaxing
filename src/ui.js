@@ -13,11 +13,20 @@ import { reveal, scoreColor } from "./report.js";
 
 /* ══ HOME ════════════════════════════════════════════════════════ */
 
-export function renderHome(){
-  const d = store.read(), ss = d.sessions;
-  const st = streak(ss);
+/* The streak chip sits in the header, so it belongs to every page rather than
+   to whichever one happened to draw it. It used to refresh only when you
+   passed through the home view. */
+function renderStreak(){
+  const st = streak(store.read().sessions);
   $("streakChip").innerHTML = st ? `Day <b>${st}</b>` : `No streak <b>yet</b>`;
+}
 
+/* #home — the landing. What to do today, and the one button that starts it. */
+export function renderHome(){ renderPlan(); }
+
+/* #practice — all six drills, to browse and choose from. */
+export function renderDrills(){
+  const ss = store.read().sessions;
   const best = id => { const r = ss.filter(s=>s.drill===id); return r.length ? Math.max(...r.map(s=>s.score)) : null; };
   $("drillGrid").innerHTML = DRILLS.map((dr,i)=>{
     const b = best(dr.id);
@@ -31,7 +40,12 @@ export function renderHome(){
       ${b!=null ? `<span class="best">best ${b}</span>` : `<span class="best" style="opacity:.55">new</span>`}</span>
     </button>`;
   }).join("");
+}
 
+/* #progress — the tiles and the history canvas are in that view, but only the
+   home render ever filled them, so opening #progress directly showed blanks. */
+function renderStats(){
+  const ss = store.read().sessions;
   const recent = ss.slice(-30);
   const avg = recent.length ? Math.round(recent.reduce((s,x)=>s+x.score,0)/recent.length) : 0;
   const bestAll = ss.length ? Math.max(...ss.map(s=>s.score)) : 0;
@@ -40,12 +54,10 @@ export function renderHome(){
   let si = 0;
   const stat = (n,k)=>`<div class="stat" data-reveal style="--i:${si++}"><div class="n">${n}</div><div class="k">${k}</div></div>`;
   $("stats").innerHTML =
-    stat(ss.length, "Sessions") + stat(st, "Day streak") +
+    stat(ss.length, "Sessions") + stat(streak(ss), "Day streak") +
     stat(avg||"—", "Avg clarity") + stat(bestAll||"—", "Personal best") +
     stat(wpm||"—", "Recent pace");
   requestAnimationFrame(()=>drawHistory(ss));
-
-  renderPlan();
 }
 
 /* Today's session: three drills aimed at your weakest metrics, so the choice
@@ -140,7 +152,7 @@ function renderRecent(){
   const box = $("recentWrap");
   if(!ss.length){
     box.innerHTML = `<div class="block"><p class="empty">Nothing here yet. Finish a drill and every run lands
-      in this list 2014 date, drill, score, pace and fillers.</p></div>`;
+      in this list — date, drill, score, pace and fillers.</p></div>`;
     return;
   }
   const fmtWhen = new Intl.DateTimeFormat(undefined,
@@ -219,13 +231,13 @@ function abortRun(){
 
 function openDrill(id){ navigate("#" + DRILL_HASH + id); }
 /* view() first, then render — a canvas in a display:none view measures 0 wide */
-function goHome(){ navigate("#practice"); }
+function goHome(){ navigate("#home"); }
 
 /* ══ ROUTING ═════════════════════════════════════════════════════════
    The three sections are real pages, so they live in the URL: deep links,
    bookmarks and browser back all work. Drills and reports stay out of the
    history — they are session state, not places. */
-const PAGES = ["practice","progress","guide"];
+const PAGES = ["home","practice","progress","guide"];
 
 const DRILL_HASH = "drill-";
 
@@ -238,14 +250,16 @@ function routeFromHash(){
     const id = h.slice(DRILL_HASH.length);
     if(drillById(id)) return { kind:"drill", id };
   }
-  return { kind:"page", page: PAGES.includes(h) ? h : "practice", bad: !!h && !PAGES.includes(h) };
+  return { kind:"page", page: PAGES.includes(h) ? h : "home", bad: !!h && !PAGES.includes(h) };
 }
 
 function goPage(page){
   audio.close();
   view(page);
-  if(page === "practice") renderHome();
-  if(page === "progress"){ renderTrends(); renderRecent(); repaint(); }
+  renderStreak();                    // header: true of every page
+  if(page === "home") renderHome();
+  if(page === "practice") renderDrills();
+  if(page === "progress"){ renderStats(); renderTrends(); renderRecent(); repaint(); }
   renderSidebar();
   reveal($("v-" + page));
 }
@@ -344,6 +358,6 @@ $("themeBtn").onclick = () => {
 
 /* redraw whatever canvas is on screen — used by theme switch and resize */
 export function repaint(){
-  if($("v-practice").classList.contains("on") || $("v-progress").classList.contains("on")) drawHistory(store.read().sessions);
+  if($("v-progress").classList.contains("on")) drawHistory(store.read().sessions);
   else if($("v-report").classList.contains("on") && S.lastSession) drawTape(S.lastSession);
 }
