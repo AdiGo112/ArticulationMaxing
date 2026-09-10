@@ -124,7 +124,8 @@ anywhere else:
 
 | URL | Where you land |
 |---|---|
-| `#practice` | The drills and today's session |
+| `#home` | Today's session, and the button that starts it |
+| `#practice` | All six drills, to browse and pick from |
 | `#progress` | Trends, history and recent sessions |
 | `#guide` | How to improve, and what the numbers mean |
 | `#drill-impromptu` | That drill, ready to start |

@@ -26,7 +26,7 @@ import { applyRoute, applyTheme, renderHome, renderSidebar, repaint } from "./ui
   applyRoute();                    // honour a deep link on first load
   // the idle wave is decorative: hold it still when the user asked for less motion
   (function spin(){
-    if($("v-practice").classList.contains("on") && !reduced()) drawIdle();
+    if($("v-home").classList.contains("on") && !reduced()) drawIdle();
     requestAnimationFrame(spin);
   })();
   if(reduced()) drawIdle();

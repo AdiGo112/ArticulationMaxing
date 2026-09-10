@@ -66,8 +66,9 @@ function stopPlayback(){
 
 export function view(name){
   stopPlayback();
-  ["practice","progress","guide","booth","report"].forEach(v=>$("v-"+v).classList.toggle("on", v===name));
-  const isHome = name === "practice";
+  ["home","practice","progress","guide","booth","report"].forEach(v=>$("v-"+v).classList.toggle("on", v===name));
+  // the full-bleed, sidebar-free treatment belongs to the landing page alone
+  const isHome = name === "home";
   document.querySelector(".layout").classList.toggle("is-home", isHome);
   document.querySelectorAll("[data-nav]").forEach(link => {
     const current = link.dataset.nav === name;
