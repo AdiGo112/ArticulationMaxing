@@ -73,18 +73,25 @@ export function wordAt(times, at){
   return cur;
 }
 
+/* One pass, longest phrase first. Tallying each filler separately counted
+   overlapping phrases twice — "and stuff" scored as both "stuff" and "and
+   stuff" — so a single verbal tic cost double. Alternation with the longest
+   entries first lets the phrase win and consume its words.
+
+   The live highlighter and the counter share this regex deliberately: the marks
+   you watch during a run are then always the same marks you are scored on.
+   Sharing a /g regex is safe here because replace() resets lastIndex when it
+   finishes and matchAll() works on its own clone. */
+export const FILLER_RE = new RegExp("\\b(" +
+  [...HARD, ...CRUTCH].sort((a,b)=>b.length-a.length).map(f=>f.replace(/ /g,"\\s+")).join("|") +
+  ")\\b", "gi");
+
 export function countFillers(text){
-  const t = " " + norm(text) + " ";
   let hard=0, crutch=0; const found={};
-  const tally = (list, isHard) => list.forEach(f=>{
-    const m = t.match(new RegExp("(?<=\\s)"+f.replace(/ /g,"\\s+")+"(?=\\s)","g"));
-    if(m){ found[f]=(found[f]||0)+m.length; if(isHard) hard+=m.length; else crutch+=m.length; }
-  });
-  try{ tally(HARD,true); tally(CRUTCH,false); }
-  catch(e){                                    // Safari <16.4 has no lookbehind
-    const ws = words(text);
-    ws.forEach(w=>{ if(HARD.includes(w)){ hard++; found[w]=(found[w]||0)+1; }
-                    else if(CRUTCH.includes(w)){ crutch++; found[w]=(found[w]||0)+1; } });
+  for(const m of norm(text).matchAll(FILLER_RE)){
+    const f = m[0].replace(/\s+/g," ");
+    found[f] = (found[f]||0)+1;
+    if(HARD.includes(f)) hard++; else crutch++;
   }
   return {hard, crutch, total:hard+crutch, found};
 }
@@ -108,9 +115,14 @@ export function variety(text){
   if(content.length < 12) return null;
   return Math.round(100 * new Set(content).size / content.length);
 }
-/* stems match so "reconciled" counts as "reconcile" */
+/* stems match so "reconciled" counts as "reconcile".
+   Normalise the target too: words() lowercases what was spoken, so a target
+   carrying a capital or an apostrophe could never match and Word Forge would
+   quietly mark a correct answer wrong. */
 export function usedWord(text, target){
-  const stem = target.slice(0, Math.max(4, target.length-3));
+  const t = norm(target || "");
+  if(!t) return false;                       // else every word startsWith("")
+  const stem = t.slice(0, Math.max(4, t.length-3));
   return words(text).some(w => w.startsWith(stem));
 }
 export const esc = s => String(s).replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));

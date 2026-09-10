@@ -636,4 +636,238 @@ t("no-speech is not recorded as a fault", () => {
   L.stop();
 });
 
+/* ── fillers: overlap, agreement with the highlighter, odd input ────────── */
+
+t("an overlapping phrase is counted once, not twice", () => {
+  // "stuff" and "and stuff" are both crutches. Tallying each separately charged
+  // a single tic twice and disagreed with what the transcript highlighted.
+  const f = X.countFillers("I finished the homework and stuff yesterday");
+  assert.strictEqual(f.crutch, 1, "counted the overlap twice: " + JSON.stringify(f.found));
+  assert.deepStrictEqual(Object.keys(f.found), ["and stuff"], "the longer phrase should win");
+});
+
+t("the shorter phrase still counts when it stands alone", () => {
+  const f = X.countFillers("I have stuff to do");
+  assert.strictEqual(f.crutch, 1);
+  assert.ok(f.found.stuff, "plain 'stuff' stopped being counted");
+});
+
+t("the counter and the highlighter mark exactly the same things", () => {
+  // they share FILLER_RE precisely so the marks you watch during a run are the
+  // marks you are scored on — this is the invariant that keeps them honest
+  const samples = [
+    "um so basically I was like you know going to say something and stuff",
+    "uh I mean it was sort of okay so anyway",
+    "no fillers at all in this particular sentence",
+  ];
+  for(const s of samples){
+    const marked = (X.norm(s).match(X.FILLER_RE) || []).length;
+    assert.strictEqual(X.countFillers(s).total, marked,
+      "counter and highlighter disagree on: " + s);
+  }
+});
+
+t("fillers survive punctuation and curly apostrophes", () => {
+  assert.strictEqual(X.countFillers("Um, well... uh — yes.").hard, 2);
+  // our copy is typeset with ’ but the recogniser returns ' — both must tokenise alike
+  assert.strictEqual(X.countFillers("I mean, I’m fine").crutch, 1);
+});
+
+t("filler counting handles empty and whitespace-only text", () => {
+  for(const s of ["", "   ", "\n\t"]){
+    const f = X.countFillers(s);
+    assert.deepStrictEqual([f.hard, f.crutch, f.total], [0,0,0], "not clean on " + JSON.stringify(s));
+  }
+});
+
+t("a filler inside a longer word is not a filler", () => {
+  // "um" in "umbrella", "er" in "certain", "mm" in "summary"
+  const f = X.countFillers("The umbrella summary was certain and thorough");
+  assert.strictEqual(f.total, 0, "matched inside a word: " + JSON.stringify(f.found));
+});
+
+/* ── usedWord: Word Forge marks the answer, so casing must not break it ──── */
+
+t("usedWord matches regardless of how the target is capitalised", () => {
+  assert.ok(X.usedWord("I reconciled the accounts", "Reconcile"));
+  assert.ok(X.usedWord("I reconciled the accounts", "reconcile"));
+  assert.ok(X.usedWord("the nuance was lost", "Nuance"));
+});
+
+t("usedWord matches a stem, not just the exact word", () => {
+  assert.ok(X.usedWord("she conceded the point", "concede"), "inflected form should count");
+  assert.ok(!X.usedWord("I ate a sandwich", "concede"), "unrelated word should not count");
+});
+
+t("usedWord on an empty target is false, not vacuously true", () => {
+  // startsWith("") is true for every string, so an empty stem would pass anything
+  assert.strictEqual(X.usedWord("literally any words here", ""), false);
+  assert.strictEqual(X.usedWord("literally any words here", null), false);
+});
+
+/* ── scoring: a bad measurement must not take the whole score with it ────── */
+
+t("a non-finite metric never reaches the score", () => {
+  const f = { hard:0, crutch:0, total:0, found:{} };
+  for(const bad of [NaN, Infinity, -Infinity]){
+    const r = X.scoreRun({ wpm:150, proj:bad, f, words:100 }, null, "impromptu");
+    assert.ok(Number.isFinite(r.score), bad + " propagated into the score");
+    assert.ok(r.parts.every(p => Number.isFinite(p.v)), bad + " survived inside a part");
+  }
+  // NaN has no defensible position on the scale, so the metric is dropped
+  // outright; the infinities are simply off the end of it and clamp into range
+  const nan = X.scoreRun({ wpm:150, proj:NaN, f, words:100 }, null, "impromptu");
+  assert.ok(!nan.parts.some(p => p.k === "proj"), "NaN should drop the metric entirely");
+  const inf = X.scoreRun({ wpm:150, proj:Infinity, f, words:100 }, null, "impromptu");
+  assert.strictEqual(inf.parts.find(p => p.k === "proj").v, 0, "Infinity should clamp, not vanish");
+});
+
+t("a run with nothing measurable scores zero rather than NaN", () => {
+  const r = X.scoreRun({ wpm:null, proj:null, f:{hard:0,crutch:0,total:0,found:{}}, words:0 },
+                       null, "impromptu");
+  assert.ok(Number.isFinite(r.score), "score was not a number");
+});
+
+t("reading a passage does not charge you for the author's crutch words", () => {
+  const m = { hard:0, crutch:8, total:8, found:{} };
+  const asReading = X.fillerRate({ f:m, words:200 }, true);
+  const asAnswer  = X.fillerRate({ f:m, words:200 }, false);
+  assert.strictEqual(asReading, 0, "crutches counted while reading a set passage");
+  assert.ok(asAnswer > 0);
+});
+
+t("filler rate is per 100 words, with a floor under short answers", () => {
+  const f = { hard:1, crutch:0, total:1, found:{} };
+  // one slip in 10 words must not read as a catastrophe: the denominator floors at 50
+  assert.strictEqual(X.fillerRate({ f, words:10 }, false), X.fillerRate({ f, words:50 }, false));
+  assert.ok(X.fillerRate({ f, words:50 }, false) > X.fillerRate({ f, words:400 }, false),
+    "the same slip should matter less in a longer answer");
+});
+
+/* ── storage: the record is user-editable, so treat it as untrusted ──────── */
+
+t("a stored record of the wrong shape cannot take down the home screen", () => {
+  // every caller assumes sessions is an array; JSON.parse("5") is truthy and used
+  // to sail through, leaving it undefined until the next render threw
+  const cases = ["5", "[]", '"hello"', '{"theme":"dark"}', "{", "null", "true"];
+  for(const raw of cases){
+    mem["speakeasy.v1"] = raw;
+    const d = X.store.read();
+    assert.ok(d && typeof d === "object", "read() returned a non-object for " + raw);
+    assert.ok(Array.isArray(d.sessions), "sessions was not an array for " + raw);
+    assert.doesNotThrow(() => X.buildPlan(d.sessions, 3), "buildPlan threw for " + raw);
+  }
+  delete mem["speakeasy.v1"];
+});
+
+t("a stored record keeps its real sessions", () => {
+  mem["speakeasy.v1"] = JSON.stringify({ sessions:[{at:1, score:50}], theme:"dark" });
+  const d = X.store.read();
+  assert.strictEqual(d.sessions.length, 1);
+  assert.strictEqual(d.theme, "dark");
+  delete mem["speakeasy.v1"];
+});
+
+t("the streak counts back from today and stops at the first gap", () => {
+  const at = d => { const x = new Date(); x.setDate(x.getDate()-d); return { at:x.getTime() }; };
+  assert.strictEqual(X.streak([]), 0, "no sessions is no streak");
+  assert.strictEqual(X.streak([at(0), at(1), at(2)]), 3);
+  assert.strictEqual(X.streak([at(0), at(1), at(3)]), 2, "should stop at the gap");
+  // not having practised yet today does not end a run that was alive yesterday
+  assert.strictEqual(X.streak([at(1), at(2)]), 2);
+  assert.strictEqual(X.streak([at(4), at(5)]), 0, "an old run is not a live streak");
+});
+
+t("several sessions on one day count as one day of streak", () => {
+  const now = Date.now();
+  assert.strictEqual(X.streak([{at:now}, {at:now-1000}, {at:now-2000}]), 1);
+});
+
+/* ── measurement helpers at their boundaries ────────────────────────────── */
+
+t("projection is bounded and rises with loudness", () => {
+  assert.strictEqual(X.projFromRms(0), 0, "silence should floor at 0");
+  assert.strictEqual(X.projFromRms(1), 100, "clipping should cap at 100");
+  const quiet = X.projFromRms(0.01), normal = X.projFromRms(0.1), loud = X.projFromRms(0.4);
+  assert.ok(quiet < normal && normal < loud, "not monotonic: " + [quiet, normal, loud]);
+  for(const v of [0, 1e-9, 0.5, 1, 2]) assert.ok(Number.isFinite(X.projFromRms(v)), "not finite at " + v);
+});
+
+t("stopping early reads as unfinished, not as bad diction", () => {
+  // this is the whole reason acc and coverage are separate numbers
+  const target = "the quick brown fox jumps over the lazy dog today";
+  const r = X.readStats("the quick brown fox jumps", target);
+  assert.strictEqual(r.acc, 100, "every word reached was correct, so acc is 100");
+  assert.ok(r.coverage < 60, "coverage should show the passage was not finished");
+});
+
+t("a dropped word costs that word and not the rest of the line", () => {
+  const target = "the quick brown fox jumps over the lazy dog";
+  const hit = X.matchTarget("the quick fox jumps over the lazy dog", target);
+  assert.strictEqual(hit[2], false, "'brown' should be marked missed");
+  assert.ok(hit.slice(3).every(Boolean), "the rest of the line should still match");
+});
+
+t("readStats on nothing spoken does not divide by zero", () => {
+  const r = X.readStats("", "the quick brown fox jumps");
+  assert.ok(Number.isFinite(r.acc) && Number.isFinite(r.coverage));
+  assert.deepStrictEqual([r.acc, r.coverage], [0, 0]);
+});
+
+t("accuracy handles an empty target or empty speech", () => {
+  assert.strictEqual(X.accuracy("hello", ""), 0, "empty target must not divide by zero");
+  assert.strictEqual(X.accuracy("", "hello world"), 0);
+  assert.strictEqual(X.accuracy("hello world", "hello world"), 100);
+});
+
+t("variety stays silent until there is enough content to mean anything", () => {
+  assert.strictEqual(X.variety("one two three"), null, "too short to judge");
+  const long = "orbit lantern harbour thicket compass meadow tunnel anchor pebble ribbon " +
+               "cavern willow signal marble" ;
+  assert.strictEqual(X.variety(long), 100, "all distinct content words");
+  const repeat = ("orbit ".repeat(14)).trim();
+  assert.ok(X.variety(repeat) < 20, "heavy repetition should score low");
+});
+
+t("wordAt returns -1 before the first word and tracks the lag", () => {
+  const times = [1, 2, 3];
+  assert.strictEqual(X.wordAt(times, 0), -1, "nothing spoken yet");
+  assert.strictEqual(X.wordAt([], 5), -1, "no timings at all");
+  // recognition reports late, so the playhead is nudged forward by READ_LAG
+  assert.strictEqual(X.wordAt(times, 1 - X.READ_LAG), 0);
+  assert.strictEqual(X.wordAt(times, 99), 2, "past the end, the last word wins");
+});
+
+t("tokens and words agree on how many things were said", () => {
+  // word timings are indexed by tokens(), so a drift here desynchronises playback
+  const s = "Hello, world — it's fine.";
+  assert.strictEqual(X.tokens(s).length, 5, "em-dash is its own token");
+  assert.deepStrictEqual(X.tokens(""), []);
+  assert.deepStrictEqual(X.words(""), []);
+  assert.deepStrictEqual(X.words("   "), []);
+});
+
+/* ── drills ─────────────────────────────────────────────────────────────── */
+
+t("every drill builds a run without throwing", () => {
+  for(const d of X.DRILLS){
+    const r = X.buildRun(d.id);
+    assert.ok(r && r.html, d.id + " produced no stage");
+    assert.ok(Number.isFinite(r.dur) && r.dur > 0, d.id + " has no usable duration");
+  }
+});
+
+t("a plan can be built before there is any history", () => {
+  const p = X.buildPlan([], 3);
+  assert.strictEqual(p.drills.length, 3);
+  assert.ok(p.drills.every(id => X.DRILLS.some(d => d.id === id)), "planned an unknown drill");
+});
+
+t("history stats are quiet rather than wrong when there is no history", () => {
+  assert.deepStrictEqual(X.metricAverages([], 5), {});
+  assert.strictEqual(X.trendFor([], "score"), null);
+  assert.strictEqual(X.trendFor([{ at:Date.now(), score:50 }], "score"), null,
+    "one point is not a trend");
+});
+
 console.log(`ok — ${n} checks passed`);

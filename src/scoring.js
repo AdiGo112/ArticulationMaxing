@@ -24,7 +24,10 @@ export function fillerRate(m, reading){
 
 export function scoreRun(m, run, id){
   const parts = [];
-  const add = (k,label,v,w) => { if(v!=null) parts.push({k,label,v:Math.round(v),w}); };
+  // Number.isFinite, not just != null: one NaN or Infinity out of a degenerate
+  // measurement propagated through the weighted mean and made the whole run
+  // score NaN, which was then written to history and poisoned every trend after
+  const add = (k,label,v,w) => { if(v!=null && Number.isFinite(v)) parts.push({k,label,v:Math.round(v),w}); };
   const reading = !!(run && run.target);
 
   // 138–165 wpm is the band broadcasters aim for; outside it, degrade steadily

@@ -4,7 +4,7 @@
 import { $ } from "./dom.js";
 import { CRUTCH, HARD } from "./content.js";
 import { store } from "./storage.js";
-import { clamp, countFillers, esc, matchTarget, projFromRms, readStats, tokens, usedWord, variety, words } from "./text.js";
+import { clamp, countFillers, esc, FILLER_RE, matchTarget, projFromRms, readStats, tokens, usedWord, variety, words } from "./text.js";
 import { audio, makeVAD } from "./audio.js";
 import { asrProblem, listener } from "./speech.js";
 import { buildRun, drillById, markPlanDone } from "./drills.js";
@@ -355,10 +355,9 @@ function onTranscript(final, interim){
   }
 }
 
-/* one pass over the text so multi-word crutches ("you know", "i mean") highlight too */
-const FILLER_RE = new RegExp("\\b(" +
-  [...HARD, ...CRUTCH].sort((a,b)=>b.length-a.length).map(f=>f.replace(/ /g,"\\s+")).join("|") +
-  ")\\b", "gi");
+/* Highlighting uses the same matcher countFillers() counts with — they used to
+   be two separate regexes built two different ways, so the transcript could mark
+   "and stuff" once while the meter beside it charged you twice. */
 export function paint(text){
   return esc(text).replace(FILLER_RE, m =>
     `<span class="${HARD.includes(m.toLowerCase().replace(/\s+/g," ")) ? "f" : "c"}">${m}</span>`);
@@ -414,7 +413,10 @@ export async function finish(){
     f, words:wCount,
     proj: S.rmsN ? projFromRms(S.rmsSum/S.rmsN) : 0,
     // how far your voice sits above the room, in dB — the other half of projection
-    snr: S.rmsN ? Math.round(20*Math.log10((S.rmsSum/S.rmsN)/Math.max(S.vad.floor,1e-5))) : null,
+    // floor the numerator the way projFromRms does: a run that recorded frames
+    // but no signal at all gave log10(0), and "-Infinity dB above the room"
+    // went straight into the report row and the coaching note
+    snr: S.rmsN ? Math.round(20*Math.log10(Math.max(S.rmsSum/S.rmsN,1e-5)/Math.max(S.vad.floor,1e-5))) : null,
     acc: null, coverage: null,
     var: listener.supported ? variety(text) : null,
     goodPauses: S.goodPauses,

@@ -5,8 +5,18 @@
 
 const KEY = "speakeasy.v1";
 export const store = {
-  read(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {sessions:[],theme:null}; }
-          catch(e){ return {sessions:[],theme:null}; } },
+  /* Every caller assumes sessions is an array, so a stored value of the wrong
+     shape is worse than no stored value at all — JSON.parse("5") is truthy and
+     used to sail straight through, leaving sessions undefined and taking the
+     home screen down with it on the next render. */
+  read(){
+    try{
+      const d = JSON.parse(localStorage.getItem(KEY));
+      if(!d || typeof d !== "object" || Array.isArray(d)) return {sessions:[],theme:null};
+      if(!Array.isArray(d.sessions)) d.sessions = [];
+      return d;
+    }catch(e){ return {sessions:[],theme:null}; }
+  },
   write(d){ try{ localStorage.setItem(KEY, JSON.stringify(d)); }catch(e){} },
   add(s){ const d=this.read(); d.sessions.push(s); d.sessions=d.sessions.slice(-200); this.write(d); return d; },
   set(k,v){ const d=this.read(); d[k]=v; this.write(d); }
