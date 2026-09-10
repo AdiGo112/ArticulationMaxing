@@ -38,9 +38,49 @@ held open, and in continuous mode — logs every event and error code, and tells
 you whether the fault is your browser, your network, or this app's usage of the
 API. That distinction is the whole point: they need completely different fixes.
 
+## How it's laid out
+
+Native ES modules, loaded straight by the browser. There is still no build step
+and still nothing to install — `package.json` exists only so Node treats `src/`
+as modules when running the tests, and it has no dependencies.
+
+```
+index.html      the markup, and nothing else
+style.css       every rule, one file
+serve.js        the local dev server
+test.js         the self-check
+mic-test.html   standalone transcription diagnostic
+
+src/
+  dom.js        the one DOM lookup everything shares
+  content.js    prompts, frameworks, readings, twisters, words, filler lists
+  storage.js    the single localStorage record
+  text.js       pure text and measurement helpers — no DOM, no state
+  audio.js      microphone stream, level probing, voice-activity gate
+  speech.js     the speech recogniser and its failure messages
+  drills.js     the six drills, language analysis, the daily plan
+  scoring.js    measurements to a 0-100 score and a verdict
+  canvas.js     the tape, the idle wave, the trend sparklines
+  run.js        session runtime: arming, countdown, frame loop, finishing
+  report.js     the post-run report and shared UI primitives
+  coach.js      optional Claude coaching, off unless you supply a key
+  ui.js         home view, routing, every event listener
+  main.js       boot — the only module with a side effect at import time
+```
+
+The bottom nine modules form a plain dependency graph with no cycles: `dom` and
+`content` depend on nothing, and everything above them only reaches downward.
+`run`, `report`, `coach` and `ui` do reference each other, because finishing a
+run renders a report and the report can start the next run — that circularity is
+in the app, not in the file layout. ES modules handle it, with one rule worth
+knowing if you move code: **anything called while a module is still evaluating
+must live in a module with no cycles.** That is why `$` sits alone in `dom.js` —
+`ui.js` and `report.js` both call it at import time to attach handlers.
+
 ## Deploy it
 
-It's three static files. Anything that serves static files over HTTPS works:
+It's static files, and there is nothing to build. Anything that serves static
+files over HTTPS works:
 
 | Host | How |
 |---|---|

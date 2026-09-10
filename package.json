@@ -1,0 +1,11 @@
+{
+  "name": "speakeasy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A speaking practice booth that runs entirely in the browser.",
+  "scripts": {
+    "start": "node serve.js",
+    "test": "node test.js"
+  }
+}

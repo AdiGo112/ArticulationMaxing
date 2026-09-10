@@ -1,12 +1,7 @@
 /* Self-check for Speakeasy's pure logic. Run: node test.js
-   Loads app.js up to the DOM boundary and exercises the scoring path. */
-const fs = require("fs"), assert = require("assert");
+   Imports the modules that hold no DOM and exercises the scoring path. */
+import assert from "assert";
 
-const src = fs.readFileSync(__dirname + "/app.js", "utf8");
-const cut = src.indexOf("/* ══ 8. CANVAS");
-assert.ok(cut > 0, "section 8 marker missing — did app.js get restructured?");
-
-const mem = {};
 /* Stand-in for Chrome's recogniser, so the restart and de-duplication logic
    can be driven by hand. Records every instance the listener spins up. */
 const spun = [];
@@ -14,11 +9,22 @@ function FakeSR(){ spun.push(this); }
 FakeSR.prototype.start = function(){ this.started = true; this.onstart && this.onstart(); };
 FakeSR.prototype.stop  = function(){ this.onend && this.onend(); };
 const res = (txt, isFinal) => ({ 0:{transcript:txt}, isFinal });
-global.window = { SpeechRecognition: FakeSR };
-global.spun = spun;
-global.localStorage = { getItem:k=>mem[k]??null, setItem:(k,v)=>mem[k]=v };
-(0, eval)(src.slice(0, cut) + "\nglobal.X={countFillers,accuracy,variety,usedWord,scoreRun,streak,buildRun,band,DRILLS,verdict,coachNotes,isSpeechFrame,makeVAD,tokens,wordAt,READ_LAG,matchTarget,projFromRms,readStats,ramp,fillerRate,buildPlan,metricAverages,trendFor,analyseLanguage,listener};");
-const X = global.X;
+
+/* speech.js reads window.SpeechRecognition and storage.js reads localStorage as
+   they evaluate, so both stubs have to exist before the imports run — which is
+   why these are dynamic imports and not import statements at the top. */
+const mem = {};
+globalThis.window = { SpeechRecognition: FakeSR };
+globalThis.spun = spun;
+globalThis.localStorage = { getItem:k=>mem[k]??null, setItem:(k,v)=>mem[k]=v };
+
+const X = Object.assign({},
+  await import("./src/text.js"),
+  await import("./src/audio.js"),
+  await import("./src/speech.js"),
+  await import("./src/storage.js"),
+  await import("./src/drills.js"),
+  await import("./src/scoring.js"));
 
 let n = 0;
 const t = (name, fn) => { fn(); n++; };
