@@ -326,7 +326,9 @@ $("goBtn").onclick = () => S.running ? finish() : begin();
 $("skipBtn").onclick = () => { if(!S.running) newRun(S.drill.id); };
 $("exitBooth").onclick = () => { if(S.running) finish(); else goHome(); };
 $("homeBtn").onclick = goHome;
-$("againBtn").onclick = () => { newRun(S.drill.id); view("booth"); };
+// "again" means this prompt again — that is the only way to see whether you
+// actually got better at it. Skip, in the booth, is what deals a new one.
+$("againBtn").onclick = () => { newRun(S.drill.id, S.run); view("booth"); };
 $("planNextBtn").onclick = () => {
   const nxt = nextInPlan(readPlan());
   if(nxt) openDrill(nxt); else goHome();
