@@ -70,7 +70,10 @@ export function buildRun(id){
     const html = r.x.split("|").map(seg =>
       seg.trim().split(/\s+/).filter(Boolean).map(w=>`<w>${esc(w)}</w>`).join(" ")
     ).join(' <span class="brk">‖</span> ');
-    return { dur: Math.max(45, Math.round(words(target).length/2.5)), target,
+    // ~2.5 words a second is the middle of the target band. The floor is the
+    // point of the drill: pace drift and breath control do not show up in a
+    // twenty-second read, however tidy that read is.
+    return { dur: Math.max(60, Math.round(words(target).length/2.5)), target,
       display: r.x,                       // keeps the "|" breath marks for the report
       html:`<div class="kick eyebrow">Read aloud${r.s?" · "+esc(r.s):""}</div>
             <div class="read">${html}</div>`,
