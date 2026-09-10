@@ -1,7 +1,7 @@
 /* drills.js — The six drills, local language analysis, and the daily plan.
    Speakeasy. Native ES modules, no build step: the browser loads these directly. */
 
-import { ECHOES, FRAMEWORKS, HARD, PROMPTS, READINGS, STOP, TWISTERS, WORDS } from "./content.js";
+import { EASY_PROMPTS, ECHOES, FRAMEWORKS, HARD, PROMPTS, READINGS, STOP, TWISTERS, WORDS } from "./content.js";
 import { dayKey, store } from "./storage.js";
 import { esc, norm, words } from "./text.js";
 
@@ -18,7 +18,7 @@ export const DRILLS = [
 
   { id:"filler", name:"Filler Hunt", accent:L, dur:60, prep:5, tag:"Fluency",
     icon:"M12 3v3M12 18v3M3 12h3M18 12h3M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",
-    desc:"Talk for a minute on any topic. Every um, uh, like or basically lights up the moment it lands. Target: zero.",
+    desc:"A minute on something you already know cold, so nothing competes for your attention. Every um, uh, like or basically lights up the moment it lands. Target: zero.",
     hint:"When you feel a filler coming, close your mouth instead. Silence is free." },
 
   { id:"pace", name:"Pace & Pause", accent:M, dur:0, prep:5, tag:"Delivery",
@@ -57,11 +57,12 @@ export function buildRun(id){
       cd:`${p}` };
   }
   if(id==="filler"){
-    const p = pick(PROMPTS);
+    // an easy topic on purpose: see EASY_PROMPTS
+    const p = pick(EASY_PROMPTS);
     return { dur:60, target:null,
       html:`<div class="kick eyebrow">Filler Hunt · 60 seconds · target zero</div>
             <div class="big">${esc(p)}</div>
-            <div class="def">Any topic works — this one is just to stop you stalling. The score is the fillers, not the content.</div>`,
+            <div class="def">Nothing to work out here — you already know the answer. Just keep talking for the full minute. Only fillers and pauses are scored; the content is not.</div>`,
       cd:p };
   }
   if(id==="pace"){
@@ -70,7 +71,10 @@ export function buildRun(id){
     const html = r.x.split("|").map(seg =>
       seg.trim().split(/\s+/).filter(Boolean).map(w=>`<w>${esc(w)}</w>`).join(" ")
     ).join(' <span class="brk">‖</span> ');
-    return { dur: Math.max(45, Math.round(words(target).length/2.5)), target,
+    // ~2.5 words a second is the middle of the target band. The floor is the
+    // point of the drill: pace drift and breath control do not show up in a
+    // twenty-second read, however tidy that read is.
+    return { dur: Math.max(60, Math.round(words(target).length/2.5)), target,
       display: r.x,                       // keeps the "|" breath marks for the report
       html:`<div class="kick eyebrow">Read aloud${r.s?" · "+esc(r.s):""}</div>
             <div class="read">${html}</div>`,

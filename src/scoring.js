@@ -29,19 +29,28 @@ export function scoreRun(m, run, id){
   // score NaN, which was then written to history and poisoned every trend after
   const add = (k,label,v,w) => { if(v!=null && Number.isFinite(v)) parts.push({k,label,v:Math.round(v),w}); };
   const reading = !!(run && run.target);
+  /* Filler Hunt judges how you spoke, never what you said. It told you so on
+     screen while still scoring your word variety and your pace, which made the
+     number disagree with the instruction — and penalised the plain, repetitive
+     answer that an easy topic is supposed to produce. */
+  const mechanicsOnly = id === "filler";
 
   // 138–165 wpm is the band broadcasters aim for; outside it, degrade steadily
-  add("pace","Pace", m.wpm ? band(m.wpm,138,165,1.6) : null, id==="pace"?1.4:1);
+  if(!mechanicsOnly) add("pace","Pace", m.wpm ? band(m.wpm,138,165,1.6) : null, id==="pace"?1.4:1);
   // ~1 per 100 words is a strong speaker, ~5 is average, 10+ is distracting
   add("filler","Fillers", m.wpm==null ? null :
-      clamp(100 - fillerRate(m, reading)*9, 0, 100), id==="filler"?2.4:1);
+      clamp(100 - fillerRate(m, reading)*9, 0, 100), mechanicsOnly?2.4:1);
   // 55–78 on the dB scale is roughly rms .10–.30: carrying, without clipping
   add("proj","Projection", band(m.proj,55,78,2.2), .8);
   // ASR is never perfect, so 96% counts as full marks rather than 100%
   if(m.acc!=null)  add("acc","Diction", ramp(m.acc,50,96), 2);
   if(m.coverage!=null) add("cover","Passage read", ramp(m.coverage,30,98), 1);
-  if(m.var!=null)  add("var","Word variety", band(m.var,68,100,2.2), .7);
-  if(m.pauseScore!=null) add("pause","Pausing", m.pauseScore, id==="pace"?1.3:.7);
+  if(m.var!=null && !mechanicsOnly) add("var","Word variety", band(m.var,68,100,2.2), .7);
+  /* On Filler Hunt, pausing is not a separate virtue — it is the remedy the
+     drill teaches ("close your mouth instead; silence is free"). Scoring the
+     filler heavily while barely scoring the thing that replaces it left the
+     lesson only half in the number. */
+  if(m.pauseScore!=null) add("pause","Pausing", m.pauseScore, id==="pace"||mechanicsOnly?1.3:.7);
 
   const tw = parts.reduce((s,p)=>s+p.w,0) || 1;
   return { score: Math.round(parts.reduce((s,p)=>s+p.v*p.w,0)/tw), parts };

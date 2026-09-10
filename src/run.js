@@ -79,9 +79,13 @@ export function view(name){
   window.scrollTo({top:0, behavior:"instant"});
 }
 
-export function newRun(id){
+/* Pass `reuse` to run the exact same prompt again — same passage, same word,
+   same sentence to echo. Improving on a prompt means attempting it twice; a
+   fresh one every time measures a different thing each attempt. Nothing here
+   mutates the run object, so replaying it restores clean markup. */
+export function newRun(id, reuse){
   S.drill = drillById(id);
-  S.run = buildRun(id);
+  S.run = reuse || buildRun(id);
   S.dur = S.run.dur;
   $("boothName").textContent = S.drill.name;
   $("promptBox").innerHTML = S.run.html;

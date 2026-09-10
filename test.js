@@ -24,7 +24,8 @@ const X = Object.assign({},
   await import("./src/speech.js"),
   await import("./src/storage.js"),
   await import("./src/drills.js"),
-  await import("./src/scoring.js"));
+  await import("./src/scoring.js"),
+  await import("./src/content.js"));
 
 let n = 0;
 const t = (name, fn) => { fn(); n++; };
@@ -868,6 +869,101 @@ t("history stats are quiet rather than wrong when there is no history", () => {
   assert.strictEqual(X.trendFor([], "score"), null);
   assert.strictEqual(X.trendFor([{ at:Date.now(), score:50 }], "score"), null,
     "one point is not a trend");
+});
+
+/* ── Filler Hunt judges mechanics only ──────────────────────────────────── */
+
+const MECH = { wpm:150, proj:66, var:55, pauseScore:70, words:120,
+               f:{ hard:2, crutch:3, total:5, found:{} } };
+
+t("Filler Hunt scores no pace and no word variety", () => {
+  // its own copy promises the content is not scored; it used to score both
+  const parts = X.scoreRun(MECH, null, "filler").parts.map(p => p.k);
+  assert.ok(!parts.includes("pace"), "pace is still scored on Filler Hunt");
+  assert.ok(!parts.includes("var"), "word variety is still scored on Filler Hunt");
+  assert.ok(parts.includes("filler"), "fillers must still be scored");
+});
+
+t("every other drill still scores pace and variety", () => {
+  for(const id of ["impromptu","word"]){
+    const parts = X.scoreRun(MECH, null, id).parts.map(p => p.k);
+    assert.ok(parts.includes("pace"), id + " lost its pace metric");
+    assert.ok(parts.includes("var"), id + " lost its variety metric");
+  }
+});
+
+t("repeating yourself costs nothing on Filler Hunt, but still counts elsewhere", () => {
+  // the whole point of an easy topic is a plain, repetitive answer — scoring
+  // variety would punish exactly the behaviour the drill is asking for
+  const repetitive = { ...MECH, var:22 };
+  assert.strictEqual(X.scoreRun(repetitive,null,"filler").score,
+                     X.scoreRun(MECH,null,"filler").score,
+                     "variety still moved the Filler Hunt score");
+  assert.ok(X.scoreRun(repetitive,null,"impromptu").score <
+            X.scoreRun(MECH,null,"impromptu").score,
+            "variety stopped counting on Impromptu too");
+});
+
+t("fillers dominate the Filler Hunt score", () => {
+  const r = X.scoreRun(MECH, null, "filler");
+  const total = r.parts.reduce((s,p) => s + p.w, 0);
+  const share = r.parts.find(p => p.k === "filler").w / total;
+  assert.ok(share > 0.5, "fillers are only " + Math.round(share*100) + "% of the score");
+});
+
+t("pausing counts for more on Filler Hunt than on a general drill", () => {
+  const w = id => X.scoreRun(MECH, null, id).parts.find(p => p.k === "pause").w;
+  assert.ok(w("filler") > w("impromptu"),
+    "pausing is the remedy this drill teaches, so it should outweigh the generic case");
+});
+
+t("fillers still lead the Filler Hunt score after the pausing bump", () => {
+  const r = X.scoreRun(MECH, null, "filler");
+  const total = r.parts.reduce((s,p) => s + p.w, 0);
+  const byWeight = r.parts.slice().sort((a,b) => b.w - a.w);
+  assert.strictEqual(byWeight[0].k, "filler", "fillers stopped being the headline metric");
+  assert.strictEqual(byWeight[1].k, "pause", "pausing should be the clear second");
+  assert.ok(r.parts.find(p => p.k === "filler").w / total > 0.5,
+    "fillers dropped below half the score");
+});
+
+t("swapping fillers for pauses pays, but stopping constantly does not", () => {
+  // the trade the drill exists to teach: close your mouth instead of filling
+  const ppm = n => Math.round(X.band(n, 5, 10, 11));
+  const run = (hard, pausesPerMin) => X.scoreRun(
+    { ...MECH, f:{ hard, crutch:1, total:hard+1, found:{} }, pauseScore:ppm(pausesPerMin) },
+    null, "filler").score;
+
+  const filling = run(5, 4);          // stalls out loud
+  const pausing = run(0, 9);          // stops instead
+  const choppy  = run(0, 16);         // stops every four seconds
+
+  assert.ok(pausing > filling + 20, `the trade should pay: ${filling} -> ${pausing}`);
+  assert.ok(choppy < pausing, "constant stopping should not beat well-placed pauses");
+  assert.ok(choppy > filling, "even choppy silence beats a mouth full of um");
+});
+
+t("Filler Hunt draws from the easy pool, not the thinking prompts", () => {
+  // an unfamiliar prompt makes you think, and thinking is where "um" comes from
+  const seen = new Set();
+  for(let i = 0; i < 200; i++) seen.add(X.buildRun("filler").cd);
+  assert.ok([...seen].every(p => X.EASY_PROMPTS.includes(p)),
+    "Filler Hunt served a prompt from outside EASY_PROMPTS");
+  assert.ok(seen.size > 5, "the pool is barely varying: only " + seen.size + " seen");
+  const overlap = X.EASY_PROMPTS.filter(p => X.PROMPTS.includes(p));
+  assert.strictEqual(overlap.length, 0, "the two pools share prompts: " + overlap[0]);
+});
+
+t("Impromptu still draws from the thinking prompts", () => {
+  const seen = new Set();
+  for(let i = 0; i < 200; i++) seen.add(X.buildRun("impromptu").cd);
+  assert.ok([...seen].every(p => X.PROMPTS.includes(p)), "Impromptu served an easy prompt");
+});
+
+t("Filler Hunt gives five seconds of prep and a full minute of speaking", () => {
+  const d = X.DRILLS.find(x => x.id === "filler");
+  assert.strictEqual(d.prep, 5, "prep is meant to be short enough that you cannot plan");
+  assert.strictEqual(d.dur, 60);
 });
 
 console.log(`ok — ${n} checks passed`);
