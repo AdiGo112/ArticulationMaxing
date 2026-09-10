@@ -98,6 +98,38 @@ export const FRAMEWORKS = [
    seconds. At roughly 150 words a minute these run 60–110 seconds, which is
    long enough for the pace to drift and for you to feel yourself correct it.
    The | marks are breath points — stop fully at each one. */
+/* Filler Hunt draws from here, not from PROMPTS. The other drills want a prompt
+   that makes you think; this one wants the opposite. Thinking is where "um"
+   comes from, so a topic you have to work out would be measuring the wrong
+   thing. These need no preparation, no opinion and no structure — you already
+   know the answer, so the only question left is how cleanly you can say it.
+   Each one opens outwards, because sixty seconds is a long time to fill and
+   running dry mid-run produces the fillers we are trying to observe. */
+export const EASY_PROMPTS = [
+  "Describe your morning, from waking up to leaving the house. Every step, in order.",
+  "Talk me through making your usual drink — tea, coffee, whatever it is. Assume I've never made one.",
+  "Describe the room you're in right now. Furniture, light, what's on the walls, what's out of place.",
+  "Walk me through your route to work or school, turn by turn, as though I had to follow it.",
+  "Describe the last meal you ate. What was in it, how it was cooked, whether it was any good.",
+  "Talk about a place you know well — your street, your school, a shop you always go to. What is it like?",
+  "Explain how to get from your front door to the nearest shop, without using a map.",
+  "Describe someone you see often. What they look like, how they talk, what they always say.",
+  "Talk about what you did last weekend, hour by hour, starting from Saturday morning.",
+  "Describe your phone's home screen. Which apps, where they sit, which ones you actually open.",
+  "Explain a game you know how to play — the rules, how you win, what beginners get wrong.",
+  "Talk about the weather this week and what it changed about your day.",
+  "Describe the last thing you watched or read. What happened in it, from the beginning.",
+  "Explain how to do something you do without thinking — tying a lace, making a bed, locking up.",
+  "Talk about your journey to this room today. Where you came from, how long it took, what you passed.",
+  "Describe a photo on your phone you could find in ten seconds. Who's in it and what was happening.",
+  "Talk about what you'll do after this. The rest of today, in order, as far as you've planned it.",
+  "Describe the shop you buy food from. The layout, where things are, what you always pick up.",
+  "Explain to a visitor what your town or city is like, and where you'd send them first.",
+  "Talk about a routine you repeat every week. What it involves and why it's arranged that way.",
+  "Describe what's in your bag or your pockets right now, item by item, and why each one is there.",
+  "Talk about the last time you cooked something. What you made, what went in, what you'd change.",
+];
+
 export const READINGS = [
   { t:"On being understood", s:"", x:"The purpose of speech is not to prove that you know something. | It is to move an idea from one head into another | without losing its shape on the way. | Every extra word is friction. | Every unnecessary clause is a place where the listener can slip. | Say the thing, | then stop talking, | and let the silence do the underlining. | Most people speak as though they are being graded on effort. | They add qualifications nobody asked for, | and hedges that guard against objections | which were never coming. | The result sounds careful | and lands as noise. | Try the opposite. | Decide the one sentence you want the room to repeat afterwards, | and build everything else as a road towards it. | If a phrase carries no weight, | cut it before it reaches your mouth. | You will feel exposed doing this, | because there is nowhere to hide in a plain sentence. | That exposure is the point. | Clarity is a form of courage, | and a room hears courage | long before it follows an argument." },
 
