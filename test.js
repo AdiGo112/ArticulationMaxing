@@ -911,6 +911,38 @@ t("fillers dominate the Filler Hunt score", () => {
   assert.ok(share > 0.5, "fillers are only " + Math.round(share*100) + "% of the score");
 });
 
+t("pausing counts for more on Filler Hunt than on a general drill", () => {
+  const w = id => X.scoreRun(MECH, null, id).parts.find(p => p.k === "pause").w;
+  assert.ok(w("filler") > w("impromptu"),
+    "pausing is the remedy this drill teaches, so it should outweigh the generic case");
+});
+
+t("fillers still lead the Filler Hunt score after the pausing bump", () => {
+  const r = X.scoreRun(MECH, null, "filler");
+  const total = r.parts.reduce((s,p) => s + p.w, 0);
+  const byWeight = r.parts.slice().sort((a,b) => b.w - a.w);
+  assert.strictEqual(byWeight[0].k, "filler", "fillers stopped being the headline metric");
+  assert.strictEqual(byWeight[1].k, "pause", "pausing should be the clear second");
+  assert.ok(r.parts.find(p => p.k === "filler").w / total > 0.5,
+    "fillers dropped below half the score");
+});
+
+t("swapping fillers for pauses pays, but stopping constantly does not", () => {
+  // the trade the drill exists to teach: close your mouth instead of filling
+  const ppm = n => Math.round(X.band(n, 5, 10, 11));
+  const run = (hard, pausesPerMin) => X.scoreRun(
+    { ...MECH, f:{ hard, crutch:1, total:hard+1, found:{} }, pauseScore:ppm(pausesPerMin) },
+    null, "filler").score;
+
+  const filling = run(5, 4);          // stalls out loud
+  const pausing = run(0, 9);          // stops instead
+  const choppy  = run(0, 16);         // stops every four seconds
+
+  assert.ok(pausing > filling + 20, `the trade should pay: ${filling} -> ${pausing}`);
+  assert.ok(choppy < pausing, "constant stopping should not beat well-placed pauses");
+  assert.ok(choppy > filling, "even choppy silence beats a mouth full of um");
+});
+
 t("Filler Hunt draws from the easy pool, not the thinking prompts", () => {
   // an unfamiliar prompt makes you think, and thinking is where "um" comes from
   const seen = new Set();

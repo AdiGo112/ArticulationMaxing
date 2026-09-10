@@ -46,7 +46,11 @@ export function scoreRun(m, run, id){
   if(m.acc!=null)  add("acc","Diction", ramp(m.acc,50,96), 2);
   if(m.coverage!=null) add("cover","Passage read", ramp(m.coverage,30,98), 1);
   if(m.var!=null && !mechanicsOnly) add("var","Word variety", band(m.var,68,100,2.2), .7);
-  if(m.pauseScore!=null) add("pause","Pausing", m.pauseScore, id==="pace"?1.3:.7);
+  /* On Filler Hunt, pausing is not a separate virtue — it is the remedy the
+     drill teaches ("close your mouth instead; silence is free"). Scoring the
+     filler heavily while barely scoring the thing that replaces it left the
+     lesson only half in the number. */
+  if(m.pauseScore!=null) add("pause","Pausing", m.pauseScore, id==="pace"||mechanicsOnly?1.3:.7);
 
   const tw = parts.reduce((s,p)=>s+p.w,0) || 1;
   return { score: Math.round(parts.reduce((s,p)=>s+p.v*p.w,0)/tw), parts };
