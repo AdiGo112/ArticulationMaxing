@@ -1,24 +1,23 @@
 # Speakeasy
 
-A speaking practice booth that runs entirely in the browser. Six drills for
-articulation, pace, diction and confidence, with live feedback from your own
-microphone.
+A speaking-practice booth that runs entirely in the browser. Six drills for
+articulation, pace, diction and confidence, scored live from your microphone.
 
-No build step, no dependencies, no backend, no account. Your audio and
-transcripts never leave the tab.
+No build step, no dependencies, no backend, no account. Audio and transcripts
+stay in the tab — except one opt-in feature, documented under [Coaching](#coaching).
 
-## Run it locally
+---
 
-The microphone needs a secure context, so opening `index.html` straight from
-the file system is unreliable. Use the included server:
+## Run it
 
 ```bash
-node serve.js
+node serve.js     # http(s)://localhost:8137
+node test.js      # 108 checks
 ```
 
-`serve.js` serves **HTTPS** when `localhost-cert.pem` is present, and plain HTTP
-otherwise. Chrome's speech recogniser is fussier about origins than `getUserMedia`
-is, so prefer HTTPS. Generate the certificate once:
+`serve.js` serves **HTTPS** when `localhost-cert.pem` and `localhost-key.pem`
+are both present, plain HTTP otherwise. Chrome's speech recogniser is fussier
+about origins than `getUserMedia`, so prefer HTTPS:
 
 ```bash
 openssl req -x509 -newkey rsa:2048 -nodes \
@@ -26,388 +25,412 @@ openssl req -x509 -newkey rsa:2048 -nodes \
   -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
 ```
 
-Then open <https://localhost:8137>. It is self-signed, so Chrome warns once —
-click **Advanced → Proceed to localhost**. `localhost-key.pem` is a private key:
-it is gitignored, and must never be committed or uploaded to a host.
+Self-signed, so Chrome warns once — **Advanced → Proceed to localhost**.
+Both `.pem` files are gitignored; `localhost-key.pem` is a private key and must
+never be committed or uploaded.
 
-### Diagnosing transcription
+Opening `index.html` off the filesystem is unreliable — the mic needs a secure
+context. Port 8137 is hardcoded in `serve.js:15`.
 
-If the Transcript chip says `failed`, open **`/mic-test.html`**. It tests the
-speech recogniser in three configurations — alone, with the microphone already
-held open, and in continuous mode — logs every event and error code, and tells
-you whether the fault is your browser, your network, or this app's usage of the
-API. That distinction is the whole point: they need completely different fixes.
+Requires Node 20.11+ (`import.meta.dirname`). No `npm install` — `package.json`
+has no dependencies and exists only to set `"type": "module"` so Node treats
+`src/` as ES modules when running the tests.
 
-## How it's laid out
+---
 
-Native ES modules, loaded straight by the browser. There is still no build step
-and still nothing to install — `package.json` exists only so Node treats `src/`
-as modules when running the tests, and it has no dependencies.
+## Layout
 
-```
-index.html      the markup, and nothing else
-style.css       every rule, one file
-serve.js        the local dev server
-test.js         the self-check
-mic-test.html   standalone transcription diagnostic
+Native ES modules, loaded directly by the browser. 4,936 lines total.
+
+```text
+index.html      279   markup only
+style.css       586   every rule
+serve.js         48   dev server, port 8137
+test.js         969   108 assertions, node:assert, no framework
+mic-test.html   167   standalone transcription diagnostic
 
 src/
-  dom.js        the one DOM lookup everything shares
-  content.js    prompts, frameworks, readings, twisters, words, filler lists
-  storage.js    the single localStorage record
-  text.js       pure text and measurement helpers — no DOM, no state
-  audio.js      microphone stream, level probing, voice-activity gate
-  speech.js     the speech recogniser and its failure messages
-  drills.js     the six drills, language analysis, the daily plan
-  scoring.js    measurements to a 0-100 score and a verdict
-  canvas.js     the tape, the idle wave, the trend sparklines
-  run.js        session runtime: arming, countdown, frame loop, finishing
-  report.js     the post-run report and shared UI primitives
-  coach.js      optional Claude coaching, off unless you supply a key
-  ui.js         home view, routing, every event listener
-  main.js       boot — the only module with a side effect at import time
+  dom.js          5   export const $ = id => document.getElementById(id)
+  content.js    533   all text pools (see table below)
+  storage.js     33   the localStorage record, streak, dayKey
+  text.js       130   pure text + measurement — no DOM, no state
+  audio.js      129   mic stream, probe(), isSpeechFrame(), makeVAD()
+  speech.js     109   Web Speech wrapper, asrProblem() messages
+  drills.js     301   DRILLS, buildRun(), analyseLanguage(), the daily plan
+  scoring.js     98   band(), ramp(), fillerRate(), scoreRun(), verdict()
+  canvas.js     126   idle wave, ribbon, tape, history sparklines
+  run.js        460   session runtime: arm, countdown, frame loop, finish
+  report.js     293   post-run report, setup pills, shared UI primitives
+  coach.js      270   three coaching tiers
+  ui.js         365   views, router, event listeners
+  main.js        35   boot — the only module with an import-time side effect
 ```
 
-The bottom nine modules form a plain dependency graph with no cycles: `dom` and
-`content` depend on nothing, and everything above them only reaches downward.
-`run`, `report`, `coach` and `ui` do reference each other, because finishing a
-run renders a report and the report can start the next run — that circularity is
-in the app, not in the file layout. ES modules handle it, with one rule worth
-knowing if you move code: **anything called while a module is still evaluating
-must live in a module with no cycles.** That is why `$` sits alone in `dom.js` —
-`ui.js` and `report.js` both call it at import time to attach handlers.
+`dom.js` and `content.js` import nothing. `run`/`report`/`coach`/`ui` reference
+each other cyclically; ES modules handle it, with one rule: **anything called
+while a module is still evaluating must live in a module with no cycles.** That
+is why `$` sits alone in `dom.js` — `ui.js` and `report.js` both call it at
+import time to attach handlers.
 
-## Deploy it
+---
 
-It's static files, and there is nothing to build. Anything that serves static
-files over HTTPS works:
+## The six drills
 
-| Host | How |
-|---|---|
-| **Netlify** | Drag this folder onto <https://app.netlify.com/drop> |
-| **Vercel** | `npx vercel --prod` in this folder |
-| **GitHub Pages** | Push the folder, enable Pages on the branch |
-| **Cloudflare Pages** | Connect the repo, leave the build command empty |
+| id | Name | Length | Prep | Set text | Extra |
+|---|---|---|---|---|---|
+| `impromptu` | Impromptu | 90s | 15s | — | framework rail (PREP/STAR/…) |
+| `filler` | Filler Hunt | 60s | 5s | — | mechanics-only scoring |
+| `pace` | Pace & Pause | `max(60, words/2.5)` ≈ 60–110s | 5s | yes | `‖` breath marks |
+| `diction` | Diction Gym | 30s | 3s | yes, ×3 | — |
+| `word` | Word Forge | 35s | 10s | — | `requireWord` check |
+| `echo` | Echo | 22s | 2s | yes | sentence is spoken to you first |
 
-There is nothing to configure. HTTPS is the only requirement — browsers block
-microphone access on plain HTTP.
+Length is adjustable (30s / 1 min / 90s / 2 min) on drills with no set text.
+Reading drills take their length from the passage.
 
-## Browser support
+### Content pools (`src/content.js`)
 
-| | Chrome / Edge | Safari | Firefox |
+| Export | Count | Used by |
+|---|---|---|
+| `PROMPTS` | 126 | Impromptu |
+| `EASY_PROMPTS` | 22 | Filler Hunt |
+| `FRAMEWORKS` | 5 | Impromptu rail |
+| `READINGS` | 12 | Pace & Pause |
+| `TWISTERS` | 62 | Diction Gym |
+| `WORDS` | 110 | Word Forge |
+| `ECHOES` | 80 | Echo |
+| `HARD` | 11 | hard fillers — `um umm uh uhh er erm ah ahh hmm mmm mm` |
+| `CRUTCH` | 22 | crutch words — `like`, `you know`, `basically`, … |
+| `STOP` | 86 | stopword set for word variety |
+
+Filler Hunt draws from `EASY_PROMPTS` on purpose: the topic must not compete
+for attention. It is scored on **mechanics only** — pace and word variety are
+excluded, since a plain repetitive answer is the correct output of an easy topic.
+
+---
+
+## Scoring
+
+Every metric is mapped to 0–100 by one of two curves (`src/scoring.js`):
+
+- `band(v, lo, hi, fall)` — 100 inside `[lo, hi]`, falls by `fall` points per unit outside.
+- `ramp(v, zero, full)` — linear, no plateau, for metrics that are simply better when higher.
+
+| Component | Curve | Weight | Notes |
 |---|---|---|---|
-| Timer, level meter, pauses, projection, recording, playback, tape | yes | yes | yes |
-| Live transcript, pace, filler detection, accuracy, word variety | yes | partial | no |
+| Pace | `band(wpm, 138, 165, 1.6)` | 1.4 on `pace`, 1 elsewhere | **excluded on `filler`** |
+| Fillers | `100 − rate × 9` | 2.4 on `filler`, 1 elsewhere | rate = per 100 words, hard ×2 |
+| Projection | `band(proj, 55, 78, 2.2)` | 0.8 | ≈ RMS 0.10–0.30 |
+| Diction | `ramp(acc, 50, 96)` | 2 | reading drills only |
+| Passage read | `ramp(coverage, 30, 98)` | 1 | reading drills only |
+| Word variety | `band(var, 68, 100, 2.2)` | 0.7 | **excluded on `filler`** |
+| Pausing | `band(pausesPerMin, 5, 10, 11)` | 1.3 on `pace`/`filler`, 0.7 elsewhere | |
 
-Word-level feedback uses the Web Speech API, which today only Chrome and Edge
-implement properly. Everywhere else the drills still run and still score you on
-what the audio alone can measure — the app tells you which mode it's in rather
-than silently degrading.
+Total is the weighted mean, rounded. Non-finite components are dropped rather
+than averaged in — one `NaN` used to poison the score and every trend after it.
 
-### When transcription isn't working
+The on-screen copy for Pace & Pause says 130–170 wpm; the scorer's full-marks
+band is the narrower 138–165.
 
-The booth carries a **Transcript** chip showing exactly which state you're in:
-`ready`, `listening…`, `on`, `off`, or `failed`. A failure also raises a banner
-naming the cause. The three real ones:
+### Verdict thresholds
 
-| Chip says | Cause | Fix |
-|---|---|---|
-| `failed` + "can't reach its service" | Chrome uploads audio to Google's servers to transcribe it, so **this one feature needs internet** even though the rest is local | Check the connection, and any VPN or extension blocking Google domains |
-| `failed` + "microphone is busy" | Another tab, call app or recorder holds the mic; a second consumer can be refused, most often on Windows | Close the other app and start the drill again |
-| `failed` + "was blocked" | Permission denied | Allow the mic via the padlock in the address bar |
-| `listening…` that never becomes `on` | The recogniser is running but hasn't understood anything | Move closer, or set mic sensitivity to **Quiet voice** |
+`≥90` Sharp · `≥76` Solid · `≥62` Getting there · `≥45` Rough, and that's fine ·
+below that, Early days.
 
-## Navigation and history
+Calibrated so a flawless run is 100, good-but-imperfect is high 80s, mediocre
+≈50, poor in the 30s. `test.js` pins that ordering and requires >50 points
+between best and worst run.
 
-Every place in the app is a URL, so Back and Forward behave the way they do
-anywhere else:
+### Filler rate
 
-| URL | Where you land |
+```
+(hard × 2 + crutch) / max(words, 50) × 100
+```
+
+The 50-word denominator floor stops one slip in a short answer reading as a
+catastrophe. On a set passage `crutch` is zeroed — the author's "you know" is
+not your verbal tic.
+
+---
+
+## Measurement
+
+| Metric | Definition |
 |---|---|
-| `#home` | Today's session, and the button that starts it |
-| `#practice` | All six drills, to browse and pick from |
-| `#progress` | Trends, history and recent sessions |
-| `#guide` | How to improve, and what the numbers mean |
-| `#drill-impromptu` | That drill, ready to start |
+| `wpm` | words ÷ elapsed minutes. Needs ≥8 words and >5s, else 0 |
+| `artic` | words ÷ **speaking** minutes (pauses excluded). Needs >3s of speech |
+| `proj` | `20·log10(mean RMS)` mapped −46 dB → 0, 0 dB → 100 |
+| `snr` | mean speech RMS over the noise floor, in dB |
+| `acc` | of the passage words you **reached**, how many were recognised |
+| `coverage` | how far through the passage you got (index of last hit) |
+| `var` | unique content words ÷ total, stopwords and ≤2-char words removed; `null` under 12 content words |
+| `accuracy()` | LCS against the target, so insertions cost nothing and omissions cost |
+| `goodPauses` | gaps of 0.4–2.2s |
+| `longPause` | longest gap over 0.35s |
+| `room` | `min(100, floor × 900)` |
 
-Drills used to be invisible to history: the URL still read `#progress` while the
-booth was open, so Back skipped the drill entirely and landed on a page you had
-never visited. A drill is a place, and now has its own entry — Back from a drill
-returns you to wherever you opened it from, and Forward walks the same path in
-reverse.
+Gaps are measured between genuine voice (`vad.aboveSince − silentSince`), not
+between hangover edges, and ignore the first 500 ms of the run.
 
-The router never writes history itself. Setting the hash pushes an entry and
-fires `hashchange`, which applies the route; that single path is what keeps the
-stack honest. The one exception is a hash pointing nowhere (`#nonsense`), which
-is *replaced* rather than pushed so a bad link can't become a trap you have to
-press Back twice to escape.
+Word Forge overrides: using the target word sets `acc` to 100, missing it caps
+`acc` at 40. Stem matching accepts inflections (`reconciled` counts as `reconcile`).
 
-Navigating away from a run in progress discards it rather than saving a partial
-score — you chose to leave, the same as abandoning a form.
+---
 
-## Today's session
+## Voice activity detection (`src/audio.js`)
 
-Landing on six drills and having to choose is where a daily habit dies, so the
-Practice page opens with a plan: **three drills picked from your own weakest
-metrics.** Each step says why it was chosen — "weakest: fillers · 41" — so the
-practice is aimed rather than random.
+A fixed threshold is wrong in most rooms — a fan sits above it permanently, so
+the app believes you never stop talking. Two gates, both relative to your room:
 
-The plan is built once a day and remembers what you've finished. Complete a drill
-and the report hands you straight to the next one instead of dropping you back at
-the menu. With no history yet it falls back to whatever you've practised least.
+```js
+isSpeechFrame(rms, ratio, floor, sens):
+  gate   = floor × (3.2 / sens) + 0.006
+  speech = rms > gate  &&  ratio > 0.32
+```
 
-This is why the component scores are persisted with every session, not just the
-total: the plan reads them to find the weak spot.
-
-## What is moving
-
-The composite score can't tell you that your pace is improving while your
-projection is sliding — and that is exactly the thing worth knowing. The Progress
-page breaks the score into its parts and sparklines each one, with an arrow
-comparing your recent half against your earlier half.
-
-A trend needs three sessions before it claims a direction. Sessions recorded
-before component scores existed are skipped rather than counted as zeros.
-
-## The drills
-
-| Drill | Trains | How it's scored |
+| Constant | Value | Meaning |
 |---|---|---|
-| **Impromptu** | Structure under pressure | A rail shows which part of PREP / STAR / etc. you should be on right now |
-| **Filler Hunt** | Fluency | Every *um, uh, like, basically* lights up the moment you say it |
-| **Pace & Pause** | Delivery | Read inside a 130–170 wpm band; amber marks are breath points |
-| **Diction Gym** | Clarity | Tongue twisters, scored by whether the recogniser actually understood you |
-| **Word Forge** | Vocabulary | Build a spoken sentence around a precise word; it checks you used it |
-| **Echo** | Cadence | A well-shaped sentence is read to you; repeat it, scored on accuracy |
+| Speech band | 200–3800 Hz | `ratio` = share of spectral energy inside it |
+| `ratio` threshold | 0.32 | rejects hum, fans, desk knocks (below) and hiss (above) |
+| `ON_MS` | 60 ms | must look like speech this long before it counts |
+| `HANG_MS` | 220 ms | stays believed this long after, so plosives don't chop a word |
+| Calibration | 1s, ≤400 frames | needs ≥8 samples to commit |
+| Floor | 75th percentile | one cough can't poison it the way `max()` would |
+| Floor adaptation | ×0.05 down, ×0.0004 up | falls fast, rises slowly; min 0.002 |
+| `fftSize` | 2048 | ≈23 Hz bins at 48 kHz |
+| `minDecibels` | −85 | clamps near-silent bins so the ratio stays sharp |
 
-## Telling you apart from your room
+`getUserMedia` constraints: `echoCancellation: true`, `noiseSuppression: true`,
+`autoGainControl: false` — AGC would flatten the projection measurement.
 
-Everything time-based depends on knowing when you are actually speaking. The
-first version used a fixed threshold (`level > 0.075`), which is wrong in most
-rooms: a fan or traffic sits above it permanently, so the app believed you never
-stopped talking and every pause, projection and speaking-rate number was junk.
+**Mic sensitivity** (`sens`) is exposed next to the length picker, because real
+rooms vary more than any constant covers:
 
-Detection is now relative to your room rather than absolute, with two gates:
-
-1. **Loudness above the measured noise floor.** Before every run the app spends
-   a second listening to your silence and takes the 75th percentile as the
-   floor — so one cough during calibration can't poison it. The floor keeps
-   adapting during the session (falls fast, rises very slowly), so an air
-   conditioner starting mid-session doesn't break it.
-2. **Spectral shape.** Voices concentrate energy in the 200–3800 Hz band; fans,
-   hum and desk knocks sit below it, hiss sits above. A frame only counts as
-   speech if enough of its energy is in the voice band.
-
-Onset and hangover timers stop single clicks registering as speech and stop
-plosives chopping a word in half. Pause length is measured between genuine voice,
-not between hangover edges, so the timings stay honest.
-
-You can see the result: in the ribbon and on the tape, **your voice is amber and
-full height, the room is grey and flat.** The booth shows the measured room level
-and warns you when it's high enough to interfere.
-
-**Tuning is exposed, deliberately.** Real rooms and real microphones vary more
-than any fixed constant can cover, so there is a Strict / Normal / Quiet voice
-control next to the length picker. If quiet speech is being missed, loosen it; if
-your room is bleeding in, tighten it.
-
-## Coaching, in three tiers
-
-The report's Coach panel offers whatever the browser can actually do, strongest
-first, and always leaves something useful.
-
-**1. Local analysis — always on, no model, no network.** Deterministic checks for
-the habits that weaken spoken English: hedging, placeholder nouns, intensifiers
-propping up weak words, one content word carried too far, clauses that all start
-the same way, a weak opening, and — on framework drills — a missing reason or
-missing example. It quotes your own words back. It runs instantly, offline, in
-every browser, and stays silent when there is too little to judge honestly.
-
-Rates are floored at 50 words and need more than one occurrence before anything
-is flagged. Without that, a single "someone" in a thirty-word answer crosses a
-per-hundred threshold and gets reported as a habit.
-
-**2. The on-device model — no key, nothing sent.** Chrome ships a small language
-model that runs locally. Where it's available the panel offers it directly; where
-it needs a one-off download, it says so. Availability is probed with a timeout and
-the panel renders before the probe answers, so a slow or hanging check can never
-leave a blank space where the buttons should be.
-
-**3. Claude — sharpest, but it does send your transcript.** Unchanged, opt-in,
-your own key. Still the only thing here that leaves the device.
-
-## Sending your transcript to Claude (optional, off by default)
-
-The local metrics measure *how* you spoke. They cannot judge whether the answer
-was any good — whether it had a shape, whether you hedged, whether you actually
-answered the question. That is what this adds.
-
-Press **Review what I said** on the report and the transcript is sent to Claude
-(`claude-opus-5`) for feedback on structure, vague or hedged language, one
-concrete rewrite of your weakest sentence, and what to practise next.
-
-- **Off until you turn it on.** No key, no requests.
-- **Your own API key**, from [console.anthropic.com](https://console.anthropic.com/settings/keys),
-  stored only in this browser's `localStorage`.
-- **Your audio never leaves.** Only the transcript and the drill context are sent,
-  and only when you press the button.
-- The SDK is loaded on demand from a CDN, so it costs nothing for anyone who
-  doesn't use the feature.
-
-Note this is a browser-side key (`dangerouslyAllowBrowser`), which is fine for
-your own machine but is not how you'd ship this to other people — a public
-deployment wants a small server proxy holding the key instead.
-
-## What it measures
-
-- **Pace** — words per minute over the whole session, plus articulation rate
-  (words per minute of actual speech, excluding pauses).
-- **Fillers** — hard fillers (*um, uh, er*) counted separately from crutch words
-  (*like, basically, actually*), because the second group is only a problem in
-  volume.
-- **Projection** — mean RMS while speaking, in decibels, mapped so −46 dB (barely
-  audible) is 0 and 0 dB (clipping) is 100. It is scored against a healthy band,
-  so both mumbling and shouting into the mic cost you. Reported alongside
-  **voice above room** in dB, which is the other half of projecting: a voice only
-  6 dB above the background isn't carrying, however loud it feels.
-- **Diction** *(reading drills)* — of the words you actually reached, how many the
-  recogniser understood.
-- **Passage read** *(reading drills)* — how far through the passage you got.
-  Kept separate from diction on purpose: stopping early is a pacing problem, not
-  a pronunciation one, and mixing them makes a careful reader look unintelligible.
-- **Pausing** — silence gaps over 350ms, with 0.4–2.2s counted as deliberate.
-- **Word variety** — unique content words over total, with stopwords removed.
-- **Accuracy** — longest common subsequence against the target text, so inserted
-  filler words don't destroy the score but dropped words do.
-
-Everything is combined into a 0–100 clarity score, weighted per drill.
-
-### The score has to actually discriminate
-
-An early version scored almost every session in the nineties, which makes the
-history chart useless — you can't see improvement in a number that never moves.
-Two causes, both fixed:
-
-- **Plateaus were far too wide.** Pace, projection and word variety returned a
-  flat 100 across most of their plausible range, so only the filler count moved
-  the total. The bands are now narrow enough that ordinary variation shows, and
-  metrics that are simply better-when-higher (diction, passage read) use a linear
-  ramp with no plateau at all.
-- **Fillers were counted, not rated.** Two "um"s in a 40-word answer scored the
-  same as two in a 300-word answer, though the first is a stammer and the second
-  is fluent. It's now per 100 words, with hard fillers weighted double and a
-  floor on the denominator so a single slip in a short answer isn't a
-  catastrophe.
-
-Calibrated so a flawless run is 100, a good-but-imperfect run is high 80s, a
-mediocre one is around 50, and a poor one lands in the 30s. A test pins that
-ordering and requires more than 50 points between best and worst.
-
-## The tape
-
-Every session prints as a strip: bar height is loudness, red marks are fillers,
-green ticks are deliberate pauses, and grey stretches are room noise rather than
-you. Click anywhere on it to hear that moment back. Listening to yourself is the
-single fastest way to improve, and it's the part most people skip.
-
-## The passage comes back with you
-
-The report shows the input as well as the output. For the reading drills
-(Pace & Pause, Diction Gym, Echo) the passage you were given is reproduced with
-every word marked: **mint where it came through, coral where it didn't.** The
-misses are the useful part — they're where consonants got swallowed, and the
-recogniser is a harsher and more honest judge of that than your own ear.
-
-Breath marks (`‖`) survive into the report, so you can see whether you actually
-stopped where you were told to. They are not target words, so they never shift
-the hit marking — there's a test pinning that alignment across every reading
-drill.
-
-For the drills with no set text, the same block shows the prompt you were
-answering instead, because a score is not much use without the question it
-belongs to.
-
-The marking uses the same function as the live booth, so what you watched during
-the run is exactly what you get back afterwards.
-
-**Crutch words inside a passage don't count against you.** Several of the
-readings contain "you know" or "just"; reading those aloud is obedience, not a
-verbal tic. On a set passage only genuine stumbles (*um*, *uh*) affect the filler
-score or get marked in your transcript.
-
-## Playback that follows the text
-
-Press play and the transcript follows along: words already spoken stay lit, the
-current word is highlighted, and the rest stays dim until you reach it. Click any
-word to jump the audio to that moment. When nothing is playing the transcript
-reads as plain text, so you can just read it.
-
-The timings come from the recogniser itself. Interim results stream in word by
-word, so each word is stamped with the moment it first appeared; stamps only ever
-extend, because Chrome revises interim text and a shrinking count must not
-rewrite times already recorded. Recognition reports a word slightly *after* it
-was spoken, so the highlight applies a fixed 0.42s lead — otherwise it always
-runs late.
-
-Both the rendered words and the recorded timings come from the same tokeniser
-(`tokens()`, a plain whitespace split), so the highlight cannot drift out of sync
-with the audio. Sessions recorded before this existed, and browsers with no
-speech recognition, fall back to static text.
-
-## Interface
-
-The visual language is a broadcast booth: a warm tungsten room with cold mint
-instrument readouts. The lamp behind the page is driven by your actual
-microphone level, so the room brightens as you project and dims when you mumble.
-
-Typography is a Didone pairing, the register of theatre programmes and
-elocution manuals:
-
-| Role | Face | Why |
+| Label | `sens` | Effect |
 |---|---|---|
-| Display | **Fraunces** | Editorial serif with an `opsz` axis, low enough stroke contrast that thin diagonals — `A`, `y`, `4` — survive at every size from 16px headings to the 140px score |
-| Body | **Jost** | Geometric sans, clean and quiet under a display serif |
-| Labels & data | **IBM Plex Mono** | Sturdy enough for 10px uppercase meter labels, where a quirkier mono falls apart |
+| Strict | 0.7 | higher gate — use when the room bleeds in |
+| Normal | 1 | default |
+| Quiet voice | 1.5 | lower gate — use when quiet speech is missed |
 
-Didones want the opposite tracking to a grotesque — the display sizes run
-near-normal rather than tightly negative, or the thin strokes collide.
+On the ribbon and the tape: **your voice is amber and full height, the room is
+grey and flat.** A banner warns when the measured room level is high enough to
+interfere.
 
-The motion and material effects are the ones popularised by the animated
-component libraries (Magic UI, Aceternity, React Bits), reimplemented natively
-so the app keeps zero dependencies and no build step:
+---
 
-| Effect | Where it's used | How |
+## Transcription
+
+Uses the Web Speech API. Language follows `navigator.language` when it is any
+English, else `en-US`.
+
+| | Chrome / Edge | Safari | Firefox | Brave |
+|---|---|---|---|---|
+| Timer, level, pauses, projection, recording, playback, tape | yes | yes | yes | yes |
+| Transcript, pace, fillers, diction, word variety | yes | partial | no | no |
+
+Everywhere else the drills still run and score on what the audio alone can
+measure. The **Transcript** chip shows the exact state: `ready`, `listening…`,
+`on`, `off`, `failed`.
+
+| Chip / banner | Cause | Fix |
 |---|---|---|
-| Spotlight card | Drill cards | Radial gradient tracking `--mx`/`--my` from `pointermove` |
-| Border beam | Ribbon while recording | `conic-gradient` on an animated `@property` angle, masked to the border |
-| Number ticker | Report score | `requestAnimationFrame` with easeOutQuart |
-| Blur fade | Every view entrance | Staggered `transition` on opacity, transform and blur |
-| Split text | Hero headline | Per-word spans on their own delay |
-| Radial gauge | Score breakdown | SVG `stroke-dashoffset` sweep |
-| Film grain | Whole page | Inline `feTurbulence` SVG data URI |
-| Light rays & dot grid | Background | Layered gradients, masked and blurred |
-| Shimmer | Primary buttons | Translating linear-gradient highlight |
-| Ripple | Record button | Scaling ring on a pseudo-element |
+| `failed` + "can't reach its service" | Chrome uploads audio to Google to transcribe, so **this one feature needs internet** | Check VPN, proxy, privacy extensions; try Incognito |
+| `failed` + "Brave doesn't support transcription" | Brave ships without the Google speech keys — deliberate, no setting to change | Use Chrome or Edge; everything else works in Brave |
+| `failed` + "microphone is busy" (`audio-capture`) | Another tab, call app or recorder holds the mic | Close it and start again |
+| `failed` + "was blocked" (`not-allowed`) | Permission denied | Allow via the padlock in the address bar |
+| `listening…` that never becomes `on` | Recogniser running, nothing understood | Move closer, or set mic to **Quiet voice** |
 
-**One rule the whole interface follows:** no element's resting state may depend
-on an animation having run. Reveals are inverted — content is visible by
-default, and script adds a `.pre` class for a single frame to play the
-transition. If scripting or the animation clock fails, the page is simply
-already there rather than stuck invisible.
+`no-speech` and `aborted` are normal between utterances and are not reported.
+`network` retries twice before giving up. Recognition restarts itself on `onend`
+(300 ms backoff if the session died inside 500 ms), and any interim text is
+folded into the final rather than dropped — that is the "words vanish
+mid-sentence" case.
 
-Accessibility and the [Vercel Web Interface Guidelines](https://github.com/vercel-labs/web-interface-guidelines)
-were built in rather than retrofitted: skip link, visible focus rings,
-`aria-live` on the coach and transcript, labelled icon buttons, `color-scheme`
-and `theme-color` per theme, explicit transition properties (never
-`transition: all`), safe-area padding, and full `prefers-reduced-motion`
-support that also stills the decorative canvas loop.
+**Diagnosing:** open `/mic-test.html`. It runs the recogniser in three
+configurations — alone, with the mic already held open, and continuous — logs
+every event and error code, and tells you whether the fault is the browser, the
+network, or this app's usage of the API.
+
+---
+
+## Routes
+
+Every place is a URL; Back and Forward behave normally.
+
+| URL | Page |
+|---|---|
+| `#home` | today's session and the start button |
+| `#practice` | all six drills |
+| `#progress` | trends, history, recent sessions |
+| `#guide` | how to improve, what the numbers mean |
+| `#drill-<id>` | that drill, ready to start |
+
+The router never writes history itself: setting the hash pushes an entry and
+fires `hashchange`, which applies the route. The one exception is a hash
+pointing nowhere, which is **replaced** rather than pushed so a bad link isn't a
+Back-button trap. Navigating away mid-run discards the run rather than saving a
+partial score.
+
+---
+
+## The daily plan
+
+`#home` opens with three drills picked from your own weakest component scores
+(`buildPlan`, `src/drills.js`). Each step says why — "weakest: fillers · 41".
+
+| Weak metric | Drill |
+|---|---|
+| `filler` | Filler Hunt |
+| `pace`, `pause` | Pace & Pause |
+| `acc`, `cover` | Diction Gym |
+| `var` | Word Forge |
+| `proj` | Echo |
+
+Averaged over the last 10 sessions; sessions with no `parts` are skipped, not
+counted as zeros. Ties and gaps fall back to whatever you've practised least.
+Rebuilt once a day, remembers what you finished, and the report hands you
+straight to the next step.
+
+`trendFor()` on `#progress` compares the recent half of a series against the
+earlier half and needs **at least 3 points** before claiming a direction.
+
+---
 
 ## Storage
 
-Session scores live in `localStorage` under the key `speakeasy.v1` — dates,
-drill, score, pace, filler count. Recordings are held in memory for the current
-session only and are discarded when you leave the page. Clearing site data
-resets your streak and history.
+One `localStorage` record, key `speakeasy.v1`, read and written whole:
+
+```js
+{
+  sessions: [{ at, drill, name, score, wpm, fillers,
+               parts: { pace, filler, proj, acc, cover, var, pause } }],
+  plan:     { day, drills: [id], why: { [id]: { metric, score } }, done: [id] },
+  theme:    string | null
+}
+```
+
+Capped at the last **200** sessions. A stored value of the wrong shape is
+discarded rather than trusted. Component scores are persisted, not just the
+total — the plan and the trends both read them.
+
+The Anthropic API key, if you set one, lives separately under
+`speakeasy.anthropicKey`.
+
+Recordings are held in memory for the current page only and are dropped when
+you leave. Clearing site data resets streak and history.
+
+---
+
+## Coaching
+
+Three tiers on the report, strongest first, always leaving something useful.
+
+**1. Local analysis — always on, no model, no network.** `analyseLanguage()`
+flags hedging, placeholder nouns, intensifiers, one content word carried too
+far, repeated clause openers, a weak opening, and on framework drills a missing
+reason or example. Findings are ranked worst-first and quote your own words.
+
+Thresholds: silent under 12 words; rates floored at a 50-word denominator and
+requiring **≥2 occurrences** — otherwise a single "someone" in a 30-word answer
+crosses a per-100 threshold and gets reported as a habit.
+
+| Finding | Trigger |
+|---|---|
+| Hedging | ≥2 and ≥2.2 per 100 words |
+| Placeholder words | ≥2 and ≥3.0 per 100 |
+| Intensifiers | ≥2 and ≥3.5 per 100 |
+| One word carrying too much | ≥4 uses and ≥5% of content words |
+| Repeated clause openers | ≥4 clauses start the same |
+
+**2. On-device model — no key, nothing sent.** Chrome's built-in
+`LanguageModel`. Availability is probed with a **3s timeout** and the panel
+renders before the probe answers, so a hanging check can't leave a blank space.
+Offers the one-off download when the state is `downloadable`.
+
+**3. Claude — sharpest, but it sends your transcript.** Opt-in, your own key.
+
+Press **Review what I said** and the transcript plus drill context go to
+`claude-opus-5` for four sections: **Structure**, **Language**, **Rewrite** (the
+whole answer as you could have said it, sized to what you actually spoke — it is
+skipped on set-passage drills, where the words are the author's) and **Next**.
+
+- Off until you turn it on. No key, no requests.
+- Key from [console.anthropic.com](https://console.anthropic.com/settings/keys),
+  stored only in this browser's `localStorage`.
+- **Your audio never leaves.** Only the transcript and drill context, and only
+  on the button press.
+- The SDK is `import()`ed on demand from `esm.sh`, so it costs nothing for
+  anyone who doesn't use it.
+
+This is a browser-side key (`dangerouslyAllowBrowser`) — fine on your own
+machine, but a public deployment wants a small server proxy holding the key.
+
+---
+
+## The report
+
+- **Tape** — bar height is loudness, red marks are fillers, green ticks are
+  deliberate pauses, grey stretches are room rather than you. Click anywhere to
+  hear that moment back.
+- **The passage comes back.** Reading drills reproduce the text word by word,
+  **mint where it came through, coral where it didn't**, using the same
+  `matchTarget()` the live booth used — so the marking you watched is the
+  marking you get. Breath marks (`‖`) are not target words and never shift the
+  alignment; a test pins that across every reading drill.
+- **Playback follows the text.** Spoken words stay lit, the current word is
+  highlighted, the rest stays dim. Click a word to jump the audio. Timings come
+  from the recogniser's interim results, stamped when a word first appears and
+  only ever extended. A fixed **0.42s** lead (`READ_LAG`) compensates for
+  recognition reporting a word after it was spoken. Rendered words and recorded
+  timings share one tokeniser (`tokens()`), so the highlight cannot drift.
+- Drills with no set text show the prompt instead.
+
+---
+
+## Interface
+
+A broadcast booth: warm tungsten room, cold mint instrument readouts. The lamp
+behind the page is driven by your actual mic level.
+
+| Role | Face |
+|---|---|
+| Display | **Fraunces** — `opsz` axis, survives 16px to 140px |
+| Body | **Jost** |
+| Labels & data | **IBM Plex Mono** — holds up at 10px uppercase |
+
+Motion effects are reimplemented natively (no dependencies, no build):
+spotlight cards (`--mx`/`--my` from `pointermove`), border beam (`conic-gradient`
+on an animated `@property` angle), number ticker (`requestAnimationFrame`,
+easeOutQuart), blur fade, split text, SVG radial gauges, `feTurbulence` grain,
+shimmer, ripple.
+
+**One rule the whole interface follows:** no element's resting state may depend
+on an animation having run. Reveals are inverted — content is visible by
+default and script adds `.pre` for a single frame. If scripting fails, the page
+is already there rather than stuck invisible.
+
+Accessibility was built in: skip link, visible focus rings, `aria-live` on the
+coach and transcript, labelled icon buttons, `color-scheme` and `theme-color`
+per theme, explicit transition properties (never `transition: all`), safe-area
+padding, and `prefers-reduced-motion` support that also stills the canvas loop.
+
+---
+
+## Deploy
+
+Static files, nothing to build. HTTPS is the only requirement — browsers block
+mic access on plain HTTP.
+
+| Host | How |
+|---|---|
+| Netlify | drag the folder onto <https://app.netlify.com/drop> |
+| Vercel | `npx vercel --prod` |
+| GitHub Pages | push, enable Pages on the branch |
+| Cloudflare Pages | connect the repo, leave the build command empty |
+
+Don't deploy `serve.js` or the `.pem` files.
+
+---
 
 ## Tests
 
@@ -415,6 +438,11 @@ resets your streak and history.
 node test.js
 ```
 
-Covers the scoring path: filler counting, alignment accuracy, word variety,
-streaks, the composite score at both extremes, and that every drill builds a
-runnable stage. The DOM and audio layers aren't covered — run the app for those.
+108 assertions, `node:assert`, no framework, no dependencies. Covers filler
+counting, LCS accuracy, word variety, stem matching, streaks, the score at both
+extremes and its spread, every drill building a runnable stage, VAD gating and
+calibration, word-timing alignment, passage marking, projection across the real
+dynamic range, diction vs coverage separation, the daily plan, trends, language
+analysis, and the recogniser's duplicate/interim/throw recovery paths.
+
+Not covered: the DOM and audio-device layers — run the app for those.

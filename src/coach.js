@@ -72,15 +72,13 @@ Did the answer have a shape? If a framework was given, did they actually follow 
 ## Language
 Where was the wording vague, hedged, or repetitive? Quote their actual words. Two or three sentences.
 
-## Sharper
-Take the single weakest sentence they said and rewrite it. Give exactly one example, as two lines:
-You said: "..."
-Tighter: "..."
+## Rewrite
+The whole answer as they could have said it. Same points, same opinion, their own examples — restructured and unhedged. Spoken English meant to be said out loud, not written prose. Keep it to roughly the number of words they actually spoke, so the two are comparable. Output the rewrite alone: no preamble, no commentary, no quotation marks.
 
 ## Next
 One sentence naming the specific thing to practise next.
 
-Be concrete and honest. Do not open with praise and do not flatter. If it was genuinely good, say so in one clause and move on. Never exceed 200 words in total.`;
+Be concrete and honest. Do not open with praise and do not flatter. If it was genuinely good, say so in one clause and move on. Keep Structure, Language and Next under 150 words combined; the rewrite is sized by what they said.`;
 
 function coachPrompt(sess){
   const m = sess.m, r = sess.run || {};
@@ -88,7 +86,7 @@ function coachPrompt(sess){
     `Drill: ${sess.name}`,
     r.question ? `Prompt they were answering: "${r.question}"` : null,
     r.framework ? `Framework given: ${r.framework}` : null,
-    r.target ? `They were reading a set passage, so judge delivery of it, not their word choice.` : null,
+    r.target ? `They were reading a set passage, so judge delivery of it, not their word choice. The words are the author's: omit the Rewrite section entirely.` : null,
     `Spoke for ${Math.round(sess.elapsed)}s at ${m.wpm ?? "unknown"} wpm.`,
     `Hard fillers: ${m.f.hard}. Crutch words: ${m.f.crutch}. Deliberate pauses: ${m.goodPauses}.`
   ].filter(Boolean).join("\n");
@@ -117,14 +115,15 @@ async function askCoach(sess){
   return res.content.filter(b => b.type === "text").map(b => b.text).join("\n").trim();
 }
 
-/* the reply is four fixed `## ` sections — render those, nothing more */
+/* the reply is four fixed `## ` sections — render those, nothing more.
+   Rewrite is the whole answer as it could have been said, so it gets the quote style. */
 function renderCoach(md){
   return md.split(/^##\s+/m).filter(s => s.trim()).map(sec => {
     const nl = sec.indexOf("\n");
     const head = (nl < 0 ? sec : sec.slice(0, nl)).trim();
     const body = (nl < 0 ? "" : sec.slice(nl)).trim();
-    const paras = body.split(/\n{2,}|\n(?=You said:|Tighter:)/).filter(Boolean).map(p => {
-      const q = /^(You said:|Tighter:)/.test(p.trim());
+    const paras = body.split(/\n{2,}/).filter(Boolean).map(p => {
+      const q = head === "Rewrite";
       return `<p class="${q ? "quote" : ""}">${esc(p.trim())}</p>`;
     }).join("");
     return `<h4>${esc(head)}</h4>${paras}`;
