@@ -162,8 +162,8 @@ function renderRecent(){
       <b class="rscore" style="color:${scoreColor(s.score)}">${s.score}</b>
       <span class="rname">${esc(s.name)}</span>
       <span class="rwhen">${esc(fmtWhen.format(new Date(s.at)))}</span>
-      <span class="rmeta">${s.wpm ? s.wpm + " wpm" : "2014"}</span>
-      <span class="rmeta">${s.fillers != null ? s.fillers + " filler" + (s.fillers === 1 ? "" : "s") : "2014"}</span>
+      <span class="rmeta">${s.wpm ? s.wpm + " wpm" : "—"}</span>
+      <span class="rmeta">${s.fillers != null ? s.fillers + " filler" + (s.fillers === 1 ? "" : "s") : "—"}</span>
     </div>`).join("") + `</div>`;
 }
 
