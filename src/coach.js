@@ -94,7 +94,8 @@ function coachPrompt(sess){
 }
 
 async function askCoach(sess){
-  const { default: Anthropic } = await import("https://esm.sh/@anthropic-ai/sdk");
+  // pinned: an unversioned CDN import ships whatever was published last to every user
+  const { default: Anthropic } = await import("https://esm.sh/@anthropic-ai/sdk@0.131.0");
   const client = new Anthropic({
     apiKey: readKey(),
     dangerouslyAllowBrowser: true,
