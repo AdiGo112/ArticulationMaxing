@@ -12,7 +12,7 @@ stay in the tab — except one opt-in feature, documented under [Coaching](#coac
 
 ```bash
 node serve.js     # http(s)://localhost:8137
-node test.js      # 108 checks
+node test.js      # 112 checks
 ```
 
 `serve.js` serves **HTTPS** when `localhost-cert.pem` and `localhost-key.pem`
@@ -40,27 +40,30 @@ has no dependencies and exists only to set `"type": "module"` so Node treats
 
 ## Layout
 
-Native ES modules, loaded directly by the browser. 4,936 lines total.
+Native ES modules, loaded directly by the browser. 5,019 lines total.
 
 ```text
 index.html      279   markup only
 style.css       586   every rule
 serve.js         48   dev server, port 8137
-test.js         969   108 assertions, node:assert, no framework
+test.js        1023   112 assertions, node:assert, no framework
 mic-test.html   167   standalone transcription diagnostic
+content-ids.txt 412   ledger of content ids — see Content pools
+netlify.toml     16   deploy: copies the site into dist/, security headers
 
 src/
   dom.js          5   export const $ = id => document.getElementById(id)
-  content.js    533   all text pools (see table below)
-  storage.js     33   the localStorage record, streak, dayKey
+  content.js    533   all text pools, every item with a permanent id
+  storage.js     58   the localStorage record, streak, dayKey, plan persistence
   text.js       130   pure text + measurement — no DOM, no state
   audio.js      129   mic stream, probe(), isSpeechFrame(), makeVAD()
   speech.js     109   Web Speech wrapper, asrProblem() messages
-  drills.js     301   DRILLS, buildRun(), analyseLanguage(), the daily plan
-  scoring.js     98   band(), ramp(), fillerRate(), scoreRun(), verdict()
+  drills.js     255   DRILLS, buildRun() (pure data), analyseLanguage(), buildPlan()
+  stage.js       40   stageHtml(run) — the booth's markup for one run
+  scoring.js    102   band(), ramp(), fillerRate(), scoreRun(), verdict(), SCORING_VERSION
   canvas.js     126   idle wave, ribbon, tape, history sparklines
-  run.js        460   session runtime: arm, countdown, frame loop, finish
-  report.js     293   post-run report, setup pills, shared UI primitives
+  run.js        465   session runtime: arm, countdown, frame loop, finish
+  report.js     294   post-run report, setup pills, shared UI primitives
   coach.js      270   three coaching tiers
   ui.js         365   views, router, event listeners
   main.js        35   boot — the only module with an import-time side effect
@@ -106,6 +109,17 @@ Reading drills take their length from the passage.
 Filler Hunt draws from `EASY_PROMPTS` on purpose: the topic must not compete
 for attention. It is scored on **mechanics only** — pace and word variety are
 excluded, since a plain repetitive answer is the correct output of an easy topic.
+
+**Content ids.** Every item in the six drill pools carries a permanent `id`
+(`imp-001`, `easy-001`, `read-001`, `tw-001`, `word-<word>`, `echo-001`), and
+every run records it as `promptId`. Ids are never reused or renumbered:
+
+- **Fix a typo:** edit the text in place; the id stays.
+- **Add an item:** append it with the next number, and add the id to `content-ids.txt`.
+- **Retire an item:** delete it *and* its line in `content-ids.txt`, on purpose.
+
+`test.js` fails if an id is duplicated, missing from the ledger, or gone from
+the content while still in the ledger.
 
 ---
 
@@ -303,7 +317,8 @@ One `localStorage` record, key `speakeasy.v1`, read and written whole:
 ```js
 {
   sessions: [{ at, drill, name, score, wpm, fillers,
-               parts: { pace, filler, proj, acc, cover, var, pause } }],
+               parts: { pace, filler, proj, acc, cover, var, pause },
+               promptId, reading, raw, v }],
   plan:     { day, drills: [id], why: { [id]: { metric, score } }, done: [id] },
   theme:    string | null
 }
@@ -312,6 +327,13 @@ One `localStorage` record, key `speakeasy.v1`, read and written whole:
 Capped at the last **200** sessions. A stored value of the wrong shape is
 discarded rather than trusted. Component scores are persisted, not just the
 total — the plan and the trends both read them.
+
+Since scoring version 1, each session also keeps `promptId` (which prompt it
+answered), `raw` (the full measurement object `scoreRun()` was given),
+`reading` (whether it was a set passage) and `v` (`SCORING_VERSION`). A
+recalibrated scorer can recompute old sessions from `raw` instead of trusting
+`parts`; `test.js` pins that a stored session rescores to the same number.
+Sessions from before this have none of these fields and are left as they are.
 
 The Anthropic API key, if you set one, lives separately under
 `speakeasy.anthropicKey`.
@@ -350,7 +372,7 @@ Offers the one-off download when the state is `downloadable`.
 **3. Claude — sharpest, but it sends your transcript.** Opt-in, your own key.
 
 Press **Review what I said** and the transcript plus drill context go to
-`claude-opus-5` for four sections: **Structure**, **Language**, **Rewrite** (the
+`claude-opus-5-5` for four sections: **Structure**, **Language**, **Rewrite** (the
 whole answer as you could have said it, sized to what you actually spoke — it is
 skipped on set-passage drills, where the words are the author's) and **Next**.
 
@@ -421,9 +443,15 @@ padding, and `prefers-reduced-motion` support that also stills the canvas loop.
 Static files, nothing to build. HTTPS is the only requirement — browsers block
 mic access on plain HTTP.
 
+**Netlify is the target** (see `docs/PRODUCTION_PLAN.md`): connect the repo and
+`netlify.toml` does the rest — it copies only `index.html`, `style.css` and
+`src/` into `dist/` and sets a Content-Security-Policy plus security headers.
+Adding a new external origin (a font host, a CDN, an API) means adding it to
+that policy, or the browser will block it.
+
 | Host | How |
 |---|---|
-| Netlify | drag the folder onto <https://app.netlify.com/drop> |
+| Netlify | connect the repo (uses `netlify.toml`) |
 | Vercel | `npx vercel --prod` |
 | GitHub Pages | push, enable Pages on the branch |
 | Cloudflare Pages | connect the repo, leave the build command empty |
@@ -438,7 +466,7 @@ Don't deploy `serve.js` or the `.pem` files.
 node test.js
 ```
 
-108 assertions, `node:assert`, no framework, no dependencies. Covers filler
+112 assertions, `node:assert`, no framework, no dependencies. Covers filler
 counting, LCS accuracy, word variety, stem matching, streaks, the score at both
 extremes and its spread, every drill building a runnable stage, VAD gating and
 calibration, word-timing alignment, passage marking, projection across the real
