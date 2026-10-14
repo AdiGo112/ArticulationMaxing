@@ -235,7 +235,16 @@ value of the wrong shape is discarded rather than trusted.
 ```
 
 Older sessions lack the scoring-v1 fields and are left as they are; facts and then-vs-now ignore
-them. Recordings live in memory for the page only. Clearing site data resets everything.
+them. Recordings live in memory for the page only.
+
+**Backup.** Browsers delete this record — clearing site data does, and Safari does after seven days
+without a visit — so *Progress → Your data* downloads it as a file and restores it. `parseBackup()`
+accepts only `{ kind: "speakeasy-backup", version: 1, sessions, cards }`, copies known fields of
+entries that look like sessions and cards, and drops the rest; `mergeBackup()` matches sessions by
+time and drill (restoring twice changes nothing), keeps existing cards, and caps at 200 sessions.
+The same validator is the shape a server import must accept (PRD → F11). The Anthropic key is
+never in a backup. After 5 sessions the app calls `navigator.storage.persist()` (Chrome decides
+silently; Firefox asks once).
 
 ## Built ahead of its UI
 
@@ -282,14 +291,21 @@ Served by `serve.js`, never published:
 
 `netlify.toml` copies only `index.html`, `style.css` and `src/` into `dist/` and sets a
 Content-Security-Policy plus `Permissions-Policy` (microphone self only), `nosniff`,
-`frame-ancestors 'none'`. Allowed origins: esm.sh (SDK), api.anthropic.com, Google Fonts.
+`frame-ancestors 'none'`. Allowed origins: esm.sh (SDK), api.anthropic.com, Google Fonts. Fonts
+from Google send each visitor's IP to Google, so they are self-hosted in the redesign (TASKS).
 
 ## Tests
+
+`node scripts/smoke.mjs` loads the real app in headless Chrome over the DevTools protocol (no
+dependencies): every route and drill renders without script errors, the label page's mouse and
+keyboard handling works, and backup restore works through the real file input. CI
+(`.github/workflows/ci.yml`) runs it and `node test.js` on every push.
 
 `node test.js` — `node:assert`, no framework. Covers the pure modules: filler counting, matching,
 accuracy, variety, scoring and its spread, VAD gating and calibration, timings, the plan and trends,
 language analysis, the recogniser's recovery paths, content ids, rescoring from `raw`, and the
-F1/F2/F4/F5 logic and label helpers. Not covered: the DOM and audio-device layers — run the app.
+F1/F2/F4/F5 logic, backup, and label helpers. Neither suite reaches a real microphone run —
+headless Chrome has no mic — so run the app for that.
 
 ---
 
@@ -318,7 +334,7 @@ NestJS + Prisma API ................. Render free web service
    ├─ Neon Postgres ................. scores and metadata
    ├─ Cloudflare R2 ................. opt-in audio only
    └─ Resend ........................ magic-link email
-Cron: GitHub Actions · Errors: Sentry · Traffic: Netlify analytics
+Cron: GitHub Actions · Errors: Sentry · Traffic: Cloudflare Web Analytics (page views, no cookies)
 ```
 
 Render's free service sleeps after 15 minutes and takes ~30–60 s to wake, so the SPA never waits
@@ -347,6 +363,7 @@ state changes only on phase changes. The AudioContext is created inside the clic
 | Webcam video | IndexedDB | never |
 | Claude review | — | transcript only, to Anthropic, on button press, user's key |
 | Training donations (F15/F16) | — | per-take opt-in, separate from cloud storage |
+| Request data (IP address, browser) | — | to Netlify serving the page and Cloudflare Web Analytics (no cookies); fonts self-hosted so none goes to Google |
 
 No voiceprints, speaker identification, embeddings or face analysis. Error reports carry no
 transcripts.

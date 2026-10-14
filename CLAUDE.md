@@ -7,7 +7,9 @@ free tiers.
 ## Commands
 
 - `node serve.js` — dev server, https://localhost:8137 (HTTP if the `.pem` files are absent)
-- `node test.js` — the whole suite; no `npm install` needed (Node 20.11+)
+- `node test.js` — unit tests; no `npm install` needed (Node 20.11+)
+- `node scripts/smoke.mjs` — the app in headless Chrome: routes, drills, label page, backup (Node 22+)
+- CI runs both on every push.
 
 ## Docs — read before acting
 
@@ -26,7 +28,7 @@ free tiers.
 - **The audio-only path is a feature.** Every drill and feature keeps running with no transcript
   (Firefox, Brave): it scores what audio alone measures and never throws or shows NaN.
 - **Analysis stays on the device.** Anything that leaves it is opt-in, says what it sends, and is
-  listed in ARCHITECTURE → What leaves the device before it ships.
+  listed in ARCHITECTURE → What leaves the device and in `docs/PRIVACY.md` before it ships.
 - **$0 to run.** Use free tiers that allow commercial use. A new hosted service, paid tier or
   external origin starts as a DECISIONS entry; a new origin also goes into the CSP in `netlify.toml`.
 - **Content ids are permanent.** Fix text in place (the id stays). Append new items with the next id

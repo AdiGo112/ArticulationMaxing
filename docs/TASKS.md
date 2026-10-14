@@ -27,7 +27,10 @@ These need a person, an account or a microphone.
 - [ ] First real take in `label.html` — confirms recording and decoding (headless can't).
 - [ ] Record and label **20 takes** with hand-counted fillers (Whisper gate, F9).
 - [ ] Record and label **~200 takes** over the coming weeks (F15 training data).
-- [ ] Decide whether to merge `refactor/es-modules` and `prod/phase-0-1` into `main`.
+- [ ] Decide whether to merge `refactor/es-modules` and `prod/phase-0-1` into `main`, and push —
+      CI (`.github/workflows/ci.yml`) runs once the branch is on GitHub; it hasn't run yet.
+- [ ] Cloudflare account for Web Analytics (DECISIONS D-016), then add its snippet and CSP origins.
+- [ ] Answer the open questions in DECISIONS: feedback channel, licence, domain.
 
 ---
 
@@ -39,6 +42,15 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
 - [x] Coach on `claude-opus-5-5`; SDK pinned on esm.sh.
 - [ ] Deploy (owner).
 - [ ] Waitlist / "what would you use this for?" — Netlify Forms.
+- [ ] Analytics snippet once the Cloudflare account exists; privacy page names it.
+
+## Groundwork (not tied to a phase)
+
+- [x] CI: unit tests and the browser smoke test on every push (not yet run on GitHub).
+- [x] `scripts/smoke.mjs`: routes, drills, label page, backup restore — in real Chrome.
+- [x] Backup and restore of local history (*Progress → Your data*); persistent-storage request.
+- [x] Fixed: recent sessions showed the text "2014" instead of a dash for missing values.
+- [x] `docs/PRIVACY.md` draft, true to today's app.
 
 ## Phase 1 — prepare the code ✓
 
@@ -59,6 +71,7 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
 - [ ] Session engine `createSession({ onTick, onPhase, onFinish })`; React mounts it via a ref;
       safe under StrictMode double-mount; AudioContext created inside the click (iOS).
 - [ ] Screens built to `DESIGN.md`.
+- [ ] Self-host the fonts (Google Fonts sends every visitor's IP to Google).
 - [ ] `localStorage` → IndexedDB with a one-time migration.
 - [ ] Exit: feature parity; audio-only path passes in Firefox; deployed.
 
@@ -110,8 +123,9 @@ From the security and privacy review; general information, not legal advice.
 - [ ] Imported history validated server-side (shape, size cap, idempotent).
 - [ ] Magic links single-use, 15 minutes; sign-in emails rate-limited per IP.
 - [~] CSP and security headers (done for the static app; redo for the SPA + API); `security.txt`.
-- [ ] Privacy page listing every processor: Netlify, Render, Neon, Cloudflare, Resend, Sentry,
-      Google (Web Speech), Anthropic (user's key).
+- [~] Privacy page: draft in `docs/PRIVACY.md`; publish it, filled in for whatever has shipped, with
+      every processor (Netlify, Render, Neon, Cloudflare, Resend, Sentry, Google, Anthropic).
+- [ ] Fonts self-hosted, so no visitor IP goes to Google on page load.
 - [ ] Sentry scrubs transcripts.
 
 ## After launch

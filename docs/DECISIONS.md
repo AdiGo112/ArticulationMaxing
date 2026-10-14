@@ -136,6 +136,31 @@ every screen would be built twice.
 **Decision.** The Anthropic SDK loads from esm.sh at an exact version at least two weeks old.
 **Why.** An unversioned CDN import ships whatever was published last to every user.
 
+## D-016 · Analytics: Cloudflare Web Analytics, page views only — 2026-10-14
+
+**Context.** The plan listed "Netlify analytics"; it needs a paid plan, which D-002 rules out.
+**Decision.** Cloudflare Web Analytics: free, cookieless, a script snippet on any host (no DNS or
+proxy change). It counts page views, referrers, countries and browsers — not custom events.
+**Rejected.** Netlify Analytics (paid); PostHog (more than needed, and session replay conflicts
+with D-008). **Consequences.** "Which drills do people use" needs our own counts: from Phase 4 the
+API's `Usage` table; before that, page views of `#drill-<id>` routes if the script records hash
+changes (to verify). The CSP and the privacy page must name it before it ships.
+
+## D-017 · CI and a dependency-free browser smoke test — 2026-10-14
+
+**Context.** Tests ran only when someone remembered, and browser checks were ad hoc.
+**Decision.** GitHub Actions runs `node test.js` and `scripts/smoke.mjs` on every push. The smoke
+test drives Chrome through the DevTools protocol with Node's built-in `fetch` and `WebSocket`.
+**Rejected.** Playwright or Puppeteer — a dependency for what ~150 lines do, in a repo with none.
+Revisit in the React port, where the project gains a package manager anyway.
+
+## D-018 · Local backup before accounts — 2026-10-14
+
+**Context.** History lives only in the browser, which may delete it (Safari after seven days
+without a visit), and accounts are phases away. **Decision.** Download/restore a backup file now;
+restore validates and merges, never overwrites; the validator doubles as the server import check.
+Ask for persistent storage after 5 sessions.
+
 ---
 
 ## Open questions
@@ -148,3 +173,5 @@ every screen would be built twice.
 | PodcastFillers licence | before training F15 | If non-commercial: own + volunteer takes, LibriSpeech for "other speech" |
 | Anthropic terms on training with outputs | before F16 data work | Assume no until confirmed |
 | Waitlist | Phase 0 | Netlify Forms is free with a plain HTML form |
+| Feedback channel | before deploy | GitHub issues (public repo) or a Netlify form; users need somewhere to report a broken mic |
+| Licence | before making the repo public | Open source (e.g. MIT) or all rights reserved |

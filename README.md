@@ -15,6 +15,7 @@ transcript (never audio) using your own API key.
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How it works, scoring, storage, the target stack |
 | [docs/TASKS.md](docs/TASKS.md) | What's done, what's next, what's blocked |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Why it's built this way, and what was rejected |
+| [docs/PRIVACY.md](docs/PRIVACY.md) | Draft of the public privacy policy |
 | [CLAUDE.md](CLAUDE.md) | Rules for anyone (human or agent) changing the code |
 
 ---
@@ -23,7 +24,8 @@ transcript (never audio) using your own API key.
 
 ```bash
 node serve.js     # https://localhost:8137
-node test.js      # the test suite
+node test.js      # unit tests
+node scripts/smoke.mjs   # the app in headless Chrome (Node 22+)
 ```
 
 No `npm install`: there are no dependencies; `package.json` only sets `"type": "module"`.
