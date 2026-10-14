@@ -7,7 +7,7 @@ import { markPlanDone, store } from "./storage.js";
 import { clamp, countFillers, esc, FILLER_RE, matchTarget, projFromRms, readStats, tokens, usedWord, variety, words } from "./text.js";
 import { audio, makeVAD } from "./audio.js";
 import { asrProblem, listener } from "./speech.js";
-import { buildRun, drillById } from "./drills.js";
+import { buildRun, dictionOutcome, drillById, dueCards, updateCards } from "./drills.js";
 import { stageHtml } from "./stage.js";
 import { band, scoreRun, SCORING_VERSION } from "./scoring.js";
 import { css, drawRibbon } from "./canvas.js";
@@ -86,7 +86,8 @@ export function view(name){
    mutates the run object, so replaying it restores clean markup. */
 export function newRun(id, reuse){
   S.drill = drillById(id);
-  S.run = reuse || buildRun(id);
+  S.run = reuse || buildRun(id, id === "diction"
+    ? { twisterId: (dueCards(store.read().cards, Date.now())[0] || {}).twisterId } : undefined);
   S.dur = S.run.dur;
   $("boothName").textContent = S.drill.name;
   $("promptBox").innerHTML = stageHtml(S.run);
@@ -459,7 +460,14 @@ export async function finish(){
     // which prompt this answered, and the raw measurements behind the score:
     // then-vs-now needs the first, and rescoring after a recalibration needs
     // the second — the parts above are only true for the scorer that made them
-    promptId: S.run.promptId || null, reading: !!S.run.target, raw: m, v: SCORING_VERSION });
+    promptId: S.run.promptId || null, reading: !!S.run.target, raw: m, v: SCORING_VERSION,
+    secs: Math.round(S.elapsed) });
+  // diction retry: every Diction Gym run updates the cards, whether or not
+  // the screen shows them yet. Without a transcript there is nothing to judge.
+  if(sess.drill === "diction" && listener.supported && text){
+    const d = store.read();
+    store.set("cards", updateCards(d.cards, S.run.promptId, dictionOutcome(text, S.run.target), sess.at).cards);
+  }
   markPlanDone(sess.drill);
   showReport(sess);
 }

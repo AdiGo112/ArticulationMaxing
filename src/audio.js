@@ -127,3 +127,60 @@ export function makeVAD(sens){
     }
   };
 }
+
+/* ══ PITCH (F4) ═══════════════════════════════════════════════════
+   A flat voice is one of the commonest complaints about speakers. Measured
+   per speech frame with YIN, then summarised relative to the take's own
+   median, so the number means the same for a bass and a soprano. Only the
+   summary is ever kept — no voice profile is built.                     */
+
+/* YIN fundamental-frequency estimate for one frame (Float32Array, -1..1).
+   Returns { f0, conf } with conf in 0..1, or null when nothing periodic
+   enough was found in the speaking range (70–400 Hz). */
+export function yin(frame, sampleRate, lo, hi){
+  lo = lo || 70; hi = hi || 400;
+  const W = frame.length >> 1;
+  const tMin = Math.max(2, Math.floor(sampleRate / hi)), tMax = Math.min(W, Math.ceil(sampleRate / lo));
+  if(tMax <= tMin + 2) return null;
+  const d = new Float32Array(tMax + 1);
+  for(let t = 1; t <= tMax; t++){
+    let s = 0;
+    for(let i = 0; i < W; i++){ const x = frame[i] - frame[i + t]; s += x * x; }
+    d[t] = s;
+  }
+  // cumulative mean normalised difference
+  let run = 0; d[0] = 1;
+  for(let t = 1; t <= tMax; t++){ run += d[t]; d[t] = run ? d[t] * t / run : 1; }
+  let tau = -1;
+  for(let t = tMin; t < tMax; t++){
+    if(d[t] < 0.15){ while(t + 1 < tMax && d[t + 1] < d[t]) t++; tau = t; break; }
+  }
+  if(tau < 0) return null;
+  // parabolic interpolation around the dip
+  const a = d[tau - 1], b = d[tau], c = d[tau + 1], den = a + c - 2 * b;
+  const exact = den ? tau + (a - c) / (2 * den) : tau;
+  return { f0: sampleRate / exact, conf: 1 - b };
+}
+
+const pct = (sorted, p) => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))];
+
+/* Summary of one take from [{t (s), f0}] voiced frames.
+   range — p90 − p10 in semitones; the headline number
+   flat  — start times of 4 s windows whose own range was under 2 semitones
+   Needs 20 voiced frames, else null: too little to say anything honest.
+   ponytail: fixed, non-overlapping 4 s windows; sliding windows if the tape
+   marks look too coarse once it is drawn. */
+export function pitchStats(frames){
+  if(!frames || frames.length < 20) return null;
+  const median = pct(frames.map(f => f.f0).sort((a,b) => a-b), 0.5);
+  const st = f => 12 * Math.log2(f / median);
+  const all = frames.map(f => st(f.f0)).sort((a,b) => a-b);
+  const flat = [], win = {};
+  frames.forEach(f => (win[Math.floor(f.t / 4)] ||= []).push(st(f.f0)));
+  for(const k in win){
+    const v = win[k].sort((a,b) => a-b);
+    if(v.length >= 10 && pct(v, 0.9) - pct(v, 0.1) < 2) flat.push(k * 4);
+  }
+  return { median: Math.round(median), range: +(pct(all, 0.9) - pct(all, 0.1)).toFixed(1),
+           flat: flat.sort((a,b) => a-b) };
+}

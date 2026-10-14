@@ -12,7 +12,7 @@ stay in the tab — except one opt-in feature, documented under [Coaching](#coac
 
 ```bash
 node serve.js     # http(s)://localhost:8137
-node test.js      # 112 checks
+node test.js      # 136 checks
 ```
 
 `serve.js` serves **HTTPS** when `localhost-cert.pem` and `localhost-key.pem`
@@ -40,13 +40,13 @@ has no dependencies and exists only to set `"type": "module"` so Node treats
 
 ## Layout
 
-Native ES modules, loaded directly by the browser. 5,019 lines total.
+Native ES modules, loaded directly by the browser. 5,498 lines total.
 
 ```text
 index.html      279   markup only
 style.css       586   every rule
 serve.js         48   dev server, port 8137
-test.js        1023   112 assertions, node:assert, no framework
+test.js        1238   136 assertions, node:assert, no framework
 mic-test.html   167   standalone transcription diagnostic
 content-ids.txt 412   ledger of content ids — see Content pools
 netlify.toml     16   deploy: copies the site into dist/, security headers
@@ -54,15 +54,16 @@ netlify.toml     16   deploy: copies the site into dist/, security headers
 src/
   dom.js          5   export const $ = id => document.getElementById(id)
   content.js    533   all text pools, every item with a permanent id
-  storage.js     58   the localStorage record, streak, dayKey, plan persistence
-  text.js       130   pure text + measurement — no DOM, no state
-  audio.js      129   mic stream, probe(), isSpeechFrame(), makeVAD()
+  storage.js     59   the localStorage record, streak, dayKey, plan persistence
+  text.js       167   pure text + measurement, cleanText(), autoBreaths() — no DOM, no state
+  audio.js      186   mic stream, probe(), isSpeechFrame(), makeVAD(), yin(), pitchStats()
   speech.js     109   Web Speech wrapper, asrProblem() messages
-  drills.js     255   DRILLS, buildRun() (pure data), analyseLanguage(), buildPlan()
+  drills.js     415   DRILLS, buildRun(), buildTextRun(), analyseLanguage(), buildPlan(),
+                       facts(), recordFor(), diction cards
   stage.js       40   stageHtml(run) — the booth's markup for one run
   scoring.js    102   band(), ramp(), fillerRate(), scoreRun(), verdict(), SCORING_VERSION
   canvas.js     126   idle wave, ribbon, tape, history sparklines
-  run.js        465   session runtime: arm, countdown, frame loop, finish
+  run.js        473   session runtime: arm, countdown, frame loop, finish
   report.js     294   post-run report, setup pills, shared UI primitives
   coach.js      270   three coaching tiers
   ui.js         365   views, router, event listeners
@@ -318,7 +319,8 @@ One `localStorage` record, key `speakeasy.v1`, read and written whole:
 {
   sessions: [{ at, drill, name, score, wpm, fillers,
                parts: { pace, filler, proj, acc, cover, var, pause },
-               promptId, reading, raw, v }],
+               promptId, reading, raw, v, secs }],
+  cards:    [{ word, twisterId, box, misses, dueAt }],
   plan:     { day, drills: [id], why: { [id]: { metric, score } }, done: [id] },
   theme:    string | null
 }
@@ -334,6 +336,34 @@ answered), `raw` (the full measurement object `scoreRun()` was given),
 recalibrated scorer can recompute old sessions from `raw` instead of trusting
 `parts`; `test.js` pins that a stored session rescores to the same number.
 Sessions from before this have none of these fields and are left as they are.
+`secs` is the run's length, which pauses-per-minute needs. `cards` are the
+diction retry cards (below).
+
+---
+
+## Built, not yet on screen
+
+Logic for four planned features (`docs/FEATURES.md`) is written and tested
+but has no UI yet — it lands with the redesign. Two of them already collect
+data, so history exists by the time the screens do.
+
+| Feature | Functions | Live today? |
+|---|---|---|
+| F1 Your own text | `cleanText()`, `autoBreaths()`, `buildTextRun()` | no |
+| F2 Progress as facts | `facts()`, `recordFor()` — need ≥6 sessions with `raw` over ≥3 days | no |
+| F4 Pitch range | `yin()`, `pitchStats()` — range in semitones, flat 4 s windows | no — not measured during runs yet, and scoring constants need calibrating on real takes |
+| F5 Diction retry | `dictionOutcome()`, `updateCards()`, `dueCards()` | **yes** — every Diction Gym run updates `cards`, and a due twister is served before a random one |
+
+Breath marks: always after `. ! ? ; :`; after a comma once the segment is 6+
+words; never more than 14 words, cutting at the last comma when there is one.
+
+Diction cards: Leitner boxes at 1/3/7/14/30 days. A miss resets to box 1; a hit
+only promotes a card that was due; passing box 5 retires it, and so do five
+misses in a row (some words the recogniser can't produce for anyone).
+
+Facts: median of the earliest third vs the latest third; a claim needs ≥15%
+relative change and a per-metric absolute minimum. Progress is listed before
+regressions, and a regression names the drill that trains it.
 
 The Anthropic API key, if you set one, lives separately under
 `speakeasy.anthropicKey`.
@@ -466,7 +496,7 @@ Don't deploy `serve.js` or the `.pem` files.
 node test.js
 ```
 
-112 assertions, `node:assert`, no framework, no dependencies. Covers filler
+136 assertions, `node:assert`, no framework, no dependencies. Covers filler
 counting, LCS accuracy, word variety, stem matching, streaks, the score at both
 extremes and its spread, every drill building a runnable stage, VAD gating and
 calibration, word-timing alignment, passage marking, projection across the real

@@ -16,6 +16,7 @@ export const store = {
       const d = JSON.parse(localStorage.getItem(KEY));
       if(!d || typeof d !== "object" || Array.isArray(d)) return {sessions:[],theme:null};
       if(!Array.isArray(d.sessions)) d.sessions = [];
+      if(!Array.isArray(d.cards)) d.cards = [];        // diction retry cards (F5)
       return d;
     }catch(e){ return {sessions:[],theme:null}; }
   },

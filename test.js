@@ -1020,4 +1020,219 @@ t("a stored session can be rescored from its raw measurements", () => {
   assert.ok(Number.isInteger(X.SCORING_VERSION) && X.SCORING_VERSION >= 1);
 });
 
+/* ── your own text (F1) ───────────────────────────────────────────────── */
+
+t("pasted text is reduced to plain sentences", () => {
+  assert.strictEqual(X.cleanText("# Title\n- **Bold** point 🎉\n1. Second | item\n> quote `code`"),
+    "Title Bold point Second item quote code");
+  assert.strictEqual(X.cleanText(""), "");
+});
+
+t("breath marks land on sentence and clause ends", () => {
+  assert.strictEqual(X.autoBreaths("Hello there. How are you today? Fine; thanks."),
+    "Hello there. | How are you today? | Fine; | thanks.");
+});
+
+t("a comma only earns a breath once the segment is long enough", () => {
+  assert.strictEqual(X.autoBreaths("Well, I think so."), "Well, I think so.", "short: no cut at the comma");
+  assert.strictEqual(X.autoBreaths("When the meeting finally started late, everyone sat down."),
+    "When the meeting finally started late, | everyone sat down.");
+});
+
+t("no segment runs past 14 words, and a forced cut prefers the last comma", () => {
+  const long = "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen";
+  const segs = X.autoBreaths(long).split(" | ");
+  assert.ok(segs.every(s => s.split(" ").length <= 14), "segment over 14 words");
+  assert.strictEqual(segs.join(" "), long, "words lost or reordered");
+  const comma = "Thank you for coming today, it really means a lot to all of us here!";
+  assert.strictEqual(X.autoBreaths(comma), "Thank you for coming today, | it really means a lot to all of us here!",
+    "should break at the comma, not strand 'here!'");
+});
+
+t("a run from your own text is a normal reading run", () => {
+  const r = X.buildTextRun("Good morning, everyone. Thank you for coming today, it really means a lot to us.", { id:"abc", title:"Toast" });
+  assert.strictEqual(r.drill, "pace");
+  assert.strictEqual(r.promptId, "text-abc");
+  assert.strictEqual(X.tokens(r.display).filter(w => w !== "|").length, X.tokens(r.target).length,
+    "display and target out of step");
+  assert.strictEqual(X.accuracy(r.target, r.target), 100);
+  assert.ok(r.dur >= 30, "short texts still get 30 seconds");
+  assert.ok(X.stageHtml(r).includes("<w>"), "stage has no matchable words");
+  assert.strictEqual(X.buildTextRun("   🎉  "), null, "nothing to read");
+  assert.deepStrictEqual(X.buildTextRun("It was basically fine, like, mostly.").crutch.sort(), ["basically","like"]);
+});
+
+/* ── pitch (F4) ───────────────────────────────────────────────────────── */
+
+const SR = 48000;
+const tone = (f, harmonics) => {
+  const a = new Float32Array(2048);
+  for(let i = 0; i < a.length; i++){
+    let s = 0;
+    for(let k = 1; k <= (harmonics || 1); k++) s += Math.sin(2*Math.PI*f*k*i/SR) / k;
+    a[i] = s * 0.3;
+  }
+  return a;
+};
+
+t("YIN finds the pitch of pure and voice-like tones across the speaking range", () => {
+  for(const f of [80, 120, 180, 260, 380]){
+    for(const h of [1, 6]){
+      const r = X.yin(tone(f, h), SR);
+      assert.ok(r && Math.abs(r.f0 - f) / f < 0.01, `${f} Hz x${h} read as ${r && r.f0}`);
+      assert.ok(r.conf > 0.85, "low confidence on a clean tone");
+    }
+  }
+});
+
+t("YIN reports nothing for noise", () => {
+  let x = 7;
+  const n = new Float32Array(2048).map(() => (x = (x * 1103515245 + 12345) % 2147483648) / 2147483648 - 0.5);
+  assert.strictEqual(X.yin(n, SR), null);
+});
+
+t("YIN refuses a pitch it cannot trust, like a voice buried in loud noise", () => {
+  let x = 7;
+  const a = tone(150).map((v, i) => v + ((x = (x * 1103515245 + 12345) % 2147483648) / 2147483648 - 0.5) * 1.2);
+  assert.strictEqual(X.yin(a, SR), null, "a guess in noise would invent pitch variation");
+});
+
+t("pitch range is measured in semitones, independent of voice", () => {
+  const frames = (notes) => notes.flatMap((f, j) => Array.from({length:20}, (_, i) => ({ t:(j*20+i)*0.05, f0:f })));
+  const flat = X.pitchStats(frames([150, 150, 150]));
+  assert.ok(flat.range < 0.5, "a constant tone has no range: " + flat.range);
+  const six = X.pitchStats(frames([150, 150 * 2 ** (6/12)]));
+  assert.ok(Math.abs(six.range - 6) < 0.5, "two notes six semitones apart: " + six.range);
+  const low = X.pitchStats(frames([90, 90 * 2 ** (6/12)]));
+  assert.ok(Math.abs(low.range - six.range) < 0.1, "a lower voice must read the same range");
+  assert.strictEqual(X.pitchStats(frames([150]).slice(0, 10)), null, "too few frames to judge");
+});
+
+t("flat stretches are found, expressive ones are not", () => {
+  const f = [];
+  for(let i = 0; i < 160; i++) f.push({ t: i * 0.05, f0: 150 });                       // 0–8 s monotone
+  for(let i = 160; i < 320; i++) f.push({ t: i * 0.05, f0: 150 * 2 ** ((i % 20 - 10) / 2.5) }); // 8–16 s varied
+  const s = X.pitchStats(f);
+  assert.deepStrictEqual(s.flat, [0, 4]);
+});
+
+/* ── diction retry (F5) ───────────────────────────────────────────────── */
+
+const D0 = Date.UTC(2026, 9, 1), DAY = 864e5;
+
+t("diction outcome splits reached words into hit and missed", () => {
+  const target = "Red lorry, yellow lorry. Red lorry, yellow lorry.";
+  const o = X.dictionOutcome("red lorry yellow lolly red lorry yellow lorry", target);
+  assert.deepStrictEqual(o.missed, ["lorry"], "missed once of four is missed");
+  assert.deepStrictEqual(o.hit.sort(), ["red", "yellow"]);
+  assert.deepStrictEqual(X.dictionOutcome("", target), { hit:[], missed:[] }, "nothing reached, nothing judged");
+});
+
+t("a missed word becomes a card due tomorrow; a miss resets it", () => {
+  let { cards } = X.updateCards([], "tw-002", { hit:[], missed:["lorry"] }, D0);
+  assert.strictEqual(cards.length, 1);
+  assert.strictEqual(cards[0].dueAt, D0 + DAY);
+  ({ cards } = X.updateCards(cards, "tw-002", { hit:["lorry"], missed:[] }, D0 + DAY));
+  assert.strictEqual(cards[0].box, 2);
+  assert.strictEqual(cards[0].dueAt, D0 + DAY + 3*DAY);
+  ({ cards } = X.updateCards(cards, "tw-002", { hit:[], missed:["lorry"] }, D0 + 2*DAY));
+  assert.strictEqual(cards[0].box, 1, "a miss goes back to box 1");
+});
+
+t("a hit only promotes a card that was due", () => {
+  let { cards } = X.updateCards([], "tw-002", { hit:[], missed:["lorry"] }, D0);
+  ({ cards } = X.updateCards(cards, "tw-002", { hit:["lorry"], missed:[] }, D0 + 3600e3));
+  assert.strictEqual(cards[0].box, 1, "same-day repeat promoted early");
+});
+
+t("cards retire after box 5, or after five misses in a row", () => {
+  let cards = [{ word:"lorry", twisterId:"tw-002", box:5, misses:0, dueAt:D0 }], retired;
+  ({ cards, retired } = X.updateCards(cards, "tw-002", { hit:["lorry"], missed:[] }, D0));
+  assert.deepStrictEqual(retired, [{ word:"lorry", why:"learned" }]);
+  assert.strictEqual(cards.length, 0);
+  cards = [];
+  for(let i = 0; i < 5; i++) ({ cards, retired } = X.updateCards(cards, "tw-009", { hit:[], missed:["sheikh's"] }, D0 + i*DAY));
+  assert.deepStrictEqual(retired, [{ word:"sheikh's", why:"recogniser" }]);
+});
+
+t("the same word in two twisters is two cards", () => {
+  let { cards } = X.updateCards([], "tw-001", { hit:[], missed:["sea"] }, D0);
+  ({ cards } = X.updateCards(cards, "tw-040", { hit:[], missed:["sea"] }, D0));
+  assert.strictEqual(cards.length, 2);
+});
+
+t("due cards come most overdue first, and Diction Gym serves that twister", () => {
+  const cards = [{ word:"a1", twisterId:"tw-003", dueAt:D0 + 2*DAY }, { word:"b1", twisterId:"tw-010", dueAt:D0 },
+                 { word:"c1", twisterId:"tw-020", dueAt:D0 + 9*DAY }];
+  assert.deepStrictEqual(X.dueCards(cards, D0 + 3*DAY).map(c => c.twisterId), ["tw-010", "tw-003"]);
+  assert.strictEqual(X.buildRun("diction", { twisterId:"tw-010" }).promptId, "tw-010");
+  assert.ok(X.buildRun("diction", { twisterId:"tw-nope" }).promptId, "unknown id falls back to random");
+});
+
+/* ── progress as facts (F2) ───────────────────────────────────────────── */
+
+const sess = (day, o) => ({ at: D0 + day*DAY, drill: o.drill || "impromptu", name: o.name || "Impromptu",
+  score: o.score ?? 60, secs: o.secs ?? 90,
+  raw: { wpm: o.wpm ?? 150, words: o.words ?? 200, goodPauses: o.pauses ?? 6,
+         f: { total: o.fillers ?? 4, hard: 0, crutch: o.fillers ?? 4 } } });
+
+t("facts stay quiet without enough history", () => {
+  assert.deepStrictEqual(X.facts([]), []);
+  const five = [0,1,2,3,4].map(d => sess(d, { fillers: d ? 1 : 20 }));
+  assert.deepStrictEqual(X.facts(five), [], "five sessions is too few");
+  const sameDay = [0,0,0,0,0,0,0,0,0].map((d, i) => sess(i * 0.01, { fillers: i < 3 ? 20 : 1 }));
+  assert.deepStrictEqual(X.facts(sameDay), [], "one afternoon is not a trend");
+  const old = [0,1,2,3,4,5,6,7,8].map(d => ({ at: D0 + d*DAY, score: d * 10, drill:"filler" }));
+  assert.deepStrictEqual(X.facts(old), [], "sessions without raw are not counted");
+});
+
+t("noisy but flat history makes no claim", () => {
+  const noisy = [0,1,2,3,4,5,6,7,8].map(d => sess(d, { fillers: [4,5,4,6,4,5,4,5,4][d], score: [60,64,58,61,63,59,62,60,61][d] }));
+  assert.deepStrictEqual(X.facts(noisy), []);
+});
+
+t("a change too small relative to its size makes no claim", () => {
+  // +6 points clears the 5-point floor but is only 7% of a score of 80
+  const h = [0,1,2,3,4,5,6,7,8].map(d => sess(d, { score: d < 3 ? 80 : 86 }));
+  assert.ok(!X.facts(h).some(f => f.metric === "score"));
+});
+
+t("a clear filler improvement is reported with its start date", () => {
+  const h = [0,1,2,3,4,5,6,7,8].map(d => sess(d, { fillers: d < 3 ? 12 : d < 6 ? 8 : 5 }));
+  const f = X.facts(h);
+  assert.strictEqual(f[0].metric, "filler");
+  assert.strictEqual(f[0].kind, "better");
+  assert.strictEqual(f[0].text, "Fillers down 58% since 1 Oct");
+});
+
+t("a regression is reported gently, with the drill that fixes it, after any progress", () => {
+  const h = [0,1,2,3,4,5,6,7,8].map(d => sess(d, { wpm: d < 3 ? 150 : 185, score: d < 3 ? 50 : 70 }));
+  const f = X.facts(h);
+  assert.strictEqual(f[0].metric, "score", "progress leads");
+  const pace = f.find(x => x.metric === "pace");
+  assert.strictEqual(pace.kind, "worse");
+  assert.strictEqual(pace.drill, "pace");
+  assert.strictEqual(pace.text, "Your pace drifted from 150 to 185 wpm since 1 Oct");
+});
+
+t("pace inside the band never counts as a change", () => {
+  const h = [0,1,2,3,4,5,6,7,8].map(d => sess(d, { wpm: d < 3 ? 140 : 162 }));
+  assert.ok(!X.facts(h).some(f => f.metric === "pace"));
+});
+
+t("a metric that appears mid-history is judged on its own points", () => {
+  const h = [0,1,2,3,4,5,6,7,8,9,10,11].map(d => sess(d, { secs: d < 6 ? 5 : 60, pauses: d < 9 ? 2 : 8 }));
+  const p = X.facts(h).find(f => f.metric === "pause");
+  assert.ok(p && p.kind === "better", "pause trend over its own six sessions");
+  assert.strictEqual(p.text, "From 2 to 8 deliberate pauses a minute since 7 Oct");
+});
+
+t("records need history, and name the drill", () => {
+  const h = [0,1,2,3,4].map(d => sess(d, { score: 60 }));
+  assert.strictEqual(X.recordFor(h.concat(sess(5, { score: 90 })).slice(1)), null, "only four earlier sessions");
+  assert.deepStrictEqual(X.recordFor(h.concat(sess(5, { score: 90 }))), { kind:"score", text:"Your best Impromptu score yet" });
+  assert.deepStrictEqual(X.recordFor(h.concat(sess(5, { score: 55, fillers: 1 }))), { kind:"filler", text:"Your lowest filler rate yet" });
+  assert.strictEqual(X.recordFor(h.concat(sess(5, { score: 55 }))), null);
+});
+
 console.log(`ok — ${n} checks passed`);

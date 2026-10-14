@@ -1,8 +1,8 @@
 /* drills.js — The six drills, local language analysis, and the daily plan.
    Speakeasy. Native ES modules, no build step: the browser loads these directly. */
 
-import { EASY_PROMPTS, ECHOES, FRAMEWORKS, HARD, PROMPTS, READINGS, STOP, TWISTERS, WORDS } from "./content.js";
-import { norm, words } from "./text.js";
+import { CRUTCH, EASY_PROMPTS, ECHOES, FRAMEWORKS, HARD, PROMPTS, READINGS, STOP, TWISTERS, WORDS } from "./content.js";
+import { autoBreaths, countFillers, norm, readStats, tokens, words } from "./text.js";
 
 /* ══ DRILLS ═══════════════════════════════════════════════════════ */
 
@@ -45,7 +45,8 @@ export const drillById = id => DRILLS.find(d=>d.id===id);
 /* Pick the material for one run. Pure data — no markup, no storage — so the
    same object can be rendered by any UI, replayed by "Run it again", and
    stored by its promptId. The booth turns it into markup (stageHtml, run.js). */
-export function buildRun(id){
+export function buildRun(id, opts){
+  opts = opts || {};
   if(id==="impromptu"){
     const p = pick(PROMPTS), f = pick(FRAMEWORKS);
     return { drill:id, promptId:p.id, dur:90, target:null, framework:f, prompt:p.x, cd:p.x };
@@ -66,7 +67,8 @@ export function buildRun(id){
       source: r.s, cd:r.t };
   }
   if(id==="diction"){
-    const t = pick(TWISTERS);
+    // a twister with words due for a retry (dueCards) beats a random one
+    const t = TWISTERS.find(x => x.id === opts.twisterId) || pick(TWISTERS);
     return { drill:id, promptId:t.id, dur:30, target:(t.x+" ").repeat(3).trim(), focus:t.f, cd:t.x };
   }
   if(id==="word"){
@@ -253,3 +255,161 @@ export function trendFor(sessions, key){
 }
 
 export const nextInPlan = p => p.drills.find(d => !p.done.includes(d)) || null;
+
+/* ══ YOUR OWN TEXT (F1) ══════════════════════════════════════════
+   A pasted talk runs through exactly the Pace & Pause machinery: the same
+   marking, coverage and diction, with breath marks placed automatically.
+   Crutch words aren't scored, as on any set passage (fillerRate's reading
+   flag) — but they are the user's own words, so the run lists them for the
+   setup screen to point out.                                           */
+
+export const TEXT_MAX_WORDS = 2000;
+
+export function buildTextRun(text, opts){
+  opts = opts || {};
+  const display = autoBreaths(text);
+  const target = display.replace(/\|/g, " ").replace(/\s+/g, " ").trim();
+  if(!words(target).length) return null;
+  const found = countFillers(target).found;
+  return { drill:"pace", promptId: opts.id ? "text-" + opts.id : null, custom:true,
+    dur: Math.max(30, Math.round(words(target).length/2.5)), target, display,
+    source: opts.title || "", cd: opts.title || "Your text",
+    crutch: Object.keys(found).filter(w => CRUTCH.includes(w)) };
+}
+
+/* ══ DICTION RETRY (F5) ══════════════════════════════════════════
+   The same sounds fail for the same person. Words that come out coral in
+   Diction Gym become cards; Leitner boxes bring them back at 1, 3, 7, 14
+   and 30 days until they come through clean. A card is a word inside a
+   specific twister — the sound depends on its neighbours.               */
+
+const DAY = 864e5;
+export const BOX_DAYS = [1, 3, 7, 14, 30];
+
+/* Which content words of a twister came through and which didn't.
+   Only words you reached count (readStats' coverage), and a word missed in
+   any of the three repetitions is missed. Stopwords are skipped: a dropped
+   "the" is the recogniser, not your consonants. */
+export function dictionOutcome(spoken, target){
+  const st = readStats(spoken, target), toks = tokens(target);
+  const hit = new Set(), missed = new Set();
+  for(let i = 0; i < st.covered; i++){
+    const w = words(toks[i])[0];
+    if(!w || w.length < 3 || STOP.has(w)) continue;
+    (st.hit[i] ? hit : missed).add(w);
+  }
+  missed.forEach(w => hit.delete(w));
+  return { hit:[...hit], missed:[...missed] };
+}
+
+/* Apply one Diction Gym result to the card set; returns { cards, retired }.
+   A miss always sends the card back to box 1. A hit only promotes a card
+   that was due — repeating the twister the same afternoon proves nothing
+   about next week. Passing box 5 retires a card; so do five misses in a
+   row, because some words the recogniser can't produce for anyone. */
+export function updateCards(cards, twisterId, outcome, now){
+  const out = (cards || []).map(c => ({...c})), retired = [];
+  const find = w => out.find(c => c.word === w && c.twisterId === twisterId);
+  for(const w of outcome.missed){
+    const c = find(w);
+    if(c){ c.box = 1; c.misses = (c.misses||0) + 1; c.dueAt = now + DAY; }
+    else out.push({ word:w, twisterId, box:1, misses:1, dueAt: now + DAY });
+  }
+  for(const w of outcome.hit){
+    const c = find(w);
+    if(!c || c.dueAt > now) continue;
+    c.misses = 0;
+    if(c.box >= BOX_DAYS.length){ retired.push({ word:w, why:"learned" }); c.gone = true; }
+    else { c.box++; c.dueAt = now + BOX_DAYS[c.box - 1] * DAY; }
+  }
+  for(const c of out) if(!c.gone && c.misses >= 5){ retired.push({ word:c.word, why:"recogniser" }); c.gone = true; }
+  return { cards: out.filter(c => !c.gone), retired };
+}
+
+/* Due cards, most overdue first. */
+export const dueCards = (cards, now) =>
+  (cards || []).filter(c => c.dueAt <= now).sort((a,b) => a.dueAt - b.dueAt);
+
+/* ══ PROGRESS AS FACTS (F2) ══════════════════════════════════════
+   "Fillers down 58% since 4 Sep" lands harder than any chart. Compares the
+   median of the earliest third of your history against the latest third —
+   medians, so one bad day can neither create nor erase a trend — and only
+   claims a change that is both relatively and absolutely real.
+   Reads the raw measurements stored since scoring v1; older sessions are
+   simply not counted.                                                   */
+
+const median = a => { const s = [...a].sort((x,y) => x-y), m = s.length >> 1;
+  return s.length % 2 ? s[m] : (s[m-1] + s[m]) / 2; };
+const shortDate = t => new Date(t).toLocaleDateString("en-GB", { day:"numeric", month:"short" });
+const offBand = w => w < 138 ? 138 - w : w > 165 ? w - 165 : 0;   // scoreRun's full-marks pace band
+const pctOf = (a, b) => Math.round(Math.abs(b - a) / Math.max(a, b) * 100);
+const fix = v => v < 10 ? v.toFixed(1).replace(/\.0$/, "") : String(Math.round(v));
+
+/* value(s) → number | null. better: which direction is good. minAbs: the
+   smallest absolute change worth mentioning. rel:false skips the 15%
+   relative test, for values that are distances rather than amounts. */
+const FACT_METRICS = {
+  filler: { drill:"filler", better:"down", minAbs:0.5,
+    value: s => s.raw.words >= 20 ? s.raw.f.total / Math.max(s.raw.words, 50) * 100 : null,
+    say: (a, b, since, worse) => worse
+      ? `Fillers crept up ${pctOf(a,b)}% since ${since}`
+      : `Fillers down ${pctOf(a,b)}% since ${since}` },
+  pace: { drill:"pace", better:"down", minAbs:5, rel:false,
+    value: s => s.raw.wpm ? offBand(s.raw.wpm) : null, show: s => s.raw.wpm,
+    say: (a, b, since, worse, from, to) => worse
+      ? `Your pace drifted from ${from} to ${to} wpm since ${since}`
+      : `Your pace settled from ${from} to ${to} wpm since ${since}` },
+  pause: { drill:"pace", better:"up", minAbs:1,
+    value: s => s.secs >= 20 ? s.raw.goodPauses / (s.secs / 60) : null,
+    say: (a, b, since, worse) => worse
+      ? `Deliberate pauses fell from ${fix(a)} to ${fix(b)} a minute since ${since}`
+      : `From ${fix(a)} to ${fix(b)} deliberate pauses a minute since ${since}` },
+  score: { drill:null, better:"up", minAbs:5,
+    value: s => s.score,
+    say: (a, b, since, worse) => worse
+      ? `Scores slipped from ${Math.round(a)} to ${Math.round(b)} since ${since}`
+      : `Your scores rose from ${Math.round(a)} to ${Math.round(b)} since ${since}` }
+};
+
+/* Up to `max` facts, biggest change first, progress before regressions.
+   Each: { metric, kind:"better"|"worse", text, drill } — a regression
+   carries the drill that trains it. */
+export function facts(sessions, max){
+  const out = [];
+  const usable = (sessions || []).filter(s => s.raw && s.raw.f);
+  for(const [k, M] of Object.entries(FACT_METRICS)){
+    const pts = usable.map(s => ({ s, v: M.value(s) })).filter(p => p.v != null && Number.isFinite(p.v));
+    if(pts.length < 6 || pts[pts.length-1].s.at - pts[0].s.at < 3 * DAY) continue;
+    const third = Math.floor(pts.length / 3);
+    const early = pts.slice(0, third), late = pts.slice(-third);
+    const a = median(early.map(p => p.v)), b = median(late.map(p => p.v));
+    const abs = Math.abs(b - a);
+    // relative to the larger side, so falling all the way to zero still counts
+    const rel = M.rel === false ? 1 : abs / Math.max(Math.abs(a), Math.abs(b));
+    if(abs < M.minAbs || rel < 0.15) continue;
+    const good = M.better === "down" ? b < a : b > a;
+    const from = M.show && Math.round(median(early.map(p => M.show(p.s))));
+    const to   = M.show && Math.round(median(late.map(p => M.show(p.s))));
+    out.push({ metric:k, kind: good ? "better" : "worse", drill: good ? null : M.drill,
+      rank: (good ? 2 : 1) + Math.min(rel, 0.99),
+      text: M.say(a, b, shortDate(early[0].s.at), !good, from, to) });
+  }
+  return out.sort((x,y) => y.rank - x.rank).slice(0, max || 3).map(({rank, ...f}) => f);
+}
+
+/* Did the latest session set a personal record? Needs 5 earlier sessions of
+   the same drill, so the first decent day isn't a "record" by default. */
+export function recordFor(sessions){
+  const all = (sessions || []).filter(s => s.raw && s.raw.f);
+  const last = all[all.length-1];
+  if(!last) return null;
+  const prior = all.slice(0, -1).filter(s => s.drill === last.drill);
+  if(prior.length < 5) return null;
+  if(last.score > Math.max(...prior.map(s => s.score)))
+    return { kind:"score", text:`Your best ${last.name} score yet` };
+  const rate = s => s.raw.words >= 20 ? s.raw.f.total / Math.max(s.raw.words, 50) : Infinity;
+  const best = Math.min(...prior.map(rate));
+  if(Number.isFinite(best) && rate(last) < best)
+    return { kind:"filler", text:"Your lowest filler rate yet" };
+  return null;
+}

@@ -128,3 +128,40 @@ export function usedWord(text, target){
 export const esc = s => String(s).replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 
 export const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+
+/* ══ YOUR OWN TEXT (F1) ═══════════════════════════════════════════ */
+
+/* Pasted text arrives with markdown, bullets, emoji and smart quotes. Reduce
+   it to plain sentences before anything tokenises it. "|" is our breath-mark
+   syntax, so a literal one in the paste would silently split the passage. */
+export function cleanText(s){
+  return String(s || "")
+    .replace(/\p{Extended_Pictographic}|\uFE0F/gu, " ")
+    .replace(/^[ \t]*(?:[-*•>]+|\d+[.)])[ \t]+/gm, "")     // bullets, numbering, quotes
+    .replace(/[#*_`~|]+/g, " ")                              // markdown emphasis, headings, code
+    .replace(/\s+/g, " ").trim();
+}
+
+/* Breath marks for a passage nobody marked by hand. Always after a sentence
+   or clause end; after a comma once the segment is long enough to need air;
+   and never more than 14 words without one — at the last comma if possible. Returns the READINGS format:
+   segments joined by " | ". */
+export function autoBreaths(text){
+  const out = [];
+  let seg = [];
+  const cut = () => { if(seg.length){ out.push(seg.join(" ")); seg = []; } };
+  for(const w of tokens(cleanText(text))){
+    seg.push(w);
+    if(/[.!?;:]["”’)]*$/.test(w)) cut();
+    else if(/,["”’)]*$/.test(w) && seg.length >= 6) cut();
+    else if(seg.length >= 14){
+      // out of air: break at the last comma if there is one, so the cut
+      // lands on a phrase boundary rather than stranding a word or two
+      const c = seg.findLastIndex((x, i) => i >= 2 && /,["”’)]*$/.test(x));
+      if(c < 0) cut();
+      else { const rest = seg.splice(c + 1); cut(); seg = rest; }
+    }
+  }
+  cut();
+  return out.join(" | ");
+}
