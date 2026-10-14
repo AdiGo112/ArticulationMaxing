@@ -1,0 +1,27 @@
+# Runs on every push and pull request. Free on GitHub Actions; no dependencies
+# to install. Node 24 matches local development (the smoke test needs Node's
+# built-in WebSocket, 22+). ubuntu-latest ships Google Chrome.
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node test.js
+
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node scripts/smoke.mjs

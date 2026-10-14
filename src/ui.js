@@ -2,7 +2,7 @@
    Speakeasy. Native ES modules, no build step: the browser loads these directly. */
 
 import { $ } from "./dom.js";
-import { readPlan, store, streak } from "./storage.js";
+import { exportBackup, mergeBackup, parseBackup, readPlan, store, streak } from "./storage.js";
 import { esc } from "./text.js";
 import { audio } from "./audio.js";
 import { listener } from "./speech.js";
@@ -357,6 +357,35 @@ $("themeBtn").onclick = () => {
   applyTheme(next);
 };
 
+
+/* ══ BACKUP ══════════════════════════════════════════════════════
+   Logic and validation live in storage.js; this is only the two buttons. */
+
+$("backupBtn").onclick = () => {
+  const d = store.read();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(exportBackup(d, Date.now()))], { type:"application/json" }));
+  a.download = `speakeasy-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  $("backupMsg").textContent = `Saved ${d.sessions.length} session${d.sessions.length === 1 ? "" : "s"}. Keep the file somewhere other than this browser.`;
+};
+$("restoreBtn").onclick = () => $("restoreFile").click();
+$("restoreFile").onchange = async e => {
+  const file = e.target.files[0];
+  e.target.value = "";                         // so choosing the same file again still fires
+  if(!file) return;
+  try{
+    const backup = parseBackup(await file.text(), DRILLS.map(d => d.id));
+    const { record, added } = mergeBackup(store.read(), backup);
+    store.write(record);
+    $("backupMsg").textContent = (added ? `Restored ${added} session${added === 1 ? "" : "s"}.` : "Nothing new — everything in that file is already here.")
+      + (backup.dropped ? ` Skipped ${backup.dropped} damaged entr${backup.dropped === 1 ? "y" : "ies"}.` : "");
+    renderSidebar(); applyRoute();
+  }catch(err){
+    $("backupMsg").textContent = err.message;
+  }
+};
 
 /* redraw whatever canvas is on screen — used by theme switch and resize */
 export function repaint(){

@@ -3,3 +3,6 @@
 # command in the README if you need it again.
 localhost-key.pem
 localhost-cert.pem
+
+# Netlify build output (netlify.toml copies the site here)
+dist/

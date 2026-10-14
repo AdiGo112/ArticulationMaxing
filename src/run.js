@@ -462,6 +462,10 @@ export async function finish(){
     // the second — the parts above are only true for the scorer that made them
     promptId: S.run.promptId || null, reading: !!S.run.target, raw: m, v: SCORING_VERSION,
     secs: Math.round(S.elapsed) });
+  // once there is history worth keeping, ask the browser not to evict it.
+  // Chrome decides silently; Firefox asks the user once.
+  if(navigator.storage?.persist && store.read().sessions.length >= 5)
+    navigator.storage.persisted().then(p => p || navigator.storage.persist()).catch(() => {});
   // diction retry: every Diction Gym run updates the cards, whether or not
   // the screen shows them yet. Without a transcript there is nothing to judge.
   if(sess.drill === "diction" && listener.supported && text){

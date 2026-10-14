@@ -122,6 +122,20 @@
       </div>
       <div id="recentWrap"></div>
     </section>
+
+    <section class="sec">
+      <div class="sechead">
+        <h2>Your data</h2>
+        <p>Your history lives only in this browser, and browsers delete it — clearing site data does, and
+          Safari does after a week without a visit. Keep a backup file; restoring it merges, never overwrites.</p>
+      </div>
+      <div class="block backup">
+        <button class="btn" id="backupBtn" type="button">Download a backup</button>
+        <button class="btn" id="restoreBtn" type="button">Restore from a backup</button>
+        <input type="file" id="restoreFile" accept=".json,application/json" hidden>
+        <p class="backupmsg" id="backupMsg" role="status" aria-live="polite"></p>
+      </div>
+    </section>
   </div>
 </section>
 

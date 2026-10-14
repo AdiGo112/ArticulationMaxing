@@ -1273,4 +1273,69 @@ t("label: the export says what it is, who spoke, and whether it is complete", ()
   assert.strictEqual(doc.consent, true);
 });
 
+/* ── backup (storage.js) ──────────────────────────────────────────────── */
+
+const IDS = X.DRILLS.map(d => d.id);
+const T0 = Date.UTC(2026, 9, 1);
+const full = (i, o) => ({ at: T0 + i * 864e5, drill: "impromptu", name: "Impromptu", score: 70, wpm: 150, fillers: 3,
+  parts: { pace: 90, filler: 80 }, promptId: "imp-001", reading: false, v: 1, secs: 90,
+  raw: { wpm: 150, words: 220, proj: 60, acc: null, f: { hard: 1, crutch: 2, total: 3, found: { um: 1 } } }, ...o });
+
+t("backup: export then parse gives the same sessions and cards back", () => {
+  const record = { sessions: [full(0), full(1)], cards: [{ word:"lorry", twisterId:"tw-002", box:2, misses:0, dueAt:T0 }], theme:"light" };
+  const text = JSON.stringify(X.exportBackup(record, T0));
+  const b = X.parseBackup(text, IDS);
+  assert.deepStrictEqual(b.sessions, record.sessions);
+  assert.deepStrictEqual(b.cards, record.cards);
+  assert.strictEqual(b.dropped, 0);
+  assert.ok(!text.includes("anthropic"), "the API key must never be in a backup");
+});
+
+t("backup: files that aren't backups are refused with a readable reason", () => {
+  assert.throws(() => X.parseBackup("not json", IDS), /isn't valid JSON/);
+  assert.throws(() => X.parseBackup(JSON.stringify({ sessions: [] }), IDS), /isn't a Speakeasy backup/);
+  assert.throws(() => X.parseBackup(JSON.stringify({ kind: X.BACKUP_KIND, version: 9 }), IDS), /newer version/);
+});
+
+t("backup: anything that doesn't look like a session is dropped, and extra fields never ride along", () => {
+  const text = JSON.stringify({ kind: X.BACKUP_KIND, version: 1, cards: [{ word: "x" }], sessions: [
+    full(0, { evil: "<script>" }),           // kept, minus the unknown field
+    full(1, { drill: "hacking" }),           // unknown drill
+    full(2, { score: 400 }),                 // impossible score
+    full(3, { at: "yesterday" }),            // not a timestamp
+    full(4, { parts: { pace: "fast" } }),    // kept, but without its bad parts
+    full(5, { raw: { wpm: 150, f: "lots" } }), // kept, but without its bad raw
+    null, 42
+  ] });
+  const b = X.parseBackup(text, IDS);
+  assert.strictEqual(b.sessions.length, 3);
+  assert.ok(!("evil" in b.sessions[0]));
+  assert.ok(!("parts" in b.sessions[1]) && "raw" in b.sessions[1]);
+  assert.ok(!("raw" in b.sessions[2]) && "parts" in b.sessions[2]);
+  assert.strictEqual(b.dropped, 5 + 1, "5 bad sessions and 1 bad card");
+});
+
+t("backup: restoring merges by time and drill, and twice changes nothing", () => {
+  const here = { sessions: [full(0), full(2)], cards: [{ word:"lorry", twisterId:"tw-002", box:3, misses:0, dueAt:T0 }], theme:"dark" };
+  const file = X.parseBackup(JSON.stringify(X.exportBackup({ sessions: [full(1), full(2)],
+    cards: [{ word:"lorry", twisterId:"tw-002", box:1, misses:2, dueAt:T0 }, { word:"sea", twisterId:"tw-001", box:1, misses:1, dueAt:T0 }] }, T0)), IDS);
+  const once = X.mergeBackup(here, file);
+  assert.strictEqual(once.added, 1);
+  assert.deepStrictEqual(once.record.sessions.map(s => s.at), [full(0).at, full(1).at, full(2).at], "sorted by time");
+  assert.strictEqual(once.record.cards.find(c => c.word === "lorry").box, 3, "the card already here wins");
+  assert.strictEqual(once.record.cards.length, 2);
+  assert.strictEqual(once.record.theme, "dark", "settings stay as they are");
+  const twice = X.mergeBackup(once.record, file);
+  assert.strictEqual(twice.added, 0);
+  assert.deepStrictEqual(twice.record, once.record);
+});
+
+t("backup: a merge keeps only the newest 200 sessions, like the store", () => {
+  const many = Array.from({ length: 250 }, (_, i) => full(i));
+  const b = X.parseBackup(JSON.stringify(X.exportBackup({ sessions: many }, T0)), IDS);
+  const m = X.mergeBackup({ sessions: [] }, b);
+  assert.strictEqual(m.record.sessions.length, 200);
+  assert.strictEqual(m.record.sessions[0].at, full(50).at);
+});
+
 console.log(`ok — ${n} checks passed`);
