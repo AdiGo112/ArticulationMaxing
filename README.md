@@ -12,7 +12,7 @@ stay in the tab — except one opt-in feature, documented under [Coaching](#coac
 
 ```bash
 node serve.js     # http(s)://localhost:8137
-node test.js      # 136 checks
+node test.js      # 140 checks
 ```
 
 `serve.js` serves **HTTPS** when `localhost-cert.pem` and `localhost-key.pem`
@@ -40,14 +40,16 @@ has no dependencies and exists only to set `"type": "module"` so Node treats
 
 ## Layout
 
-Native ES modules, loaded directly by the browser. 5,498 lines total.
+Native ES modules, loaded directly by the browser. 6,129 lines total.
 
 ```text
 index.html      279   markup only
 style.css       586   every rule
 serve.js         48   dev server, port 8137
-test.js        1238   136 assertions, node:assert, no framework
+test.js        1276   140 assertions, node:assert, no framework
 mic-test.html   167   standalone transcription diagnostic
+label.html      523   filler labelling tool for the F15 dataset (dev only)
+label.js         70   its pure helpers: peaks, quickLabel, normLabels, exportDoc
 content-ids.txt 412   ledger of content ids — see Content pools
 netlify.toml     16   deploy: copies the site into dist/, security headers
 
@@ -490,13 +492,39 @@ Don't deploy `serve.js` or the `.pem` files.
 
 ---
 
+## Labelling takes (F15 dataset)
+
+`/label.html` builds the training data for the in-browser filler detector.
+Dev only: `serve.js` serves it, `netlify.toml` never publishes it, and nothing
+leaves the page except the files you download.
+
+1. **Record** a take on the page (same mic settings as the app, 128 kbps), or
+   **open** audio files — with their `.json` to carry on labelling.
+2. **Mark** every um, uh and other hard filler: press 1 / 2 / 3 while it plays
+   to drop a label 0.35 s behind the playhead, then drag its edges to fit; or
+   drag a span and press a number. Labels autosave in the browser.
+3. Tick **Fully labelled** when every filler is marked — only complete takes can
+   teach the model what *isn't* a filler — and **consent** for donated takes.
+4. **Download** writes `take-….webm` plus `take-….json`:
+
+```js
+{ tool:"speakeasy-label/1", file, duration, sampleRate, recordedAt, prompt, promptId,
+  speaker, mic, room, consent, notes, complete,
+  counts: { um, uh, other }, labels: [{ start, end, type }] }   // seconds
+```
+
+`counts` doubles as the hand count for the Whisper filler gate (F9).
+`/label.html#demo` loads a synthetic take to try the controls.
+
+---
+
 ## Tests
 
 ```bash
 node test.js
 ```
 
-136 assertions, `node:assert`, no framework, no dependencies. Covers filler
+140 assertions, `node:assert`, no framework, no dependencies. Covers filler
 counting, LCS accuracy, word variety, stem matching, streaks, the score at both
 extremes and its spread, every drill building a runnable stage, VAD gating and
 calibration, word-timing alignment, passage marking, projection across the real

@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speakeasy — filler labelling</title>
+<style>
+  :root{--bg:#100C0A;--panel:#211A17;--line:#3D302A;--ink:#F4EDE5;--dim:#A99C92;
+    --um:#F0A93F;--uh:#FF6A47;--other:#B58CFF;--sel:#63E6C0}
+  *{box-sizing:border-box}
+  body{margin:0;padding:24px;background:var(--bg);color:var(--ink);
+    font:15px/1.55 ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  main{max-width:1180px;margin:0 auto}
+  h1{font-size:24px;margin:0 0 4px}
+  h2{font-size:15px;margin:0 0 10px;color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+  p.sub{color:var(--dim);margin:0 0 20px}
+  .row{display:flex;gap:16px;flex-wrap:wrap}
+  .panel{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px 16px;margin-bottom:16px}
+  .grow{flex:1 1 320px}
+  button,select,input[type=text]{font:inherit;color:var(--ink);background:#00000030;border:1px solid var(--line);
+    border-radius:8px;padding:7px 12px}
+  button{cursor:pointer;font-weight:600}
+  button.primary{background:var(--um);color:#180F03;border-color:transparent}
+  button.rec{background:var(--uh);color:#1a0702;border-color:transparent}
+  button:disabled{opacity:.4;cursor:default}
+  label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--dim)}
+  .prompt{font-size:18px;margin:6px 0 12px;min-height:2.4em}
+  .mono{font-family:ui-monospace,Menlo,monospace;font-size:13px}
+  #takes{display:flex;gap:6px;flex-wrap:wrap}
+  #takes button{font-weight:500;font-size:13px}
+  #takes button.on{border-color:var(--sel);color:var(--sel)}
+  #takes button .n{color:var(--dim);margin-left:6px}
+  .wave{position:relative}
+  canvas{display:block;width:100%;border-radius:8px;background:#161110;touch-action:none}
+  #main{height:220px;cursor:crosshair}
+  #over{height:40px;margin-top:8px;cursor:pointer}
+  .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  .counts span{margin-right:14px}
+  .k{display:inline-block;min-width:1.6em;text-align:center;border:1px solid var(--line);border-radius:5px;
+    padding:0 5px;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--ink)}
+  .keys{color:var(--dim);font-size:13px;line-height:2}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  td,th{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left}
+  tr.on td{background:#63E6C015}
+  .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+  #empty{color:var(--dim);padding:40px 0;text-align:center}
+  .hide{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<h1>Filler labelling</h1>
+<p class="sub">Builds the dataset for the in-browser filler detector (F15 in <code>docs/FEATURES.md</code>).
+Record or open takes, mark every <b>um</b>, <b>uh</b> and other hard filler, then export.
+Dev tool — it is never deployed, and nothing leaves this page except the files you download.</p>
+
+<div class="row">
+  <div class="panel grow">
+    <h2>Record a take</h2>
+    <div class="prompt" id="prompt"></div>
+    <div class="bar" style="margin-top:0">
+      <button id="recBtn" class="rec">● Record</button>
+      <button id="newPrompt">Another prompt</button>
+      <span class="mono" id="recClock"></span>
+    </div>
+    <p class="keys" style="margin:10px 0 0">Same mic settings as the app (echo cancellation and noise suppression on,
+    auto-gain off), so the training audio sounds like what the detector will hear. Talk naturally — don't
+    perform fillers.</p>
+  </div>
+  <div class="panel grow">
+    <h2>Or open files</h2>
+    <p class="keys" style="margin:0 0 10px">Audio files, plus their <code>.json</code> labels to carry on where you left off.</p>
+    <input type="file" id="files" multiple accept="audio/*,.json">
+    <h2 style="margin-top:16px">About the speaker</h2>
+    <div class="row" style="gap:10px">
+      <label class="f">Speaker id<input type="text" id="speaker" placeholder="e.g. s01" size="8"></label>
+      <label class="f">Mic<select id="mic"><option>laptop</option><option>headset</option><option>phone</option><option>external</option></select></label>
+      <label class="f">Room<select id="room"><option>quiet</option><option>some noise</option><option>noisy</option></select></label>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div id="takes"></div>
+  <div id="empty">No take loaded. Record one, or open audio files.</div>
+  <div id="editor" class="hide">
+    <div class="wave"><canvas id="main"></canvas><canvas id="over"></canvas></div>
+    <div class="bar">
+      <button id="playBtn" class="primary">▶ Play</button>
+      <button id="zoomOut">−</button><button id="zoomIn">+</button>
+      <span class="mono" id="time">0:00.0</span>
+      <span style="flex:1"></span>
+      <span class="counts mono" id="counts"></span>
+    </div>
+    <div class="bar">
+      <label class="f" style="flex-direction:row;align-items:center;gap:6px;color:var(--ink)"><input type="checkbox" id="complete"> Fully labelled — every filler in this take is marked</label>
+      <label class="f" style="flex-direction:row;align-items:center;gap:6px;color:var(--ink)"><input type="checkbox" id="consent"> Speaker agreed to this take being used for training</label>
+      <input type="text" id="notes" placeholder="Notes" style="flex:1;min-width:160px">
+    </div>
+    <div class="bar">
+      <button id="saveBtn" class="primary">Download audio + labels</button>
+      <button id="saveAllBtn">Download all takes</button>
+      <button id="dropBtn">Remove take</button>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="panel grow">
+    <h2>Labels</h2>
+    <table><thead><tr><th>Type</th><th>Start</th><th>End</th><th>Length</th><th></th></tr></thead>
+      <tbody id="list"></tbody></table>
+  </div>
+  <div class="panel" style="flex:0 1 380px">
+    <h2>Keys</h2>
+    <div class="keys">
+      <span class="k">Space</span> play / pause<br>
+      <span class="k">1</span> <span class="sw" style="background:var(--um)"></span>um &nbsp;
+      <span class="k">2</span> <span class="sw" style="background:var(--uh)"></span>uh &nbsp;
+      <span class="k">3</span> <span class="sw" style="background:var(--other)"></span>other (er, ah, hmm)<br>
+      &nbsp;&nbsp;while playing: drops a label just behind the playhead<br>
+      &nbsp;&nbsp;with a selection: labels it · with a label selected: retypes it<br>
+      Drag on the wave to select · drag a label's edge to adjust<br>
+      Click a label to select it · <span class="k">Del</span> removes it · <span class="k">L</span> plays it<br>
+      <span class="k">←</span><span class="k">→</span> nudge 0.5 s (<span class="k">Shift</span> 5 s) ·
+      <span class="k">Z</span><span class="k">X</span> zoom · wheel scrolls, <span class="k">Ctrl</span>+wheel zooms ·
+      <span class="k">Esc</span> clear
+    </div>
+  </div>
+</div>
+</main>
+
+<script type="module">
+import { PROMPTS } from "./src/content.js";
+import { TYPES, peaks, quickLabel, normLabels, counts, exportDoc, MIN_LEN } from "./label.js";
+
+const $ = id => document.getElementById(id);
+const COLORS = { um:"--um", uh:"--uh", other:"--other" };
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmt = (t, d = 1) => `${Math.floor(t/60)}:${(t%60).toFixed(d).padStart(3 + d,"0")}`;
+const store = { get(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } },
+                set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} } };
+
+/* ── state ─────────────────────────────────────────────────────────── */
+const takes = [];
+let cur = null;                         // current take
+let view = { start:0, pps:80 };         // window start (s), pixels per second
+let sel = null;                         // { a, b } selection in seconds
+let selLabel = -1;                      // index into cur.labels
+let drag = null;
+const audio = new Audio();
+// decoding only — an offline context needs no output device and no user gesture.
+// decodeAudioData resamples to this rate; label times are in seconds, so that is harmless.
+const actx = () => new OfflineAudioContext(1, 1, 48000);
+
+/* ── speaker metadata, remembered between sessions ─────────────────── */
+const META_KEY = "speakeasy.label.meta";
+const savedMeta = store.get(META_KEY) || {};
+["speaker","mic","room"].forEach(k => {
+  if(savedMeta[k]) $(k).value = savedMeta[k];
+  $(k).onchange = () => { savedMeta[k] = $(k).value; store.set(META_KEY, savedMeta); };
+});
+const metaNow = () => ({ speaker:$("speaker").value.trim(), mic:$("mic").value, room:$("room").value });
+
+/* ── prompts ───────────────────────────────────────────────────────── */
+let prompt;
+const newPrompt = () => { prompt = PROMPTS[Math.floor(Math.random()*PROMPTS.length)]; $("prompt").textContent = prompt.x; };
+$("newPrompt").onclick = newPrompt;
+newPrompt();
+
+/* ── recording ─────────────────────────────────────────────────────── */
+let rec = null, recT0 = 0, recTimer = 0;
+$("recBtn").onclick = async () => {
+  if(rec){ rec.stop(); return; }
+  let stream;
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio:{ echoCancellation:true, noiseSuppression:true, autoGainControl:false } });
+  }catch(e){ alert("Microphone unavailable: " + e.message); return; }
+  const mime = ["audio/webm;codecs=opus","audio/webm","audio/mp4"].find(t => MediaRecorder.isTypeSupported(t));
+  // full quality for training data; the app's 16 kbps is a storage decision, not this one
+  rec = new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 128000 });
+  const chunks = [], p = prompt;
+  rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+  rec.onstop = async () => {
+    stream.getTracks().forEach(t => t.stop());
+    clearInterval(recTimer); $("recClock").textContent = "";
+    $("recBtn").textContent = "● Record"; rec = null;
+    const blob = new Blob(chunks, { type: chunks[0]?.type || mime });
+    const stamp = new Date().toISOString().replace(/[-:]/g,"").replace("T","-").slice(0,15);
+    const ext = blob.type.includes("mp4") ? "m4a" : "webm";
+    await addTake(blob, `take-${stamp}.${ext}`, { recordedAt:new Date().toISOString(), prompt:p.x, promptId:p.id, fresh:true });
+    newPrompt();
+  };
+  rec.start(250);
+  recT0 = performance.now();
+  $("recBtn").textContent = "■ Stop";
+  recTimer = setInterval(() => $("recClock").textContent = fmt((performance.now()-recT0)/1000), 100);
+};
+
+/* ── opening files ─────────────────────────────────────────────────── */
+$("files").onchange = async e => {
+  const files = [...e.target.files];
+  const docs = {};
+  for(const f of files.filter(f => f.name.endsWith(".json"))){
+    try{ const d = JSON.parse(await f.text()); if(d.file) docs[d.file] = d; }catch(err){ alert(f.name + ": not a labels file"); }
+  }
+  for(const f of files.filter(f => !f.name.endsWith(".json"))) await addTake(f, f.name, { doc: docs[f.name] });
+  e.target.value = "";
+};
+
+async function addTake(blob, name, o){
+  let buffer = o.buffer;
+  if(!buffer) try{ buffer = await actx().decodeAudioData(await blob.arrayBuffer()); }
+  catch(e){ alert(name + ": could not decode this audio"); return; }
+  const take = { name, blob, url: URL.createObjectURL(blob), buffer, data: buffer.getChannelData(0),
+    duration: buffer.duration, sampleRate: buffer.sampleRate, recordedAt: o.recordedAt || null,
+    prompt: o.prompt || null, promptId: o.promptId || null, fresh: !!o.fresh,
+    labels: [], meta: { ...metaNow(), consent:false, notes:"", complete:false } };
+  // labels: the opened .json wins, then autosave, then nothing
+  const saved = o.doc || store.get(autoKey(take));
+  if(saved){
+    take.labels = normLabels(saved.labels, take.duration);
+    for(const k of ["speaker","mic","room","consent","notes","complete"]) if(k in saved) take.meta[k] = saved[k];
+    for(const k of ["prompt","promptId","recordedAt"]) if(saved[k]) take[k] = saved[k];
+  }
+  take.overview = peaks(take.data, 0, take.data.length, 1200);
+  takes.push(take);
+  open(take);
+}
+const autoKey = t => `speakeasy.label.${t.name}:${t.duration.toFixed(2)}`;
+const autosave = () => { if(cur) store.set(autoKey(cur), exportDoc(cur)); };
+
+/* ── take switching ────────────────────────────────────────────────── */
+function open(take){
+  audio.pause();
+  cur = take; sel = null; selLabel = -1;
+  audio.src = take.url;
+  view = { start:0, pps: Math.max(20, mainW() / Math.min(take.duration, 15)) };
+  $("complete").checked = take.meta.complete; $("consent").checked = take.meta.consent; $("notes").value = take.meta.notes;
+  renderAll();
+}
+$("complete").onchange = () => { cur.meta.complete = $("complete").checked; autosave(); renderTakes(); };
+$("consent").onchange  = () => { cur.meta.consent  = $("consent").checked;  autosave(); };
+$("notes").oninput     = () => { cur.meta.notes    = $("notes").value;      autosave(); };
+$("dropBtn").onclick = () => {
+  if(!cur) return;
+  if(cur.fresh && !confirm("This take was recorded here and hasn't been downloaded. Remove it anyway?")) return;
+  audio.pause(); URL.revokeObjectURL(cur.url);
+  takes.splice(takes.indexOf(cur), 1);
+  cur = null;
+  takes.length ? open(takes[takes.length-1]) : renderAll();
+};
+
+function renderTakes(){
+  $("takes").innerHTML = "";
+  takes.forEach(t => {
+    const b = document.createElement("button");
+    b.className = t === cur ? "on" : "";
+    b.textContent = (t.meta.complete ? "✓ " : "") + t.name;
+    const n = document.createElement("span"); n.className = "n"; n.textContent = t.labels.length;
+    b.append(n);
+    b.onclick = () => open(t);
+    $("takes").append(b);
+  });
+  $("empty").classList.toggle("hide", !!cur);
+  $("editor").classList.toggle("hide", !cur);
+}
+
+/* ── geometry ──────────────────────────────────────────────────────── */
+const mainW = () => $("main").clientWidth || 1000;
+const viewDur = () => mainW() / view.pps;
+const xToT = x => view.start + x / view.pps;
+const tToX = t => (t - view.start) * view.pps;
+function clampView(){
+  view.pps = Math.max(mainW() / Math.max(cur.duration, 1), Math.min(2000, view.pps));
+  view.start = Math.max(0, Math.min(view.start, cur.duration - viewDur()));
+}
+function zoom(f, aroundT){
+  const t = aroundT ?? (audio.paused ? view.start + viewDur()/2 : audio.currentTime);
+  const x = tToX(t);
+  view.pps *= f;
+  view.start = t - x / view.pps;
+  clampView(); draw();
+}
+$("zoomIn").onclick = () => zoom(1.6);
+$("zoomOut").onclick = () => zoom(1/1.6);
+
+/* ── drawing ───────────────────────────────────────────────────────── */
+function sizeCanvas(c){
+  const r = devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
+  if(c.width !== Math.round(w*r) || c.height !== Math.round(h*r)){ c.width = Math.round(w*r); c.height = Math.round(h*r); }
+  const g = c.getContext("2d"); g.setTransform(r,0,0,r,0,0);
+  return [g, w, h];
+}
+function drawWave(g, pk, cols, h, color){
+  g.fillStyle = color;
+  const mid = h/2;
+  for(let c = 0; c < cols; c++){
+    const lo = pk[2*c], hi = pk[2*c+1];
+    g.fillRect(c, mid - hi*mid*0.95, 1, Math.max(1, (hi-lo)*mid*0.95));
+  }
+}
+function draw(){
+  if(!cur) return;
+  clampView();
+  const [g, w, h] = sizeCanvas($("main"));
+  g.clearRect(0,0,w,h);
+  // seconds grid
+  const step = view.pps > 300 ? 0.5 : view.pps > 60 ? 1 : view.pps > 15 ? 5 : 10;
+  g.fillStyle = cssv("--line"); g.font = "11px ui-monospace,monospace";
+  for(let t = Math.ceil(view.start/step)*step; t < view.start + viewDur(); t += step){
+    const x = tToX(t); g.fillRect(x, 0, 1, h);
+    g.fillStyle = cssv("--dim"); g.fillText(fmt(t), x + 3, 12); g.fillStyle = cssv("--line");
+  }
+  // labels
+  cur.labels.forEach((l, i) => {
+    const x0 = tToX(l.start), x1 = tToX(l.end);
+    if(x1 < 0 || x0 > w) return;
+    g.fillStyle = cssv(COLORS[l.type]) + (i === selLabel ? "66" : "33");
+    g.fillRect(x0, 16, x1-x0, h-16);
+    g.fillStyle = cssv(COLORS[l.type]);
+    g.fillRect(x0, 16, 2, h-16); g.fillRect(x1-2, 16, 2, h-16);
+    g.fillText(l.type, x0 + 4, 30);
+  });
+  // selection
+  if(sel){
+    g.fillStyle = cssv("--sel") + "33";
+    g.fillRect(tToX(Math.min(sel.a, sel.b)), 16, Math.abs(sel.b-sel.a)*view.pps, h-16);
+  }
+  const a = view.start * cur.sampleRate, b = (view.start + viewDur()) * cur.sampleRate;
+  drawWave(g, peaks(cur.data, a, b, Math.floor(w)), Math.floor(w), h, cssv("--ink") + "cc");
+  // playhead
+  g.fillStyle = cssv("--sel"); g.fillRect(tToX(audio.currentTime), 0, 2, h);
+
+  // overview
+  const [o, ow, oh] = sizeCanvas($("over"));
+  o.clearRect(0,0,ow,oh);
+  const scale = ow / 1200;
+  o.save(); o.scale(scale, 1); drawWave(o, cur.overview, 1200, oh, cssv("--dim")); o.restore();
+  cur.labels.forEach(l => { o.fillStyle = cssv(COLORS[l.type]); o.fillRect(l.start/cur.duration*ow, 0, Math.max(2,(l.end-l.start)/cur.duration*ow), oh); });
+  o.strokeStyle = cssv("--sel"); o.lineWidth = 1.5;
+  o.strokeRect(view.start/cur.duration*ow, 1, viewDur()/cur.duration*ow, oh-2);
+  o.fillStyle = cssv("--sel"); o.fillRect(audio.currentTime/cur.duration*ow, 0, 1.5, oh);
+
+  $("time").textContent = `${fmt(audio.currentTime)} / ${fmt(cur.duration)}`;
+}
+function renderList(){
+  const tb = $("list"); tb.innerHTML = "";
+  cur?.labels.forEach((l, i) => {
+    const tr = document.createElement("tr");
+    if(i === selLabel) tr.className = "on";
+    tr.innerHTML = `<td><span class="sw" style="background:var(${COLORS[l.type]})"></span>${l.type}</td>
+      <td class="mono">${fmt(l.start, 2)}</td><td class="mono">${fmt(l.end, 2)}</td>
+      <td class="mono">${Math.round((l.end-l.start)*1000)} ms</td><td><button>▶</button></td>`;
+    tr.onclick = () => { selectLabel(i, true); };
+    tr.querySelector("button").onclick = ev => { ev.stopPropagation(); selectLabel(i, true); playSpan(l.start, l.end); };
+    tb.append(tr);
+  });
+  const c = cur ? counts(cur.labels) : {};
+  $("counts").innerHTML = cur ? TYPES.map(t => `<span><span class="sw" style="background:var(${COLORS[t]})"></span>${t} ${c[t]}</span>`).join("") : "";
+}
+function renderAll(){ renderTakes(); renderList(); draw(); }
+addEventListener("resize", draw);
+
+/* ── labels ────────────────────────────────────────────────────────── */
+function commit(){                       // after any label change
+  const keep = cur.labels[selLabel];
+  cur.labels = normLabels(cur.labels, cur.duration);
+  selLabel = keep ? cur.labels.findIndex(l => l.start === Math.round(keep.start*1000)/1000 && l.type === keep.type) : -1;
+  autosave(); renderTakes(); renderList(); draw();
+}
+function selectLabel(i, scroll){
+  selLabel = i; sel = null;
+  const l = cur.labels[i];
+  if(l && scroll && (l.start < view.start || l.end > view.start + viewDur())) view.start = l.start - viewDur()/3;
+  renderList(); draw();
+}
+function setType(type){
+  if(sel && Math.abs(sel.b - sel.a) >= MIN_LEN){
+    cur.labels.push({ start:Math.min(sel.a, sel.b), end:Math.max(sel.a, sel.b), type });
+    selLabel = cur.labels.length - 1; sel = null;
+  }else if(selLabel >= 0 && audio.paused){
+    cur.labels[selLabel].type = type;
+  }else{
+    cur.labels.push(quickLabel(audio.currentTime, type, cur.duration));
+    selLabel = cur.labels.length - 1;
+  }
+  commit();
+}
+
+/* ── playback ──────────────────────────────────────────────────────── */
+let stopAt = null;
+function playSpan(a, b){ audio.currentTime = Math.max(0, a - 0.3); stopAt = b + 0.3; audio.play(); }
+function toggle(){ if(audio.paused){ stopAt = null; audio.play(); } else audio.pause(); }
+$("playBtn").onclick = toggle;
+audio.onplay = () => { $("playBtn").textContent = "❚❚ Pause"; tick(); };
+audio.onpause = () => { $("playBtn").textContent = "▶ Play"; draw(); };
+function tick(){
+  if(audio.paused || !cur) return;
+  if(stopAt != null && audio.currentTime >= stopAt){ audio.pause(); stopAt = null; }
+  // follow the playhead
+  if(audio.currentTime > view.start + viewDur() * 0.9 || audio.currentTime < view.start) view.start = audio.currentTime - viewDur() * 0.1;
+  draw();
+  requestAnimationFrame(tick);
+}
+
+/* ── mouse on the main wave ────────────────────────────────────────── */
+const main = $("main");
+const hitEdge = x => {
+  for(let i = cur.labels.length - 1; i >= 0; i--){
+    const l = cur.labels[i];
+    if(Math.abs(tToX(l.start) - x) < 6) return { i, edge:"start" };
+    if(Math.abs(tToX(l.end) - x) < 6) return { i, edge:"end" };
+  }
+  return null;
+};
+const hitLabel = x => cur.labels.findIndex(l => tToX(l.start) <= x && x <= tToX(l.end));
+main.onpointermove = e => {
+  if(!cur) return;
+  const x = e.offsetX;
+  if(drag?.edge){
+    cur.labels[drag.i][drag.edge] = Math.max(0, Math.min(cur.duration, xToT(x)));
+    draw(); return;
+  }
+  if(drag?.sel){ sel.b = Math.max(0, Math.min(cur.duration, xToT(x))); if(Math.abs(x - drag.x0) > 3) drag.moved = true; draw(); return; }
+  main.style.cursor = hitEdge(x) ? "ew-resize" : "crosshair";
+};
+main.onpointerdown = e => {
+  if(!cur) return;
+  main.setPointerCapture(e.pointerId);
+  const x = e.offsetX, edge = hitEdge(x);
+  if(edge){ drag = edge; selLabel = edge.i; return; }
+  const t = xToT(x);
+  drag = { sel:true, x0:x, moved:false, t };
+  sel = { a:t, b:t };
+};
+main.onpointerup = e => {
+  if(!drag) return;
+  if(drag.edge){ drag = null; commit(); return; }
+  if(!drag.moved){
+    sel = null;
+    const i = hitLabel(e.offsetX);
+    if(i >= 0) selectLabel(i);
+    else { selLabel = -1; audio.currentTime = drag.t; renderList(); draw(); }
+  }
+  drag = null;
+};
+main.onwheel = e => {
+  if(!cur) return;
+  e.preventDefault();
+  if(e.ctrlKey || e.metaKey) zoom(e.deltaY < 0 ? 1.25 : 0.8, xToT(e.offsetX));
+  else { view.start += (e.deltaX || e.deltaY) / view.pps; draw(); }
+};
+$("over").onpointerdown = e => {
+  if(!cur) return;
+  const t = e.offsetX / $("over").clientWidth * cur.duration;
+  view.start = t - viewDur()/2; audio.currentTime = t; draw();
+};
+
+/* ── keys ──────────────────────────────────────────────────────────── */
+addEventListener("keydown", e => {
+  if(!cur || e.target.matches("input[type=text], select")) return;
+  const k = e.key;
+  if(k === " "){ e.preventDefault(); toggle(); }
+  else if(k === "1" || k === "2" || k === "3") setType(TYPES[+k - 1]);
+  else if((k === "Delete" || k === "Backspace") && selLabel >= 0){ cur.labels.splice(selLabel, 1); selLabel = -1; commit(); }
+  else if(k === "l" || k === "L"){
+    const l = cur.labels[selLabel];
+    if(l) playSpan(l.start, l.end); else if(sel) playSpan(Math.min(sel.a, sel.b), Math.max(sel.a, sel.b));
+  }
+  else if(k === "ArrowLeft" || k === "ArrowRight"){
+    e.preventDefault();
+    audio.currentTime = Math.max(0, Math.min(cur.duration, audio.currentTime + (k === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 5 : 0.5)));
+    if(audio.currentTime < view.start || audio.currentTime > view.start + viewDur()) view.start = audio.currentTime - viewDur()/2;
+    draw();
+  }
+  else if(k === "z" || k === "Z") zoom(1.6);
+  else if(k === "x" || k === "X") zoom(1/1.6);
+  else if(k === "Escape"){ sel = null; selLabel = -1; renderList(); draw(); }
+});
+
+/* ── export ────────────────────────────────────────────────────────── */
+function download(blob, name){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function saveTake(t){
+  const base = t.name.replace(/\.[^.]+$/, "");
+  download(new Blob([JSON.stringify(exportDoc(t), null, 2)], { type:"application/json" }), base + ".json");
+  if(t.fresh){ download(t.blob, t.name); t.fresh = false; }   // opened files already exist on disk
+}
+$("saveBtn").onclick = () => cur && saveTake(cur);
+$("saveAllBtn").onclick = () => takes.forEach((t, i) => setTimeout(() => saveTake(t), i * 400));
+addEventListener("beforeunload", e => { if(takes.some(t => t.fresh)){ e.preventDefault(); e.returnValue = ""; } });
+
+renderAll();
+
+/* #demo: a synthetic take (tone bursts as "speech", three labels) to try the
+   page — and to check it headless — without recording anything. */
+if(location.hash === "#demo"){
+  const sr = 16000, n = sr * 12, pcm = new Int16Array(n);
+  for(let i = 0; i < n; i++){
+    const t = i / sr, on = Math.sin(t * 2.1) > -0.2;
+    pcm[i] = on ? Math.sin(2 * Math.PI * (120 + 30 * Math.sin(t)) * t) * 9000 * (0.5 + 0.5 * Math.sin(t * 9)) : 0;
+  }
+  const wav = new DataView(new ArrayBuffer(44 + n * 2));
+  const str = (o, s) => [...s].forEach((c, i) => wav.setUint8(o + i, c.charCodeAt(0)));
+  str(0, "RIFF"); wav.setUint32(4, 36 + n * 2, true); str(8, "WAVEfmt "); wav.setUint32(16, 16, true);
+  wav.setUint16(20, 1, true); wav.setUint16(22, 1, true); wav.setUint32(24, sr, true); wav.setUint32(28, sr * 2, true);
+  wav.setUint16(32, 2, true); wav.setUint16(34, 16, true); str(36, "data"); wav.setUint32(40, n * 2, true);
+  pcm.forEach((v, i) => wav.setInt16(44 + i * 2, v, true));
+  // built directly rather than decoded: headless Chrome never resolves decodeAudioData
+  const buffer = new AudioBuffer({ length:n, sampleRate:sr, numberOfChannels:1 });
+  buffer.getChannelData(0).set(Float32Array.from(pcm, v => v / 32768));
+  addTake(new Blob([wav], { type:"audio/wav" }), "demo.wav", { buffer, doc: { file:"demo.wav", labels:[
+    { start:1.2, end:1.6, type:"um" }, { start:4.05, end:4.4, type:"uh" }, { start:8.3, end:8.9, type:"other" }] } });
+}
+</script>
+</body>
+</html>

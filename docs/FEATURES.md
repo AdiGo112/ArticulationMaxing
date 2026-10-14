@@ -417,8 +417,8 @@ licensed speech (e.g. LibriSpeech, CC BY 4.0) for the "other speech" class.
 **Training ($0).** PyTorch on Kaggle (≈30 free GPU hrs/week) or Colab free. Notebook + labelling
 script live in `models/filler/` in the repo; weights published on Hugging Face (free CDN), versioned.
 
-**Labelling tool.** A dev-only page in the app: plays a take, shows the tape, click to mark
-um/uh spans, exports JSON. Reuses the existing tape and playback.
+**Labelling tool.** Built: `label.html` (dev only, see README → Labelling takes). Records or opens
+takes, marks um/uh/other spans on a zoomable waveform, exports audio + JSON per take.
 
 **Evaluation gate (blocking).**
 - Held-out set of ≥ 40 takes from **different speakers** than training.
