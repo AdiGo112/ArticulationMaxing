@@ -2,11 +2,11 @@
    Speakeasy. Native ES modules, no build step: the browser loads these directly. */
 
 import { $ } from "./dom.js";
-import { store, streak } from "./storage.js";
+import { readPlan, store, streak } from "./storage.js";
 import { esc } from "./text.js";
 import { audio } from "./audio.js";
 import { listener } from "./speech.js";
-import { DRILLS, METRIC_NAME, drillById, nextInPlan, readPlan, trendFor } from "./drills.js";
+import { DRILLS, METRIC_NAME, drillById, nextInPlan, trendFor } from "./drills.js";
 import { css, drawHistory, drawTape } from "./canvas.js";
 import { S, armCancel, begin, finish, newRun, view } from "./run.js";
 import { reveal, scoreColor } from "./report.js";

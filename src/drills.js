@@ -2,8 +2,7 @@
    Speakeasy. Native ES modules, no build step: the browser loads these directly. */
 
 import { EASY_PROMPTS, ECHOES, FRAMEWORKS, HARD, PROMPTS, READINGS, STOP, TWISTERS, WORDS } from "./content.js";
-import { dayKey, store } from "./storage.js";
-import { esc, norm, words } from "./text.js";
+import { norm, words } from "./text.js";
 
 /* ══ DRILLS ═══════════════════════════════════════════════════════ */
 
@@ -43,66 +42,40 @@ export const DRILLS = [
 ];
 export const drillById = id => DRILLS.find(d=>d.id===id);
 
-/* Build the stage for one run. Returns {html, target, rail, dur, speak} */
+/* Pick the material for one run. Pure data — no markup, no storage — so the
+   same object can be rendered by any UI, replayed by "Run it again", and
+   stored by its promptId. The booth turns it into markup (stageHtml, run.js). */
 export function buildRun(id){
   if(id==="impromptu"){
     const p = pick(PROMPTS), f = pick(FRAMEWORKS);
-    return { dur:90, target:null, framework:f,
-      html:`<div class="kick eyebrow">Impromptu · ${esc(f.name)}</div>
-            <div class="big">${esc(p)}</div>
-            <div class="def">${esc(f.why)}</div>
-            <div class="rail">${f.steps.map((s,i)=>
-              `<div class="step" data-i="${i}"><div class="sn">${String(i+1).padStart(2,"0")}</div>
-               <div class="st">${esc(s.t)}</div><div class="sh">${esc(s.h)}</div></div>`).join("")}</div>`,
-      cd:`${p}` };
+    return { drill:id, promptId:p.id, dur:90, target:null, framework:f, prompt:p.x, cd:p.x };
   }
   if(id==="filler"){
     // an easy topic on purpose: see EASY_PROMPTS
     const p = pick(EASY_PROMPTS);
-    return { dur:60, target:null,
-      html:`<div class="kick eyebrow">Filler Hunt · 60 seconds · target zero</div>
-            <div class="big">${esc(p)}</div>
-            <div class="def">Nothing to work out here — you already know the answer. Just keep talking for the full minute. Only fillers and pauses are scored; the content is not.</div>`,
-      cd:p };
+    return { drill:id, promptId:p.id, dur:60, target:null, prompt:p.x, cd:p.x };
   }
   if(id==="pace"){
     const r = pick(READINGS);
     const target = r.x.replace(/\|/g," ");
-    const html = r.x.split("|").map(seg =>
-      seg.trim().split(/\s+/).filter(Boolean).map(w=>`<w>${esc(w)}</w>`).join(" ")
-    ).join(' <span class="brk">‖</span> ');
     // ~2.5 words a second is the middle of the target band. The floor is the
     // point of the drill: pace drift and breath control do not show up in a
     // twenty-second read, however tidy that read is.
-    return { dur: Math.max(60, Math.round(words(target).length/2.5)), target,
+    return { drill:id, promptId:r.id, dur: Math.max(60, Math.round(words(target).length/2.5)), target,
       display: r.x,                       // keeps the "|" breath marks for the report
-      html:`<div class="kick eyebrow">Read aloud${r.s?" · "+esc(r.s):""}</div>
-            <div class="read">${html}</div>`,
-      cd:r.t };
+      source: r.s, cd:r.t };
   }
   if(id==="diction"){
     const t = pick(TWISTERS);
-    const target = (t.x+" ").repeat(3).trim();
-    return { dur:30, target,
-      html:`<div class="kick eyebrow">Diction · ${esc(t.f)} · three times through</div>
-            <div class="read">${target.split(" ").map(w=>`<w>${esc(w)}</w>`).join(" ")}</div>
-            <div class="def">Say it three times without a stumble. Red words are ones the recogniser couldn’t make out.</div>`,
-      cd:t.x };
+    return { drill:id, promptId:t.id, dur:30, target:(t.x+" ").repeat(3).trim(), focus:t.f, cd:t.x };
   }
   if(id==="word"){
     const w = pick(WORDS);
-    return { dur:35, target:null, requireWord:w.w,
-      html:`<div class="kick eyebrow">Word Forge</div>
-            <div class="big">${esc(w.w)}</div>
-            <div class="def">${esc(w.d)}<br><i>e.g. &ldquo;${esc(w.e)}&rdquo;</i></div>`,
+    return { drill:id, promptId:w.id, dur:35, target:null, requireWord:w.w, def:w.d, example:w.e,
       cd:`${w.w} — ${w.d}` };
   }
   const line = pick(ECHOES);
-  return { dur:22, target:line, speak:line,
-    html:`<div class="kick eyebrow">Echo · listen, then repeat</div>
-          <div class="read">${line.split(" ").map(w=>`<w>${esc(w)}</w>`).join(" ")}</div>
-          <div class="def">Match the rhythm and the stress, not just the words.</div>`,
-    cd:"Listen first" };
+  return { drill:"echo", promptId:line.id, dur:22, target:line.x, speak:line.x, cd:"Listen first" };
 }
 
 /* ══ LOCAL LANGUAGE ANALYSIS ═════════════════════════════════════
@@ -279,23 +252,4 @@ export function trendFor(sessions, key){
            delta: Math.round(mean(v.slice(half)) - mean(v.slice(0, half))) };
 }
 
-const todayKey = () => dayKey(Date.now());
-
-/* The plan is regenerated once a day and remembers what you have finished. */
-export function readPlan(){
-  const d = store.read(), p = d.plan;
-  if(p && p.day === todayKey()) return p;
-  const built = buildPlan(d.sessions || []);
-  const fresh = { day: todayKey(), drills: built.drills, why: built.why, done: [] };
-  store.set("plan", fresh);
-  return fresh;
-}
-export function markPlanDone(drill){
-  const p = readPlan();
-  if(p.drills.includes(drill) && !p.done.includes(drill)){
-    p.done = p.done.concat(drill);
-    store.set("plan", p);
-  }
-  return p;
-}
 export const nextInPlan = p => p.drills.find(d => !p.done.includes(d)) || null;

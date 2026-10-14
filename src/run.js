@@ -3,12 +3,13 @@
 
 import { $ } from "./dom.js";
 import { CRUTCH, HARD } from "./content.js";
-import { store } from "./storage.js";
+import { markPlanDone, store } from "./storage.js";
 import { clamp, countFillers, esc, FILLER_RE, matchTarget, projFromRms, readStats, tokens, usedWord, variety, words } from "./text.js";
 import { audio, makeVAD } from "./audio.js";
 import { asrProblem, listener } from "./speech.js";
-import { buildRun, drillById, markPlanDone } from "./drills.js";
-import { band, scoreRun } from "./scoring.js";
+import { buildRun, drillById } from "./drills.js";
+import { stageHtml } from "./stage.js";
+import { band, scoreRun, SCORING_VERSION } from "./scoring.js";
 import { css, drawRibbon } from "./canvas.js";
 import { buildSetup, showReport } from "./report.js";
 import { closeMenu } from "./ui.js";
@@ -88,7 +89,7 @@ export function newRun(id, reuse){
   S.run = reuse || buildRun(id);
   S.dur = S.run.dur;
   $("boothName").textContent = S.drill.name;
-  $("promptBox").innerHTML = S.run.html;
+  $("promptBox").innerHTML = stageHtml(S.run);
   S.wEls = [...$("promptBox").querySelectorAll("w")];
   S.wEls.forEach(el => el._n = words(el.textContent)[0] || "");
   $("liveText").innerHTML = "";
@@ -454,7 +455,11 @@ export async function finish(){
   // keep the component scores, not just the total: the plan picks your weakest
   // metric from these, and Progress trends each one separately
   store.add({ at:sess.at, drill:sess.drill, name:sess.name, score, wpm:m.wpm, fillers:f.total,
-    parts: Object.fromEntries(parts.map(p => [p.k, p.v])) });
+    parts: Object.fromEntries(parts.map(p => [p.k, p.v])),
+    // which prompt this answered, and the raw measurements behind the score:
+    // then-vs-now needs the first, and rescoring after a recalibration needs
+    // the second — the parts above are only true for the scorer that made them
+    promptId: S.run.promptId || null, reading: !!S.run.target, raw: m, v: SCORING_VERSION });
   markPlanDone(sess.drill);
   showReport(sess);
 }

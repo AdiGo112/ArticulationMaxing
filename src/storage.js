@@ -1,6 +1,8 @@
 /* storage.js — The single localStorage record, read and written whole.
    Speakeasy. Native ES modules, no build step: the browser loads these directly. */
 
+import { buildPlan } from "./drills.js";
+
 /* ══ STORAGE ══════════════════════════════════════════════════════ */
 
 const KEY = "speakeasy.v1";
@@ -30,4 +32,27 @@ export function streak(sessions){
   if(!days.has(dayKey(cur.getTime()))) cur.setDate(cur.getDate()-1);  // today not done yet: streak still alive
   while(days.has(dayKey(cur.getTime()))){ n++; cur.setDate(cur.getDate()-1); }
   return n;
+}
+
+/* ══ THE DAILY PLAN ═════════════════════════════════════════════
+   Built by buildPlan() (drills.js); this half only persists it. */
+
+const todayKey = () => dayKey(Date.now());
+
+/* The plan is regenerated once a day and remembers what you have finished. */
+export function readPlan(){
+  const d = store.read(), p = d.plan;
+  if(p && p.day === todayKey()) return p;
+  const built = buildPlan(d.sessions || []);
+  const fresh = { day: todayKey(), drills: built.drills, why: built.why, done: [] };
+  store.set("plan", fresh);
+  return fresh;
+}
+export function markPlanDone(drill){
+  const p = readPlan();
+  if(p.drills.includes(drill) && !p.done.includes(drill)){
+    p.done = p.done.concat(drill);
+    store.set("plan", p);
+  }
+  return p;
 }

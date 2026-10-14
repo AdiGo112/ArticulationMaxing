@@ -1,6 +1,7 @@
 /* Self-check for Speakeasy's pure logic. Run: node test.js
    Imports the modules that hold no DOM and exercises the scoring path. */
 import assert from "assert";
+import fs from "fs";
 
 /* Stand-in for Chrome's recogniser, so the restart and de-duplication logic
    can be driven by hand. Records every instance the listener spins up. */
@@ -25,6 +26,7 @@ const X = Object.assign({},
   await import("./src/storage.js"),
   await import("./src/drills.js"),
   await import("./src/scoring.js"),
+  await import("./src/stage.js"),
   await import("./src/content.js"));
 
 let n = 0;
@@ -116,7 +118,7 @@ t("every drill builds a runnable stage", () => {
   X.DRILLS.forEach(d => {
     for (let i = 0; i < 40; i++) {           // buildRun picks at random — hit every branch
       const r = X.buildRun(d.id);
-      assert.ok(r.html && r.html.length > 20, d.id + " produced no prompt");
+      assert.ok(X.stageHtml(r).length > 20, d.id + " produced no prompt");
       assert.ok(r.dur > 0 && r.dur < 400, d.id + " bad duration " + r.dur);
       if (r.target) assert.ok(X.accuracy(r.target, r.target) === 100, d.id + " target not self-consistent");
     }
@@ -853,7 +855,7 @@ t("tokens and words agree on how many things were said", () => {
 t("every drill builds a run without throwing", () => {
   for(const d of X.DRILLS){
     const r = X.buildRun(d.id);
-    assert.ok(r && r.html, d.id + " produced no stage");
+    assert.ok(r && X.stageHtml(r), d.id + " produced no stage");
     assert.ok(Number.isFinite(r.dur) && r.dur > 0, d.id + " has no usable duration");
   }
 });
@@ -947,23 +949,75 @@ t("Filler Hunt draws from the easy pool, not the thinking prompts", () => {
   // an unfamiliar prompt makes you think, and thinking is where "um" comes from
   const seen = new Set();
   for(let i = 0; i < 200; i++) seen.add(X.buildRun("filler").cd);
-  assert.ok([...seen].every(p => X.EASY_PROMPTS.includes(p)),
+  const easy = X.EASY_PROMPTS.map(p => p.x), thinking = X.PROMPTS.map(p => p.x);
+  assert.ok([...seen].every(p => easy.includes(p)),
     "Filler Hunt served a prompt from outside EASY_PROMPTS");
   assert.ok(seen.size > 5, "the pool is barely varying: only " + seen.size + " seen");
-  const overlap = X.EASY_PROMPTS.filter(p => X.PROMPTS.includes(p));
+  const overlap = easy.filter(p => thinking.includes(p));
   assert.strictEqual(overlap.length, 0, "the two pools share prompts: " + overlap[0]);
 });
 
 t("Impromptu still draws from the thinking prompts", () => {
   const seen = new Set();
   for(let i = 0; i < 200; i++) seen.add(X.buildRun("impromptu").cd);
-  assert.ok([...seen].every(p => X.PROMPTS.includes(p)), "Impromptu served an easy prompt");
+  assert.ok([...seen].every(p => X.PROMPTS.some(q => q.x === p)), "Impromptu served an easy prompt");
 });
 
 t("Filler Hunt gives five seconds of prep and a full minute of speaking", () => {
   const d = X.DRILLS.find(x => x.id === "filler");
   assert.strictEqual(d.prep, 5, "prep is meant to be short enough that you cannot plan");
   assert.strictEqual(d.dur, 60);
+});
+
+/* ── content ids ────────────────────────────────────────────────────────
+   History, then-vs-now and challenge links refer to prompts by id, so an id
+   must never be reused or silently disappear. content-ids.txt is the ledger:
+   retiring an item means deleting its line here on purpose.  */
+
+const POOLS = ["PROMPTS","EASY_PROMPTS","READINGS","TWISTERS","WORDS","ECHOES"];
+const allIds = POOLS.flatMap(k => X[k].map(i => i.id));
+
+t("every content item has a unique id", () => {
+  assert.ok(allIds.every(id => typeof id === "string" && id), "an item has no id");
+  const dup = allIds.find((id, i) => allIds.indexOf(id) !== i);
+  assert.strictEqual(dup, undefined, "duplicate id: " + dup);
+});
+
+t("no id in the ledger has disappeared from the content", () => {
+  const ledger = fs.readFileSync(new URL("./content-ids.txt", import.meta.url), "utf8")
+    .split(/\r?\n/).filter(Boolean);
+  const gone = ledger.filter(id => !allIds.includes(id));
+  assert.deepStrictEqual(gone, [], "ids vanished — edit content in place, never delete: " + gone.join(", "));
+  const fresh = allIds.filter(id => !ledger.includes(id));
+  assert.deepStrictEqual(fresh, [], "new ids missing from content-ids.txt: " + fresh.join(", "));
+});
+
+t("every run says which prompt it came from", () => {
+  for(const d of X.DRILLS) for(let i = 0; i < 20; i++){
+    const r = X.buildRun(d.id);
+    assert.ok(allIds.includes(r.promptId), d.id + " run has unknown promptId " + r.promptId);
+    assert.strictEqual(r.drill, d.id);
+  }
+});
+
+t("a stored session can be rescored from its raw measurements", () => {
+  // what finish() stores: raw = m, reading = !!run.target. JSON round-trip,
+  // because that is what localStorage does to it.
+  const cases = [
+    [{ wpm:150, f:{hard:1,crutch:2,total:3,found:{um:1}}, words:220, proj:66, acc:null, coverage:null,
+       var:72, goodPauses:6, longPause:1.4, pauseScore:88, usedWord:null }, false, "impromptu"],
+    [{ wpm:141, f:{hard:0,crutch:1,total:1,found:{}}, words:180, proj:61, acc:91, coverage:97,
+       var:null, goodPauses:9, longPause:1.1, pauseScore:100, usedWord:null }, true, "pace"],
+    [{ wpm:null, f:{hard:0,crutch:0,total:0,found:{}}, words:0, proj:40, acc:null, coverage:null,
+       var:null, goodPauses:2, longPause:3, pauseScore:40, usedWord:null }, false, "filler"]
+  ];
+  for(const [m, reading, id] of cases){
+    const first = X.scoreRun(m, { target: reading ? "x" : null }, id).score;
+    const back = JSON.parse(JSON.stringify({ raw:m, reading }));
+    const again = X.scoreRun(back.raw, { target: back.reading ? "x" : null }, id).score;
+    assert.strictEqual(again, first, id + ": rescoring changed the score");
+  }
+  assert.ok(Number.isInteger(X.SCORING_VERSION) && X.SCORING_VERSION >= 1);
 });
 
 console.log(`ok — ${n} checks passed`);

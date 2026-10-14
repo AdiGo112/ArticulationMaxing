@@ -6,6 +6,10 @@ import { clamp } from "./text.js";
 
 /* ══ SCORING ══════════════════════════════════════════════════════ */
 
+/* Bump on any change to scoreRun() or the curves it uses. Stored with every
+   session so old scores can be recomputed from their raw measurements.  */
+export const SCORING_VERSION = 1;
+
 export const band = (v,lo,hi,fall)=> v>=lo&&v<=hi ? 100 : clamp(100 - (v<lo?lo-v:v-hi)*fall, 0, 100);
 /* Linear 0→100 between two points, for metrics that are simply better when
    higher. Unlike band() it has no plateau, so improvement always shows. */
