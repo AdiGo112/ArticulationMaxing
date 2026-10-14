@@ -1,11 +1,56 @@
-# Speakeasy — feature specs
+# Speakeasy — product requirements
 
-Companion to [PRODUCTION_PLAN.md](PRODUCTION_PLAN.md). Each feature: why, the flow, how it works,
-what it stores, edge cases, and what "done" means. All features run at $0 and work signed-out unless
-stated otherwise. Code references are to the current vanilla app; after the Phase 2 port they map to
-`frontend/src/lib/` and the session engine.
+What Speakeasy is for and what each feature must do. How it is built: [ARCHITECTURE.md](ARCHITECTURE.md).
+What is done: [TASKS.md](TASKS.md). Why we chose what we chose: [DECISIONS.md](DECISIONS.md).
 
-Phase key: **P3** = free on-device features · **P4** = accounts · **P5** = cloud recordings + interview · **P6** = launch.
+## Purpose
+
+A speaking-practice booth in the browser for people working on articulation, clarity and
+confidence in spoken English. Short drills, scored live from the microphone, with feedback that
+names one concrete thing to fix. It started as the owner's own practice tool and is going public.
+
+## Users
+
+- **People with a real event coming** — an interview, a talk, a pitch, a toast. They need to
+  rehearse *their* words and hear whether it got better.
+- **People building a habit** — a few minutes a day, a plan that picks the drill, and visible
+  progress.
+- Desktop first; mobile must work. Any modern browser, including those without speech
+  recognition (Firefox, Brave).
+
+## Goals
+
+1. **Useful from the first run** — a scored report within two minutes of landing, no sign-up.
+2. **Feedback you can act on** — one weakest thing, in plain words, quoting what you said.
+3. **Progress you can hear and read** — then-vs-now replays and sentences like "fillers down 58%".
+4. **Private by default** — analysis on the device; anything sent elsewhere is opt-in and says so.
+5. **Free to use and free to run.**
+
+## Non-goals
+
+- Accounts as a gate: signing in only adds sync.
+- A paid tier, for now (see DECISIONS → open questions).
+- Storing or analysing faces or voices as identities — no voiceprints, no face or gaze tracking.
+- Uploading webcam video, ever.
+- Server-side speech recognition or model hosting (costs money, and moves audio off the device).
+- A general chat assistant: models are used only to coach a specific take.
+
+## Constraints
+
+| | |
+|---|---|
+| **Cost** | $0/month to run: free tiers that allow commercial use. A domain (~$10/yr) is the only optional spend. |
+| **Privacy** | See ARCHITECTURE → What leaves the device. |
+| **Signed-out** | Every drill, score and feature except sync works without an account. |
+| **Audio-only path** | With no transcript, every drill still runs and scores what audio alone measures. |
+
+---
+
+## Features
+
+Each spec: why, the flow, how it works, what it stores, edge cases, and what "done" means. All run
+at $0 and work signed-out unless stated. Phases: **P1** prepare the code · **P2** React port ·
+**P3** free on-device features · **P4** accounts · **P5** cloud recordings + interview · **P6** launch.
 
 | # | Feature | Phase | Size | Depends on |
 |---|---|---|---|---|
@@ -25,96 +70,75 @@ Phase key: **P3** = free on-device features · **P4** = accounts · **P5** = clo
 | F13 | Interview mode | P5 | L | F8 |
 | F14 | Share: improvement card + challenge link | P6 | M | F2, F11 |
 | F15 | Own model: audio filler detector | P3 | L | F10 |
-| F16 | Own model: in-browser coaching LLM | post-launch | L | F11 (usage data) |
+| F16 | Own model: in-browser coaching LLM | after launch | L | F11 (usage data) |
 
-S ≈ ≤3 days · M ≈ 1 week · L ≈ 2 weeks, solo.
+S ≈ ≤ 3 days · M ≈ 1 week · L ≈ 2 weeks, solo.
 
 ---
 
-## F0 · Stable content ids + raw metrics (foundation)
+## F0 · Stable content ids + raw metrics
 
-**Why.** Today `content.js` pools are plain arrays and a stored session keeps no prompt at all
-(`run.js:456` saves `drill, score, wpm, fillers, parts`). Then-vs-now, diction retry and challenge
-links all need to know *which* prompt a take answered, and trends break whenever scoring is recalibrated.
+**Why.** Then-vs-now, diction retry and challenge links need to know *which* prompt a take
+answered, and trends must survive scoring recalibrations.
 
-**How.**
-- Every content item gets a permanent id: `imp-001`, `easy-001`, `read-gettysburg`, `tw-001`,
-  `word-001`, `echo-001`. Ids never change or get reused; removing an item retires its id.
-- `buildRun()` returns `promptId`. Session record gains `promptId`, `raw` (the `m` object minus the
-  transcript) and `scoringVersion` (starts at `1`; bumped by every change to `scoreRun`).
-- Progress and the daily plan recompute from `raw` with the current scorer, so recalibration never
-  makes the past look better or worse than it was.
+**What.** Every content item has a permanent id, recorded on each run as `promptId`; sessions store
+the raw measurements and the scoring version they were scored with. Built — see ARCHITECTURE →
+Drills and content, and → Scoring.
 
-**Migration.** Old sessions have no `promptId`/`raw`; they keep working for trends via `parts`, and
-are simply ineligible for then-vs-now.
-
-**Done when.** A test fails if any two content items share an id, or if an id present in the last
-release disappears without being listed as retired.
+**Done when.** A test fails if two items share an id or a ledger id disappears, and a stored
+session rescores to the same number from its raw measurements. *(Met.)*
 
 ---
 
 ## F1 · Rehearse your own text
 
-**Why.** The single most urgent reason anyone practises: a real talk, answer or toast on a real date.
+**Why.** The most urgent reason anyone practises: a real talk, answer or toast on a real date.
 
 **Flow.**
 1. Practice → **Your text** → paste or type (title optional). Live word count and estimated time.
-2. Preview shows auto-placed breath marks `‖`; tap between words to add or remove one.
-3. Start → runs exactly like Pace & Pause: passage on screen, word-by-word marking, coverage, diction, pace.
+2. Preview shows the breath marks `‖`; tap between words to add or remove one.
+3. Start → runs exactly like Pace & Pause: word-by-word marking, coverage, diction, pace.
 4. Report as for readings, plus "Run again" and "Edit text".
-5. Texts are saved in a **Your texts** list; each shows best score, last run and run count.
+5. A **Your texts** list shows each text's best score, last run and run count.
 
-**How.**
-- Reuse the reading pipeline unchanged: build `{ x: "seg | seg | seg" }` and feed it through the same
-  path as `READINGS` (`drills.js` pace branch). `matchTarget`, `readStats`, the `‖` handling and the
-  report's passage replay all apply as-is.
-- Auto breath marks: split after `. ! ? ; :` always, after `,` when the running segment is ≥ 6 words,
-  and force a split at 14 words with no punctuation.
-- Duration: `max(30, words / 2.5)` seconds — the Pace & Pause formula, with a lower floor for short answers.
-- Crutch words are not scored (as for set passages: `fillerRate(m, reading=true)`) — but a "your text
-  contains *basically* ×3" note is shown before the run, since here the author is the user.
-- Long texts (> 400 words ≈ 2:40) offer **Rehearse in sections**: the same segmentation, one section
-  per run, with a combined view.
+**How.** The reading pipeline, unchanged, fed by `buildTextRun()`; breath-mark rules and duration
+are in ARCHITECTURE → Built ahead of its UI. Crutch words aren't scored (as on any set passage), but
+the setup screen names the ones in the text ("your text says *basically* ×3"), since here the
+author is the user. Texts over 400 words (≈ 2:40) offer **Rehearse in sections**: one section per
+run, with a combined view.
 
-**Stores.** `CustomText { id, title, body, createdAt, updatedAt }`; sessions point at `customTextId`.
-Synced only if signed in. Limits: 2,000 words per text, 50 texts.
+**Stores.** `CustomText { id, title, body, updatedAt }`; sessions point at it via `promptId`
+`text-<id>`. Limits: 2,000 words per text, 50 texts.
 
-**Edge cases.** Pasted text with markdown, bullets or emoji → strip to plain text before tokenising.
-Non-English text → warn that diction marking assumes English. A text edited after runs → keep old
-sessions, mark them "earlier version".
+**Edge cases.** Markdown, bullets, emoji → stripped before tokenising. Non-English text → warn
+that diction marking assumes English. A text edited after runs → keep old sessions, marked
+"earlier version".
 
-**Done when.** A 300-word pasted talk runs end-to-end with marking identical in quality to a built-in
-reading; tests pin the breath-mark rules on fixed inputs.
+**Done when.** A 300-word pasted talk runs end to end with marking as good as a built-in reading.
 
 ---
 
 ## F2 · Progress as facts
 
-**Why.** "Fillers down 58% since 4 Sep" lands harder than any chart, and it is the core retention message.
+**Why.** "Fillers down 58% since 4 Sep" lands harder than any chart; it is the core retention
+message.
 
-**Flow.** `#progress` opens with up to three fact cards, biggest change first, then the existing
-trends. The report shows one fact if this run just set a record ("Your lowest filler rate yet").
+**Flow.** `#progress` opens with up to three fact cards, then the existing trends. The report shows
+one line when a run sets a record ("Your lowest filler rate yet").
 
-**How.** For each metric with enough history (≥ 6 sessions containing it, spanning ≥ 3 days):
-- Compare the median of the **earliest third** to the median of the **latest third** (medians, so one
-  bad day can't create or erase a trend).
-- Claim a change only if it is ≥ 15% relative **and** ≥ 5 points absolute on the component scale.
-- Metric phrasing table, never a raw component name:
-  `filler` → "Fillers down 58% since 4 Sep" · `pace` → "Your pace settled from 182 to 156 wpm" ·
-  `pause` → "From 2 to 7 deliberate pauses a minute" · `pitch` → "Your range widened from 3 to 6 semitones".
-- Regressions are reported once, gently, with the drill that fixes them ("Pace drifted up this week —
-  Pace & Pause").
-- Records: best score per drill, lowest filler rate, longest streak.
+**How.** `facts()` and `recordFor()`, rules in ARCHITECTURE → Built ahead of its UI. Phrasing names
+the thing in words, never a component id. A regression is shown once, gently, with the drill that
+trains it. Later: pitch range ("your range widened from 3 to 6 semitones", after F4) and longest
+streak.
 
-**Done when.** A pure `facts(sessions, today)` function with unit tests for: too little data (no
-claim), noisy flat data (no claim), clear improvement, clear regression, and a metric that appears
-mid-history.
+**Done when.** Unit tests cover too little data, noisy flat data, a clear improvement, a clear
+regression and a metric that starts mid-history *(met)*, and the cards are on screen.
 
 ---
 
 ## F3 · Filler buzzer
 
-**Already there:** a visual flash on each new filler (`run.js:347`, `S.flashUntil`, `#coach.flash`).
+**Already there:** a visual flash on each new filler (`S.flashUntil`, `#coach.flash` in `run.js`).
 
 **Add.**
 - **Sound:** a short, soft WebAudio tick (sine 880 Hz, 60 ms, gain envelope) — not a harsh buzz;
@@ -160,8 +184,9 @@ expressive; pick constants so flat ≤ 40, expressive ≥ 85. Commit the fixture
 **Privacy.** Pitch is computed and summarised on the device; only the range number is stored. No
 voice profile is built.
 
-**Done when.** Synthetic test: a sine sweep across 6 semitones yields range ≈ 6 ± 0.5; a constant tone
-yields < 0.5; noise yields no frames.
+**Done when.** Synthetic tests: two notes 6 semitones apart read as 6 ± 0.5, a constant tone as < 0.5,
+noise as no pitch *(met — `yin()`, `pitchStats()`)*; and pitch is measured during runs, calibrated on
+real takes, and shown on the tape.
 
 ---
 
@@ -178,13 +203,14 @@ yields < 0.5; noise yields no frames.
 - Report line: "*sixth*, *sheikh's* came back clean — 2 sounds retired."
 - Practice card shows "3 due today".
 
-**Stores.** `DictionCard { word, twisterId, box, dueAt }`. No job: due cards are a query at pick time.
+**Stores.** `{ word, twisterId, box, misses, dueAt }`. No job: due cards are a query at pick time.
+Cards are collected and due twisters served today; the report line and practice card need the UI.
 
-**Edge cases.** Proper nouns or words the recogniser can't produce for anyone (score < 30% across all
-users is unknowable offline — instead: a word missed 5 times in a row is auto-retired with a note
-"the recogniser struggles with this one, not you").
+**Edge cases.** Some words the recogniser can't produce for anyone. A word missed five times in a
+row is retired with a note: "the recogniser struggles with this one, not you".
 
-**Done when.** Unit tests on box transitions and due selection with a fixed clock.
+**Done when.** Unit tests on box transitions and due selection with a fixed clock *(met)*, and the
+report and practice card show it.
 
 ---
 
@@ -201,7 +227,7 @@ users is unknowable offline — instead: a word missed 5 times in a row is auto-
 **How.**
 - Keep per prompt (F0 id) exactly two recordings: **first** and **latest**. A new take replaces
   `latest`; `first` is never replaced. (Optionally pin a "best" as a third — later.)
-- Encode at `audioBitsPerSecond: 16000` Opus (`audio.js` `startRecording` already prefers
+- Encode at `audioBitsPerSecond: 16000` Opus (`startRecording` already prefers
   `audio/webm;codecs=opus`) → ~0.12 MB/min.
 - Safari records `audio/mp4`; store the mime type with the blob.
 
@@ -227,7 +253,7 @@ in the corner. After: video playback in the report, synced with the tape and tra
 **How.** `getUserMedia({ video: { width: 1280, height: 720, frameRate: 30 } })`, separate
 `MediaRecorder` at ~1 Mbps VP9/H.264, its own stream so audio analysis is untouched. Stored in
 IndexedDB, newest 10 videos kept, delete-all button. **Never uploaded, never analysed** — no face or
-gaze detection (privacy plan §4).
+gaze detection (ARCHITECTURE → What leaves the device).
 
 **Edge cases.** Camera denied → toggle reverts with a message, drill continues audio-only. Low storage
 (`navigator.storage.estimate()`) → warn and keep fewer videos. Mobile: front camera, portrait layout.
@@ -417,8 +443,9 @@ licensed speech (e.g. LibriSpeech, CC BY 4.0) for the "other speech" class.
 **Training ($0).** PyTorch on Kaggle (≈30 free GPU hrs/week) or Colab free. Notebook + labelling
 script live in `models/filler/` in the repo; weights published on Hugging Face (free CDN), versioned.
 
-**Labelling tool.** Built: `label.html` (dev only, see README → Labelling takes). Records or opens
-takes, marks um/uh/other spans on a zoomable waveform, exports audio + JSON per take.
+**Labelling tool.** Built: `label.html` (dev only; how-to in the README). Records or opens takes, marks
+um/uh/other spans on a zoomable waveform, exports audio + JSON per take. Only takes marked *complete*
+count as negatives.
 
 **Evaluation gate (blocking).**
 - Held-out set of ≥ 40 takes from **different speakers** than training.
@@ -482,13 +509,3 @@ The local rules always run.
 **Done when.** Gate passed; a free user on a desktop with WebGPU gets a full review with no key and
 no network after the one-time download.
 
----
-
-## Cross-cutting rules
-
-- **The audio-only path is a feature.** Every feature states what happens with no transcript; none may
-  throw or show NaN without one.
-- **Tests first for pure logic:** F0, F1 breath marks, F2 facts, F4 pitch, F5 boxes, F11 merge — each a
-  pure function with fixed-input tests, like the current `test.js`.
-- **Every new score component bumps `scoringVersion`** and gets a calibration fixture set.
-- **Nothing new leaves the device** without appearing in the F12 table.
