@@ -107,7 +107,9 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
 - [x] Self-host the fonts: Bricolage Grotesque and JetBrains Mono from `@fontsource` (OFL), bundled.
 - [x] `localStorage` → IndexedDB with a one-time migration (validated; the old copy stays).
 - [x] New screens: Drills (best, length, last done; today / pack / words-due badges), Your texts (F1).
-      On phones, the More tab holds Your texts, Guide and Your data.
+      Nav: the booth, report and Your texts sit under DRILLS, whose sub-items are the six drills and
+      Your texts; INTERVIEW is its own tab (a placeholder for F13 that starts Impromptu on interview
+      questions). On phones, the More tab holds Interview, Guide and Your data.
 - [ ] First-run screen.
 - [ ] Exit: the list above done; audio-only path passes in Firefox; deployed.
 

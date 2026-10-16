@@ -44,7 +44,7 @@ frontend/
     label/          label.js, the labelling page's pure helpers (tested)
     ui/             parts.tsx (Reel, logo, Bar, Wave, Timeline, Marked) · art.ts (ripples)
     app/            state.tsx (record, last result, hash routes) · Shell.tsx (header, nav, tabs)
-    screens/        Home, Booth, Report (+ Coach), Drills, Progress, Texts, Guide (+ waitlist), Data
+    screens/        Home, Booth, Report (+ Coach), Drills, Progress, Texts, Guide (+ waitlist), Data, Interview (placeholder)
     styles.css      DESIGN.md's tokens; fonts self-hosted from @fontsource
 ```
 
@@ -220,7 +220,7 @@ once a day and `markDone()` remembers what's done. `trendFor()` needs at least 3
 ## Routes
 
 `#/` Home, `#/drill/<id>` the booth, `#/report`, `#/drills`, `#/progress`, `#/texts`, `#/guide`,
-`#/data`. Hash routes need no server rewrites; an unknown hash shows Home.
+`#/data`, `#/interview`. Hash routes need no server rewrites; an unknown hash shows Home.
 
 ## Storage
 

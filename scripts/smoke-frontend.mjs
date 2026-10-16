@@ -114,6 +114,8 @@ check("coach: it asked Opus 5.5 with the transcript wrapped as data", !!asked &&
 check("coach: the SDK loaded only now", await ev(`performance.getEntriesByType("resource").some(e => e.name.includes("/sdk-"))`));
 await send("Fetch.disable");
 await ev(`localStorage.removeItem("speakeasy.anthropicKey"), true`);
+check("nav: the report sits under DRILLS, on its own drill", await ev(`document.querySelector(".side a[aria-current]")?.textContent.includes("DRILLS")
+  && document.querySelector(".side .sub a[aria-current=page]")?.getAttribute("href") === "#/drill/filler" && document.querySelectorAll(".side .sub a").length === 7`));
 check("report: one Reel", (await reels()) === 1, "found " + (await reels()));
 check("run: saved to IndexedDB", (await stored()) === 2);
 check("run: the recording can play", await until(`!!document.querySelector("audio[src^='blob:']")`, 3000));
@@ -130,13 +132,13 @@ await ev(`window.__asrFail = null, dispatchEvent(new KeyboardEvent("keydown", { 
 check("booth: Esc leaves the failed run", await until(`document.body.innerText.includes("START SPEAKING")`));
 
 /* every nav item lands on a real page, each with one Reel */
-for (const [page, h1] of [["drills", "Pick the one"], ["progress", "What's actually changed"], ["texts", "Rehearse the talk"], ["guide", "How to actually get better"], ["data", "Your data"]]) {
+for (const [page, h1] of [["drills", "Pick the one"], ["progress", "What's actually changed"], ["texts", "Rehearse the talk"], ["guide", "How to actually get better"], ["data", "Your data"], ["interview", "A mock interview"]]) {
   await open(origin + "/#/" + page);
   check(`${page}: renders`, await until(`document.querySelector("h1")?.textContent.startsWith(${JSON.stringify(h1)}) && !document.body.innerText.includes("is next.")`), await text());
   check(`${page}: one Reel`, (await reels()) === 1, "found " + (await reels()));
 }
 await open(origin + "/#/drills");
-check("drills: six cards, each opens its booth", await until(`document.querySelectorAll("a[href^='#/drill/']").length === 6`));
+check("drills: six cards, each opens its booth", await until(`document.querySelectorAll("main a[href^='#/drill/']").length === 6`));
 await open(origin + "/#/progress");
 check("progress: counts both sessions and lists the run", await until(`document.body.innerText.includes("Filler Hunt") && [...document.querySelectorAll("b.big")].some(b => b.textContent === "2")`), await text());
 
@@ -194,8 +196,8 @@ await open(origin + "/#/");
 check("phone: tab bar shown, side nav hidden", await until(`getComputedStyle(document.querySelector(".tabs")).display === "grid" && getComputedStyle(document.querySelector(".side")).display === "none"`));
 check("phone: home fits the width", await ev(`document.documentElement.scrollWidth <= 391`), await ev(`document.documentElement.scrollWidth + " px wide on a 390 px phone"`));
 await open(origin + "/#/data");
-check("phone: More leads to your texts and the guide", await until(`getComputedStyle(document.querySelector(".subnav")).display === "flex" && !!document.querySelector(".subnav a[href='#/guide']") && !!document.querySelector(".subnav a[href='#/texts']")`));
-for (const page of ["drills", "progress", "texts", "guide", "data"]) {
+check("phone: More leads to the interview and the guide", await until(`getComputedStyle(document.querySelector(".subnav")).display === "flex" && !!document.querySelector(".subnav a[href='#/guide']") && !!document.querySelector(".subnav a[href='#/interview']")`));
+for (const page of ["drills", "progress", "texts", "guide", "data", "interview"]) {
   await open(origin + "/#/" + page);
   check(`phone: ${page} fits the width`, await until(`!!document.querySelector("h1") && document.documentElement.scrollWidth <= 391`), await ev(`document.documentElement.scrollWidth + " px wide on a 390 px phone"`));
 }

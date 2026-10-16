@@ -10,8 +10,9 @@ import { Progress } from "./screens/Progress.tsx";
 import { Texts } from "./screens/Texts.tsx";
 import { Guide } from "./screens/Guide.tsx";
 import { Data } from "./screens/Data.tsx";
+import { Interview } from "./screens/Interview.tsx";
 
-const PAGES: Record<string, () => React.JSX.Element> = { drills: Drills, progress: Progress, texts: Texts, guide: Guide, data: Data };
+const PAGES: Record<string, () => React.JSX.Element> = { drills: Drills, progress: Progress, texts: Texts, guide: Guide, data: Data, interview: Interview };
 
 function App() {
   const [page, arg] = useRoute();

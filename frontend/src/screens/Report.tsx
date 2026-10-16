@@ -25,7 +25,7 @@ export function Report() {
   const bars = useMemo(() => r ? buckets(r.tape, 90) : [], [r]);
 
   if (!r) return (
-    <Shell page="">
+    <Shell page="drills">
       <div className="card" style={{ alignItems: "flex-start" }}>
         <Reel state="think" size={140} />
         <h1 className="h2">No report yet.</h1>
@@ -50,7 +50,7 @@ export function Report() {
   const toggle = () => { const a = audio.current; if (!a) return; if (a.paused) void a.play(); else a.pause(); };
 
   return (
-    <Shell page="">
+    <Shell page="drills" sub={r.run.custom ? "texts" : "drill/" + r.drill.id}>
       <span className="label">{r.drill.name} · {fmt(r.elapsed)} · {plan.done.length} of {plan.drills.length} done today</span>
 
       <section aria-label="Score" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "28px 56px" }}>

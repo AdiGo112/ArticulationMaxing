@@ -38,8 +38,14 @@ button { font: inherit; color: inherit; }
 .top .grow { flex-grow: 1; }
 .frame { display: flex; flex-wrap: wrap; gap: 32px; padding: 32px; width: 100%; max-width: 1440px; margin: 0 auto; flex-grow: 1; }
 .side { flex: 1 1 180px; max-width: 220px; display: flex; flex-direction: column; gap: 4px; }
-.side a { text-decoration: none; color: var(--ink); padding: 12px 14px; border-radius: 10px; letter-spacing: 0.06em; }
-.side a[aria-current="page"] { color: var(--ground); background: var(--amber); font-weight: 700; }
+.side a { text-decoration: none; color: var(--ink); white-space: nowrap; padding: 12px 14px; border-radius: 10px; letter-spacing: 0.06em; }
+.side > div > a[aria-current], .side > a[aria-current] { color: var(--ground); background: var(--amber); font-weight: 700; }
+.side .soon { margin-left: 8px; font-size: 10px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--edge); color: var(--muted); font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; }
+.side a[aria-current] .soon { color: inherit; border-color: currentColor; }
+.side .sub { list-style: none; margin: 2px 0 6px 18px; padding: 0 0 0 10px; border-left: 1px solid var(--line); display: flex; flex-direction: column; }
+.side .sub a { display: block; padding: 6px 10px; font-size: 13px; letter-spacing: 0; color: var(--muted); border-radius: 8px; }
+.side .sub a:hover { color: var(--ink); }
+.side .sub a[aria-current="page"] { color: var(--amber); background: #141210; font-weight: 700; }
 .main { flex: 999 1 600px; min-width: 0; display: flex; flex-direction: column; gap: 32px; }
 .rail { flex: 1 1 300px; max-width: 360px; display: flex; flex-direction: column; gap: 18px; }
 .tabs, .subnav { display: none; }

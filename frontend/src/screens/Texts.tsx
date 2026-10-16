@@ -34,7 +34,7 @@ export function Texts() {
   };
 
   return (
-    <Shell page="texts">
+    <Shell page="drills" sub="texts">
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <span className="label amber">// your own words · runs like pace & pause</span>
         <h1 className="h1">Rehearse the talk you have to give.</h1>

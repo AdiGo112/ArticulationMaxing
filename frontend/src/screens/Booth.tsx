@@ -124,7 +124,7 @@ function BoothFor({ drill }: { drill: Drill }) {
 
   return (
     <>
-    <Shell page="drills" live={running} top={top} rail={rail} inert={arming}>
+    <Shell page="drills" sub={run.custom ? "texts" : "drill/" + drill.id} live={running} top={top} rail={rail} inert={arming}>
       {phase === "error" && (
         <section className="card" style={{ borderColor: "var(--alert)" }} role="alert">
           <span className="label alert">mic refused</span>
