@@ -72,8 +72,8 @@ await ev(`[...document.querySelectorAll("label")].find(l => l.textContent.trim()
 check("pack: the plan takes two of the pack's drills", await until(`document.body.innerText.includes("Impromptu") && document.body.innerText.includes("Filler Hunt")`));
 
 /* a real run on the fake mic */
-await open(origin + "/#/drill/diction");
-check("booth: stages the twister", await until(`[...document.querySelectorAll("button")].some(b => b.textContent.includes("START SPEAKING"))`), await text());
+await open(origin + "/#/drill/filler");
+check("booth: ready to start", await until(`[...document.querySelectorAll("button")].some(b => b.textContent.includes("START SPEAKING"))`), await text());
 await press("▶ START SPEAKING");
 check("run: room check, then countdown", await until(`!!document.querySelector("[role=dialog]")`, 3000), await text());
 check("countdown: one Reel", (await reels()) === 1, "found " + (await reels()));
@@ -120,7 +120,7 @@ check("run: the recording can play", await until(`!!document.querySelector("audi
 check("run: no script errors", errors.length === 0, errors.join(" | "));
 
 await press("↻ same prompt again");
-check("again: back in the booth for the same drill", await until(`location.hash === "#/drill/diction" && document.body.innerText.includes("START SPEAKING")`));
+check("again: back in the booth for the same drill", await until(`location.hash === "#/drill/filler" && document.body.innerText.includes("START SPEAKING")`));
 
 /* a recogniser that fails says why while the run carries on */
 await ev(`window.__asrFail = "network", true`);
@@ -138,7 +138,7 @@ for (const [page, h1] of [["drills", "Pick the one"], ["progress", "What's actua
 await open(origin + "/#/drills");
 check("drills: six cards, each opens its booth", await until(`document.querySelectorAll("a[href^='#/drill/']").length === 6`));
 await open(origin + "/#/progress");
-check("progress: counts both sessions and lists the run", await until(`document.body.innerText.includes("Diction Gym") && [...document.querySelectorAll("b.big")].some(b => b.textContent === "2")`), await text());
+check("progress: counts both sessions and lists the run", await until(`document.body.innerText.includes("Filler Hunt") && [...document.querySelectorAll("b.big")].some(b => b.textContent === "2")`), await text());
 
 /* your texts: breath marks and crutch words in the preview, saved, rehearsed in the booth */
 await open(origin + "/#/texts");

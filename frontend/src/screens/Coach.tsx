@@ -23,7 +23,7 @@ export function Coach({ r }: { r: RunResult }) {
   const findings = reading ? [] : analyseLanguage(r.text, { framework: r.run.framework?.name }).slice(0, 4);
   const prompt = coachPrompt({ drill: r.drill.name, question: r.run.cd || null, framework: r.run.framework?.name || null,
     reading, secs: r.elapsed, wpm: r.m.wpm, f: r.m.f, goodPauses: r.m.goodPauses, text: r.text });
-  const canReview = reviewable(r.text);
+  const canReview = !reading && reviewable(r.text);       // a set passage is the author's words: nothing of yours to review
   const local = device === "available" || device === "downloadable" || device === "downloading";
 
   const run = async (who: "device" | "claude") => {
