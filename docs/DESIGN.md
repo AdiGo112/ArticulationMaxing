@@ -20,14 +20,25 @@ everywhere, ASCII art for atmosphere, and a small pixel mascot who reacts to how
 
 | Use ASCII | Never ASCII |
 |---|---|
-| The SPEAKEASY logo (figlet "small") | Scores and any big number |
-| The sound-ripple field behind the home hero | Waveforms and the take's tape |
-| Reel's speech bubbles (`.---.` boxes with a `\` tail) | Meters, progress bars, goal bars |
-| Section rules: `── TODAY'S PATH ──────` | The timeline of fillers and pauses |
-| The small status box (`┌ mic … ok ┐`) and decorative cards | Charts, sparklines, the streak week |
-| `// SECTION LABELS` in mono caps | Buttons, path nodes, any control |
+| The sound-ripple field behind the home hero | Scores and any big number |
+| Reel's speech bubbles (`.---.` boxes with a `\` tail) | Waveforms and the take's tape |
+| Section rules: `── TODAY'S PATH ──────` | Meters, progress bars, goal bars |
+| The small status box (`┌ mic … ok ┐`) and decorative cards | The timeline of fillers and pauses |
+| `// SECTION LABELS` in mono caps | Charts, sparklines, the streak week |
+| | Buttons, path nodes, any control — and the logo |
 
 Decorative ASCII is `aria-hidden`; anything that means something has a real text or ARIA equivalent.
+
+## Logo and icon
+
+- **Logo: the on-air sign.** SPEAKEASY in JetBrains Mono 800, letter-spacing 0.22em, inside a 1.5 px
+  `ink` outline with an 8 px radius, led by a round light. The light is the mic's state: a steady
+  dim `#8A1F3D` at rest; `alert` `#FF3D6E` with a soft glow, pulsing every 1.6 s, while a run is
+  recording. It never lights for anything else. Header size: 16 px text.
+- **App icon and favicon: Reel's face.** Reel's body without legs (coral, screws, 1 × 2 eyes, tape
+  slot) centred on `ground` in a rounded square, radius about 23 % of the side, with a 1 px
+  `#33333A` edge so it holds on dark home screens. The favicon is the same face at 16 × 10 pixels.
+- Not the figlet ASCII logo of the first mockups, which was hard to read at header size.
 
 ## Colour
 

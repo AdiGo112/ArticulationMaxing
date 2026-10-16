@@ -197,8 +197,11 @@ Fillers moved from coral to `#FF3D6E` so the mascot's colour means nothing else.
 DESIGN.md. **Rejected.** Using Clawd itself — it is Anthropic's mascot, not ours to ship; Mic (a
 stand microphone; the owner didn't like it); Dial, Tempo, Pip, Hum and Sonar (the other five
 options); a tape-recorder Reel with keys and a reel window (the owner preferred the plain
-cassette); purple and mint bodies. **Consequences.** Fonts change to Bricolage Grotesque and
-JetBrains Mono, still to be self-hosted; Reel's paint function becomes a tested module in the port.
+cassette); purple and mint bodies. Logo: the on-air sign (SPEAKEASY in mono caps behind a light that is lit
+only while recording); app icon: Reel's face on black. Rejected there: the figlet ASCII logo, a
+pixel wordmark, Reel beside a wordmark, a cassette label, a two-tone wordmark, a coral "s:" icon.
+**Consequences.** Fonts change to Bricolage Grotesque and JetBrains Mono, still to be self-hosted;
+Reel's paint function becomes a tested module in the port.
 
 ---
 
