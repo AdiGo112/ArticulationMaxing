@@ -1,5 +1,5 @@
 /* session.ts — One run, end to end: arm the mic, measure the room, count
-   down, run the frame loop, finish with measurements. Ported from src/run.js
+   down, run the frame loop, finish with measurements. Ported from the old app's run.js
    with every DOM write replaced by a callback, so any UI can mount it.
 
    Nothing starts until begin(), and dispose() stops everything, so React's

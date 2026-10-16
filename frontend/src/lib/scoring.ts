@@ -1,5 +1,5 @@
 /* scoring.ts — Turning one run's measurements into a 0-100 score and a verdict.
-   Ported from src/scoring.js; SCORING_VERSION is shared with it. */
+   Ported from the old app's scoring.js; SCORING_VERSION continues its numbering. */
 
 import { CRUTCH } from "./content.ts";
 import { clamp, type FillerCount } from "./text.ts";

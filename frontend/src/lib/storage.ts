@@ -1,6 +1,6 @@
 /* storage.ts — The user's record: its shape, the daily plan, streaks, and
    backup files. Pure: where the record lives (IndexedDB, db.ts) is separate.
-   Ported from src/storage.js. */
+   Ported from the old app's storage.js. */
 
 import { buildPlan, dictionOutcome, packById, retryNote, updateCards, type Card, type PlanPick, type Session } from "./drills.ts";
 

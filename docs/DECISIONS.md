@@ -214,6 +214,18 @@ the same files without versions or a licence file; React Router — a dependency
 one parameter. **Consequences.** The CSP for the port needs no font origin; revisit routing if
 nested layouts or route data loading arrive.
 
+## D-023 · Retire the vanilla app before the port reaches parity — 2026-10-16
+
+**Context.** With Home, the booth and the report rebuilt in React, two apps with the same logic in
+two places was slowing every change (each fix twice, two test suites). **Decision.** The owner's
+call: delete the vanilla app now (`src/`, `index.html`, `style.css`, `test.js`, `serve.js`, its smoke
+test), make `frontend/` the app, and point Netlify and CI at it. The dev pages and `label.js` move
+into `frontend/` (served by Vite in dev, never built). **Rejected.** Keeping both until parity
+(D-020's plan) — slower, and nothing is deployed yet, so no user loses a feature. **Consequences.**
+Until TASKS → *Back from the old app* is done, the app has no Progress page, backup buttons, coach,
+guide or waitlist card; the light theme is dropped for good (DESIGN.md). D-020's "a logic fix lands
+in both" no longer applies. The old code stays in git history.
+
 ---
 
 ## Open questions

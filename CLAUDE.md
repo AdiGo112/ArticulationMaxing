@@ -1,24 +1,25 @@
 # Speakeasy
 
-A speaking-practice booth in the browser: drills scored live from the microphone. Today a static
-site of native ES modules (no build, no dependencies); moving to a React SPA + small API, all on
-free tiers.
+A speaking-practice booth in the browser: drills scored live from the microphone. A React +
+TypeScript app in `frontend/` (Vite, static, no backend yet); a small API comes later, all on free
+tiers.
 
 ## Commands
 
-- `node serve.js` — dev server, https://localhost:8137 (HTTP if the `.pem` files are absent)
-- `node test.js` — unit tests; no `npm install` needed (Node 20.11+)
-- `node scripts/smoke.mjs` — the app in headless Chrome: routes, drills, label page, backup (Node 22+)
-- `frontend/` (the React port): `npm install`, then `npm run dev` (http://localhost:5173), `npm test`
-  (Vitest), `npm run typecheck`, `npm run build`; `node scripts/smoke-frontend.mjs` after a build
+All in `frontend/` (Node 22+; `npm install` once):
+
+- `npm run dev` — the app at http://localhost:5173, plus the dev pages `label.html` and `mic-test.html`
+- `npm test` — Vitest; `npm run typecheck`; `npm run build`
+- `node ../scripts/smoke-frontend.mjs` — after a build: the built app in headless Chrome on its fake
+  mic (a real run end to end, migration, phone widths, one Reel per screen) and the label page
 - CI runs all of these on every push.
 
 ## Docs — read before acting
 
 - **Starting a session or picking up work** → `docs/TASKS.md` (what's done, next, blocked). Update it
   in the same commit as the work.
-- **Changing anything in `src/`** → `docs/ARCHITECTURE.md` (modules, a run end to end, scoring,
-  storage, target stack, what leaves the device).
+- **Changing anything in `frontend/src/`** → `docs/ARCHITECTURE.md` (modules, a run end to end,
+  scoring, storage, the engine, target stack, what leaves the device).
 - **Building or changing a feature** → `docs/PRD.md` (goals, non-goals, specs F0–F16 with "done when").
 - **Choosing a library, service or approach** → `docs/DECISIONS.md`; append an entry when you choose
   between real alternatives.
@@ -35,13 +36,12 @@ free tiers.
   external origin starts as a DECISIONS entry; a new origin also goes into the CSP in `netlify.toml`.
 - **Content ids are permanent.** Fix text in place (the id stays). Append new items with the next id
   and add it to `content-ids.txt`. Retire an item by deleting it and its ledger line together.
-- **Scoring changes bump `SCORING_VERSION`** (`src/scoring.js`, and `frontend/src/lib/scoring.ts` to match) — any change
-  to `scoreRun()` or its curves.
-- **Logic lives in DOM-free modules with a test in `test.js`** (and in `frontend/`, its Vitest suite; during the
-  port a logic change goes into both). Break the logic on purpose once and
-  watch the new test fail before trusting it.
-- **Only runtime files ship.** `netlify.toml` copies `index.html`, `style.css` and `src/`; a new runtime
-  file outside those must be added there. Dev pages (`mic-test.html`, `label.html`) stay out.
-- **Pin CDN imports and npm dependencies** to an exact version at least two weeks old (no `^` or `~`).
+- **Scoring changes bump `SCORING_VERSION`** (`frontend/src/lib/scoring.ts`) — any change to
+  `scoreRun()` or its curves.
+- **Logic lives in `frontend/src/lib/`**: pure, no DOM or React, with a Vitest test. Break the logic
+  on purpose once and watch the new test fail before trusting it.
+- **Only the app ships.** Netlify builds `frontend/` and publishes `frontend/dist`; Vite builds
+  `index.html` alone, so the dev pages (`label.html`, `mic-test.html`) never ship.
+- **Pin npm dependencies** to an exact version at least two weeks old (no `^` or `~`).
 - **Commit messages end at the body** — no `Co-Authored-By` or other AI-attribution trailers, and
   none in PR descriptions.

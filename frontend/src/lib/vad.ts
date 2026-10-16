@@ -1,5 +1,5 @@
 /* vad.ts — Voice-activity detection and pitch (YIN). Pure maths on numbers
-   the audio engine measures; no Web Audio here. Ported from src/audio.js.
+   the audio engine measures; no Web Audio here. Ported from the old app's audio.js.
 
    Two gates, both relative to the room rather than absolute:
      1. loudness above the measured noise floor, not above a constant

@@ -131,8 +131,8 @@ Dev tool — it is never deployed, and nothing leaves this page except the files
 </main>
 
 <script type="module">
-import { PROMPTS } from "./src/content.js";
-import { TYPES, peaks, quickLabel, normLabels, counts, exportDoc, MIN_LEN } from "./label.js";
+import { PROMPTS } from "/src/lib/content.ts";
+import { TYPES, peaks, quickLabel, normLabels, counts, exportDoc, MIN_LEN } from "/src/label/label.js";
 
 const $ = id => document.getElementById(id);
 const COLORS = { um:"--um", uh:"--uh", other:"--other" };

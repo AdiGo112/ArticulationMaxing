@@ -1,5 +1,5 @@
 /* content.ts — Drill material: prompts, frameworks, readings, twisters, words, filler lists.
-   Ported from src/content.js; ids are the same permanent ids (content-ids.txt). */
+   Ported from the old app's content.js; ids are the same permanent ids (content-ids.txt). */
 
 /* ══ CONTENT ══════════════════════════════════════════════════════ */
 

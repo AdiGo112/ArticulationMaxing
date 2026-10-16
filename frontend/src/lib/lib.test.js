@@ -1,7 +1,6 @@
-/* Vitest port of test.js for the TypeScript logic in src/lib. Run: npm test
-   The cases are test.js's, minus the label page (still a dev page of the old
-   app) and stageHtml (React renders runs). Keep the two in step until the old
-   app is retired.
+/* The logic in src/lib, under Vitest. Run: npm test
+   The cases came from the old app's test.js; the label page's are in
+   src/label/label.test.js.
    ponytail: plain JS with node:assert, so the cases port unchanged; typing the
    fixtures would mean a cast on nearly every partial session. */
 import assert from "node:assert";

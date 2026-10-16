@@ -1,6 +1,6 @@
 /* drills.ts — The six drills, local language analysis, the daily plan, goal
    packs, progress facts, diction retry and the filler buzzer rule.
-   Ported from src/drills.js. */
+   Ported from the old app's drills.js. */
 
 import { CRUTCH, EASY_PROMPTS, ECHOES, FRAMEWORKS, HARD, INTERVIEW_PROMPTS, PITCH_PROMPTS, PROMPTS,
   READINGS, STOP, TWISTERS, WORDS, type Framework } from "./content.ts";

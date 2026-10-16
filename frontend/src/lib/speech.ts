@@ -1,5 +1,5 @@
 /* speech.ts — Web Speech recognition: the listener and its failure messages.
-   Ported from src/speech.js. The recogniser is passed in rather than read off
+   Ported from the old app's speech.js. The recogniser is passed in rather than read off
    window at import, so tests drive a fake and nothing runs at import time. */
 
 /* The slice of the Web Speech API we use; lib.dom doesn't ship it. */

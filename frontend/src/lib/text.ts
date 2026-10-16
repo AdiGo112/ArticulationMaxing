@@ -1,5 +1,5 @@
 /* text.ts — Pure text and measurement helpers. No DOM, no state.
-   Ported from src/text.js. */
+   Ported from the old app's text.js. */
 
 import { CRUTCH, HARD, STOP } from "./content.ts";
 

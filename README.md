@@ -3,11 +3,10 @@
 A speaking-practice booth that runs in the browser. Six drills for articulation, pace, diction and
 confidence, scored live from your microphone, with feedback that names one thing to fix.
 
-Audio and transcripts stay in the tab. The one exception is an opt-in Claude review that sends the
-transcript (never audio) using your own API key.
+Audio and transcripts stay in the tab. The one exception planned is an opt-in Claude review that
+sends the transcript (never audio) using your own API key.
 
-**Status:** a static site today. It is being taken to a public, free-to-run production app; see
-[docs/TASKS.md](docs/TASKS.md).
+**Status:** a React app on its way to a public, free-to-run launch; see [docs/TASKS.md](docs/TASKS.md).
 
 | Doc | Read it for |
 |---|---|
@@ -15,6 +14,7 @@ transcript (never audio) using your own API key.
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How it works, scoring, storage, the target stack |
 | [docs/TASKS.md](docs/TASKS.md) | What's done, what's next, what's blocked |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Why it's built this way, and what was rejected |
+| [docs/DESIGN.md](docs/DESIGN.md) | How it looks: the terminal booth, colours, type, Reel |
 | [docs/PRIVACY.md](docs/PRIVACY.md) | Draft of the public privacy policy |
 | [CLAUDE.md](CLAUDE.md) | Rules for anyone (human or agent) changing the code |
 
@@ -22,42 +22,25 @@ transcript (never audio) using your own API key.
 
 ## Run it
 
-```bash
-node serve.js     # https://localhost:8137
-node test.js      # unit tests
-node scripts/smoke.mjs   # the app in headless Chrome (Node 22+)
-```
-
-No `npm install`: there are no dependencies; `package.json` only sets `"type": "module"`.
-Needs Node 20.11+.
-
-The React port (Phase 2) lives in `frontend/` and is the one place with dependencies:
+The app lives in `frontend/` (React + TypeScript, built with Vite). Needs Node 22+.
 
 ```bash
-cd frontend && npm install
-npm run dev       # http://localhost:5173 — a bare test booth until the redesign
-npm test          # Vitest: the ported logic and whole simulated runs
-npm run build && node ../scripts/smoke-frontend.mjs   # a real run on Chrome's fake mic
+cd frontend
+npm install
+npm run dev       # http://localhost:5173 — also serves /label.html and /mic-test.html
+npm test          # Vitest: the logic, Reel, and whole simulated runs
+npm run build && node ../scripts/smoke-frontend.mjs   # the built app in headless Chrome, fake mic
 ```
 
-The microphone needs a secure context, so open the app through the server, not from the file
-system. `serve.js` uses HTTPS when `localhost-cert.pem` and `localhost-key.pem` exist (Chrome's
-speech recogniser prefers it), plain HTTP otherwise:
-
-```bash
-openssl req -x509 -newkey rsa:2048 -nodes \
-  -keyout localhost-key.pem -out localhost-cert.pem -days 825 \
-  -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
-```
-
-Self-signed, so Chrome warns once: **Advanced → Proceed to localhost**. Both files are gitignored;
-the key is private and must never be committed or uploaded.
+The microphone needs a secure context; `localhost` counts as one, so the dev server works as it is.
+To try the production build: `npm run build && npx vite preview` (http://localhost:4173).
 
 ## Deploy
 
-Connect the repo to Netlify. `netlify.toml` publishes only the runtime files (`index.html`,
-`style.css`, `src/`) and sets a Content-Security-Policy and security headers. HTTPS is required —
-browsers block the microphone on plain HTTP.
+Connect the repo to Netlify. `netlify.toml` builds `frontend/` and publishes `frontend/dist` with a
+Content-Security-Policy and security headers; nothing else in the repo ships. HTTPS is required —
+browsers block the microphone on plain HTTP. Then turn on **Site configuration → Forms → form
+detection** so the waitlist form is received.
 
 ## Troubleshooting transcription
 
@@ -73,13 +56,13 @@ chip in the booth shows its state.
 | `failed` + "was blocked" | Mic permission denied | Allow it via the padlock in the address bar |
 | `listening…` that never turns `on` | Nothing understood | Move closer, or set the mic to **Quiet voice** |
 
-Still stuck: open `/mic-test.html`. It runs the recogniser alone, with the mic held open, and in
+Still stuck: run `npm run dev` and open `/mic-test.html`. It runs the recogniser alone, with the mic held open, and in
 continuous mode, logs every event, and tells you whether the fault is the browser, the network or
 the app.
 
 ## Labelling takes
 
-`/label.html` builds the training data for the in-browser filler detector (PRD → F15). It is dev
+`/label.html` (from `npm run dev`) builds the training data for the in-browser filler detector (PRD → F15). It is dev
 only: never deployed, and nothing leaves the page except the files you download.
 
 1. **Record** a take on the page (it uses the app's mic settings), or **open** audio files —

@@ -10,6 +10,8 @@
 </head>
 <body>
 <div id="root"></div>
+<!-- Netlify Forms finds forms in the deployed HTML at build time; the app posts the real one with fetch -->
+<form name="waitlist" data-netlify="true" netlify-honeypot="company" hidden><input name="use"><input name="email"><input name="company"></form>
 <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>

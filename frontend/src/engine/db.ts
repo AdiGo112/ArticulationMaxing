@@ -19,7 +19,7 @@ function openDb(): Promise<IDBDatabase> {
 }
 
 /* The record; on the very first load, the old app's history brought across.
-   The localStorage copy is left in place, so going back to the old app loses
+   The localStorage copy is left in place, so a failed copy loses
    nothing. Without IndexedDB (rare: some private modes) the old key is used. */
 export async function loadRecord(): Promise<UserRecord> {
   let db: IDBDatabase;

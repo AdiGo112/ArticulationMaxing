@@ -48,11 +48,11 @@ recognition; there, Speakeasy scores what it can from the audio alone and nothin
   *Review what I said*, the transcript of that take and the drill's prompt are sent to Anthropic
   using your key — never audio. Your key is stored only in your browser. Use is governed by your
   agreement with Anthropic and [Anthropic's privacy policy](https://www.anthropic.com/legal/privacy).
-  The code that makes this request is downloaded from esm.sh only when you use the feature.
+  The code that makes this request is part of the app and runs only when you press the button.
 
 ### What is stored in your browser
 
-In your browser's local storage, on your device only:
+In your browser's storage (IndexedDB), on your device only:
 
 - your practice history: date, drill, prompt id, scores and measurements (pace, filler counts,
   pauses and similar numbers) — **not** transcripts or recordings;
@@ -75,9 +75,7 @@ Speakeasy, and delete it on request: [contact address].
 
 The site is hosted on Netlify, which processes standard request data (such as your IP address)
 to serve the pages; see [Netlify's privacy policy](https://www.netlify.com/privacy/).
-[Fonts are served from this site. — *true only once fonts are self-hosted; until then:* Fonts are
-loaded from Google Fonts, which receives your IP address when the page loads; see Google's policy
-above.]
+Fonts are served from this site, so loading the page sends nothing to a font provider.
 
 ### Children
 

@@ -1,70 +1,71 @@
 # Architecture
 
-How Speakeasy works today, and the system it is moving to. Behaviour and reasons live here;
+How Speakeasy works, and the system it is growing into. Behaviour and reasons live here;
 *why we chose* one option over another lives in [DECISIONS.md](DECISIONS.md), *what to build* in
 [PRD.md](PRD.md), *what's done* in [TASKS.md](TASKS.md). For exact values (thresholds, weights,
 pool contents) the code is the source of truth — this file explains them.
 
-- [Today](#today) — module map, a run end to end, drills and content, measurement, scoring,
-  voice detection, transcription, report, coaching, plan, routes, storage, logic built ahead of its
-  UI, interface, dev pages, deploy, tests
+- [The app](#the-app) — module map, a run end to end, drills and content, measurement, scoring,
+  voice detection, transcription, report, coaching, plan, routes, storage, feature logic,
+  interface, dev pages, deploy, tests, the engine
 - [Target](#target) — stack, request path, what leaves the device, data model, free-tier limits
 
 ---
 
-# Today
+# The app
 
-A static site: native ES modules loaded straight by the browser, no build step, no dependencies,
-no backend. Everything runs in the tab; the one exception is the opt-in Claude review.
+A React + TypeScript single-page app built with Vite (`frontend/`), served as static files; no
+backend yet. Everything runs in the tab. The vanilla-JS app it replaced was retired on 2026-10-16
+(DECISIONS D-023); its history is in git.
 
 ## Module map
 
 ```text
-index.html, style.css     markup and every style rule
-src/
-  main.js       boot — the only module with an import-time side effect
-  dom.js        $ = id => document.getElementById(id)
-  content.js    every text pool (prompts, readings, twisters, words, echoes, filler lists)
-  text.js       pure text + measurement: tokenising, filler counting, passage matching,
-                accuracy, variety, own-text cleaning and breath marks
-  audio.js      mic stream, per-frame probe, voice-activity detection, YIN pitch
-  speech.js     Web Speech wrapper and its error messages
-  drills.js     DRILLS, buildRun() (pure data), own-text runs, local language analysis, goal packs,
-                the daily plan's logic, progress facts, diction cards, the filler buzzer rule
-  stage.js      stageHtml(run): the booth's markup for one run
-  scoring.js    curves, scoreRun(), verdicts, coaching notes, SCORING_VERSION
-  storage.js    the localStorage record, streak, plan persistence
-  canvas.js     idle wave, live ribbon, report tape, history sparklines
-  run.js        session runtime: arm, calibrate, countdown, frame loop, finish
-  report.js     post-run report, setup pills, shared UI primitives
-  coach.js      the three coaching tiers
-  ui.js         views, router, event listeners
+frontend/
+  index.html     the only page that is built and shipped
+  label.html, mic-test.html   dev pages: served by `npm run dev`, never built
+  src/
+    lib/          pure, typed, no DOM — tested with Vitest
+      content.ts    every text pool (prompts, readings, twisters, words, echoes, filler lists)
+      text.ts       tokenising, filler counting, passage matching, accuracy, variety, own text
+      scoring.ts    curves, scoreRun(), verdicts, coaching notes, SCORING_VERSION
+      drills.ts     DRILLS, buildRun(), language analysis, the plan, packs, facts, diction cards,
+                    the buzzer rule, the live coach line
+      vad.ts        voice-activity detection, YIN pitch
+      speech.ts     the Web Speech listener (recogniser passed in) and its error messages
+      storage.ts    the record's shape, plan, streak, recordRun(), backup validation, migration
+      reel.ts       Reel's pixels: frames(state) → one SVG path per colour per frame
+      ascii.ts      ASCII decoration around real words (the speech bubble)
+    engine/
+      session.ts    createSession(): arm, calibrate, count down, frame loop, finish → RunResult
+      browser.ts    the real ports: mic + MediaRecorder + buzzer tick, clock, speech synthesis
+      db.ts         the record in IndexedDB; first load copies the old localStorage record
+      useSession.ts React's handle: the engine in a ref, state only on phase changes
+    label/          label.js, the labelling page's pure helpers (tested)
+    ui/             parts.tsx (Reel, logo, Bar, Wave, Timeline, Marked) · art.ts (ripples)
+    app/            state.tsx (record, last result, hash routes) · Shell.tsx (header, nav, tabs)
+    screens/        Home, Booth, Report; the other pages show "next" until they are built
+    styles.css      DESIGN.md's tokens; fonts self-hosted from @fontsource
 ```
 
-**Pure** (no DOM, importable by `test.js`): `content`, `text`, `audio`'s functions, `speech`'s
-wrapper (with a stubbed recogniser), `drills`, `stage`, `scoring`, `storage` (with a stubbed
-`localStorage`). **DOM-bound**: `run`, `report`, `coach`, `ui`, `canvas`, `main`.
-
-**Load-order rule.** `run`/`report`/`coach`/`ui` import each other cyclically, which ES modules
-allow — but anything *called while a module is still evaluating* must live in a module outside the
-cycle. That is why `$` sits alone in `dom.js`: `ui.js` and `report.js` call it at import time to
-attach handlers. `storage.js` imports `drills.js` (for `buildPlan`); `drills.js` imports neither
-storage nor the DOM.
+**Pure vs DOM.** `lib/` imports nothing from the DOM or React, which is what lets Vitest cover it
+and lets the engine run whole sessions in Node. `engine/` touches the browser only through
+`browser.ts` and `db.ts`.
 
 ## A run, end to end
 
 1. **Pick.** `buildRun(id, opts)` returns plain data: `{ drill, promptId, dur, target, display,
-   framework, requireWord, speak, cd, … }`. Diction Gym passes the most overdue diction card's
-   twister in `opts`. "Run it again" reuses the same object.
-2. **Stage.** `newRun()` renders `stageHtml(run)`; words to be matched are wrapped in `<w>`.
-3. **Arm.** `begin()` opens the mic, `calibrateRoom()` measures the noise floor for ~1 s, then a
-   countdown (Echo speaks its sentence here).
-4. **Live.** `loop()` runs per animation frame: probe → VAD → ribbon, meters, pauses, live word
-   marking and fillers from the transcript, live coach line.
-5. **Finish.** `finish()` assembles the measurement object `m`, scores it, stores the session
-   (and, on Diction Gym, updates diction cards), marks the plan step done, shows the report.
+   framework, requireWord, speak, cd, … }`. A goal pack can point Impromptu at its prompt pool;
+   Diction Gym passes the most overdue diction card's twister. "Same prompt again" reuses the run.
+2. **Arm.** `begin()` (from a click, for iOS) opens the mic, measures the room for ~1 s, then counts
+   down (Echo speaks its sentence instead). The booth behind the overlay is inert.
+3. **Live.** `loop()` per animation frame: probe → VAD → `onTick(live)` with level, meters,
+   pauses, fillers and their marks, live passage marking and the coach line.
+4. **Finish.** `finish()` assembles the measurement object `m`, scores it and returns a
+   `RunResult`; the booth saves it with `recordRun()` (history, diction cards, today's plan) and
+   opens the report.
 
-Leaving the booth mid-run discards the run rather than saving a partial score.
+Leaving mid-run (Esc, or another page) discards the run rather than saving a partial score.
 
 ## Drills and content
 
@@ -79,7 +80,7 @@ Leaving the booth mid-run discards the run rather than saving a partial score.
 
 Length is adjustable (30 s / 1 min / 90 s / 2 min) on drills with no set text.
 
-Pools in `content.js`: `PROMPTS` (Impromptu), `EASY_PROMPTS` (Filler Hunt), `FRAMEWORKS`,
+Pools in `lib/content.ts`: `PROMPTS` (Impromptu), `EASY_PROMPTS` (Filler Hunt), `FRAMEWORKS`,
 `READINGS` (Pace & Pause; `|` marks a breath), `TWISTERS`, `WORDS`, `ECHOES`, plus the filler lists
 `HARD` (um, uh, er…) and `CRUTCH` (like, you know, basically…) and the `STOP` word set.
 
@@ -183,45 +184,33 @@ appears in interim results.
 
 ## Report
 
-- **Tape** — bar height is loudness, red marks fillers, green ticks deliberate pauses, grey
-  stretches the room. Click to hear that moment.
-- **Passage replay** — reading drills mark each word mint (came through) or coral (didn't) with
-  the same `matchTarget()` the booth used. Breath marks never shift the alignment (tested).
-- **Playback follows the text** — click a word to jump. A fixed 0.42 s lead (`READ_LAG`) covers
-  the recogniser reporting late; rendered words and timings share one tokeniser, `tokens()`.
+- **The take** — bar height is the loudest moment in each slice; fillers are pills and deliberate
+  pauses ticks on the timeline below. Click the bars to hear that moment.
+- **Parts** — each component of the score, out of 100, coloured by band.
+- **One thing to fix** — the first of `coachNotes()`; **since you started** lists `facts()`.
 
 ## Coaching
 
-Three tiers, strongest first, always leaving something useful:
-
-1. **Local analysis** — `analyseLanguage()`: hedging, placeholder words, intensifiers, one word
-   carried too far, repeated clause openers, a weak opening, and on framework drills a missing
-   reason or example. Silent under 12 words; rates floored at 50 words and requiring ≥ 2
-   occurrences, so one "someone" in 30 words isn't reported as a habit. Quotes your own words.
-2. **Chrome's built-in model** (`LanguageModel`) — probed with a 3 s timeout; the panel renders
-   before the probe answers.
-3. **Claude** — opt-in, the user's own key in `localStorage` (`speakeasy.anthropicKey`), sent only
-   on **Review what I said**: transcript plus drill context, never audio. `claude-opus-5-5` returns
-   Structure / Language / Rewrite (skipped on set passages) / Next. The SDK is `import()`ed from
-   esm.sh at a pinned version only when used. Output is escaped, never rendered as HTML.
+The old app's three tiers — local language analysis (`analyseLanguage()`, in `lib/` and tested),
+Chrome's on-device model, and opt-in Claude review with the user's own key — are being rebuilt on
+the report (TASKS). The local tier needs no network; Claude sends only the transcript, on a button.
 
 ## The daily plan
 
 `buildPlan()` picks three drills from the weakest component averages over the last 10 sessions
 (filler → Filler Hunt; pace, pause → Pace & Pause; acc, cover → Diction Gym; var → Word Forge;
-proj → Echo), falling back to the least-practised drills. `readPlan()` (storage.js) rebuilds it
-once a day and remembers what's done. `trendFor()` needs at least 3 points to claim a direction.
+proj → Echo), falling back to the least-practised drills. `todayPlan()` (lib/storage.ts) rebuilds it
+once a day and `markDone()` remembers what's done. `trendFor()` needs at least 3 points to claim a direction.
 
 ## Routes
 
-`#home`, `#practice`, `#progress`, `#guide`, `#drill-<id>`. The router never writes history
-itself: setting the hash pushes an entry and `hashchange` applies it. A hash pointing nowhere is
-*replaced*, so a bad link isn't a Back-button trap.
+`#/` Home, `#/drill/<id>` the booth, `#/report`, `#/drills`, `#/progress`, `#/texts`, `#/guide`,
+`#/data`. Hash routes need no server rewrites; an unknown hash shows Home.
 
 ## Storage
 
-One `localStorage` record, `speakeasy.v1`, read and written whole, last 200 sessions; a stored
-value of the wrong shape is discarded rather than trusted.
+One IndexedDB value (database `speakeasy`, store `kv`, key `record`), read at start and written
+whole on change; last 200 sessions. A value of the wrong shape is replaced, not trusted.
 
 ```js
 {
@@ -236,22 +225,20 @@ value of the wrong shape is discarded rather than trusted.
 }
 ```
 
-Older sessions lack the scoring-v1 fields and are left as they are; facts and then-vs-now ignore
-them. Recordings live in memory for the page only.
+**Migration.** On first load the old app's `localStorage["speakeasy.v1"]` is copied in through the
+backup validator (`migrateLegacy()`) and left in place. Without IndexedDB the record lives in that
+key instead. Recordings live in memory for the page only.
 
-**Backup.** Browsers delete this record — clearing site data does, and Safari does after seven days
-without a visit — so *Progress → Your data* downloads it as a file and restores it. `parseBackup()`
-accepts only `{ kind: "speakeasy-backup", version: 1, sessions, cards }`, copies known fields of
-entries that look like sessions and cards, and drops the rest; `mergeBackup()` matches sessions by
-time and drill (restoring twice changes nothing), keeps existing cards, and caps at 200 sessions.
-The same validator is the shape a server import must accept (PRD → F11). The Anthropic key is
-never in a backup. After 5 sessions the app calls `navigator.storage.persist()` (Chrome decides
-silently; Firefox asks once).
+**Backup.** `parseBackup()` accepts only `{ kind: "speakeasy-backup", version: 1, sessions, cards }`,
+copies known fields and drops the rest; `mergeBackup()` matches sessions by time and drill and caps
+at 200. The same validator is the shape a server import must accept (PRD → F11). The download and
+restore buttons return with the Your data page. After 5 sessions the app calls
+`navigator.storage.persist()`.
 
-## Built ahead of its UI
+## Feature logic
 
-Tested logic for four PRD features exists without screens; it lands with the redesign
-(status in [TASKS.md](TASKS.md)).
+The PRD features' logic, all in `lib/` with tests; which screens show them is in
+[TASKS.md](TASKS.md).
 
 - **Own text (F1)** — `cleanText()` strips markdown, bullets, emoji and `|`. `autoBreaths()`
   breaks after `. ! ? ; :`, after a comma once the segment has 6+ words, and at 14 words at the
@@ -270,82 +257,57 @@ Tested logic for four PRD features exists without screens; it lands with the red
   `updateCards()` runs Leitner boxes at 1/3/7/14/30 days (a miss resets to box 1; a hit promotes
   only a due card; box 5 passed or five misses in a row retires it); `dueCards()` orders by
   overdue. `retryNote()` turns one result into the report line ("“sixth” came back clean — 1 sound
-  retired."); the Diction Gym card on `#practice` shows how many are due today.
+  retired."); the booth serves the most overdue twister, and the report shows the line.
 - **Filler buzzer (F3)** — *live*. `buzz()` fires on a rise in the hard-filler count (all fillers
   with the crutch option), at most once per 600 ms, never on a set passage, and never twice for a
-  count Chrome revised down and back up. `audio.tick()` plays a 60 ms 880 Hz sine through the
-  mic's own `AudioContext`; `navigator.vibrate(40)` where supported. `buzzOn()`: on by default in
+  count Chrome revised down and back up. the engine's `tick()` (`engine/browser.ts`) plays a 60 ms 880 Hz sine
+  through the mic's own `AudioContext`; `navigator.vibrate(40)` where supported. `buzzOn()`: on by default in
   Filler Hunt only; a per-drill choice is kept in the record's `buzz`. Needs a live transcript, so
   the toggle is disabled without one.
 - **Goal packs (F8)** — *live*. `PACKS` is data; `buildPlan(sessions, size, pack)` gives a pack
   every slot but the last (weakest of its drills first) and keeps the last on the weakest metric
   overall. `packRunOpts()` points Impromptu at `INTERVIEW_PROMPTS` (STAR or PREP) or
-  `PITCH_PROMPTS` (60 s). The choice is the record's `pack`, picked on `#home`; picking one
+  `PITCH_PROMPTS` (60 s). The choice is the record's `pack`, picked on Home; picking one
   rebuilds today's plan if none of it is done, otherwise it applies from tomorrow.
 
-## Interface (current — to be replaced by the redesign)
+## Interface
 
-A broadcast booth: warm tungsten room, mint instrument readouts, Fraunces / Jost / IBM Plex Mono,
-with motion effects reimplemented natively. Two principles carry over to any redesign: **content
-is visible by default** — reveals add `.pre` for one frame, so a script failure never leaves the
-page invisible — and the accessibility baseline: skip link, visible focus, `aria-live` on coach
-and transcript, labelled icon buttons, explicit transition properties, safe-area padding, and
-`prefers-reduced-motion` that also stills the canvas loop.
+[DESIGN.md](DESIGN.md) is the source: the terminal booth, colours, type, Reel, the screens. The
+accessibility baseline carries over: visible focus, `aria-live` on the transcript and coach,
+labelled controls, real buttons and links, a modal that makes the page inert, and reduced motion
+(Reel holds its first frame).
 
 ## Dev pages
 
-Served by `serve.js`, never published:
+Served by `npm run dev` in `frontend/` (http://localhost:5173), never built or published:
 
 - `mic-test.html` — runs the recogniser alone, with the mic held, and continuous, logging every
   event, to tell a browser/network fault from an app fault.
-- `label.html` + `label.js` — the F15 labelling tool (how-to in the README). Decodes with an
-  `OfflineAudioContext`; `#demo` builds a synthetic take. `label.js` is pure and tested.
+- `label.html` + `src/label/label.js` — the F15 labelling tool (how-to in the README). Decodes with
+  an `OfflineAudioContext`; `#demo` builds a synthetic take. `label.js` is pure and tested.
 
 ## Deploy
 
-`netlify.toml` copies only `index.html`, `style.css` and `src/` into `dist/` and sets a
-Content-Security-Policy plus `Permissions-Policy` (microphone self only), `nosniff`,
-`frame-ancestors 'none'`. Allowed origins: esm.sh (SDK), api.anthropic.com, Google Fonts. Fonts
-from Google send each visitor's IP to Google, so they are self-hosted in the redesign (TASKS).
+`netlify.toml` builds `frontend/` (`npm ci && npm run build`) and publishes `frontend/dist`, with a
+Content-Security-Policy that allows only our own origin plus `api.anthropic.com` for opt-in
+coaching, `Permissions-Policy` (microphone self only), `nosniff` and `frame-ancestors 'none'`.
+Fonts, scripts and styles are bundled, so a visit loads nothing from a third party. A hidden copy
+of the waitlist form in `index.html` is what Netlify Forms detects at build time.
 
 ## Tests
 
-`node scripts/smoke.mjs` loads the real app in headless Chrome over the DevTools protocol (no
-dependencies): every route and drill renders without script errors, the label page's mouse and
-keyboard handling works, backup restore works through the real file input, and the goal-pack
-picker, waitlist form and buzzer toggle behave. CI
-(`.github/workflows/ci.yml`) runs it and `node test.js` on every push.
+`npm test` (Vitest): `lib/lib.test.js` (the old suite, case for case), `lib/*.test.ts` (Reel, ASCII,
+storage), `label/label.test.js`, and `engine/session.test.ts`, which drives whole runs with a
+scripted fake mic, a hand-driven clock and a fake recogniser.
 
-`node test.js` — `node:assert`, no framework. Covers the pure modules: filler counting, matching,
-accuracy, variety, scoring and its spread, VAD gating and calibration, timings, the plan and trends,
-language analysis, the recogniser's recovery paths, content ids, rescoring from `raw`, and the
-F1/F2/F3/F4/F5/F8 logic, backup, and label helpers. Neither suite reaches a real microphone run —
-headless Chrome has no mic — so run the app for that.
+`node scripts/smoke-frontend.mjs` (after a build) runs the built app in headless Chrome over the
+DevTools protocol, with Chrome's fake microphone: a real run from the room check to the report and
+IndexedDB, the old-history migration, the goal pack, the live logo, one Reel per screen, Home and
+Report at phone width (checked against 390 px — mobile emulation widens the viewport to fit
+overflow), and the label page's mouse and keyboard handling. CI runs typecheck, tests, build and
+smoke on every push.
 
----
-
-# The port (`frontend/`, Phase 2)
-
-Vite + React + TypeScript, built next to the static app, which keeps shipping until the port
-reaches parity (`netlify.toml` still publishes the old app). Until then **a logic change goes into
-both** `src/` and `frontend/src/lib/`, with its test in both suites; new features go into the port.
-
-```text
-frontend/src/
-  lib/          pure, typed, no DOM — the old pure modules, one-to-one
-    content.ts  text.ts  scoring.ts  drills.ts  vad.ts (VAD + YIN)  speech.ts  storage.ts
-  engine/
-    session.ts  createSession(): arm, calibrate, count down, frame loop, finish → RunResult
-    browser.ts  the real ports: mic + MediaRecorder + buzzer tick, clock, speech synthesis
-    db.ts       the record in IndexedDB; first load copies the old localStorage record
-    useSession.ts  React's handle: the engine in a ref, state only on phase changes
-  lib/reel.ts   Reel's pixels: frames(state) → one SVG path per colour per frame (tested)
-  lib/ascii.ts  ASCII decoration around real words (the speech bubble)
-  styles.css    DESIGN.md's tokens and rules; fonts self-hosted from @fontsource
-  ui/parts.tsx  Reel, the on-air logo, Bar, Wave, Timeline, Marked (fillers in text)
-  app/          state.tsx (record, last result, hash routes) · Shell.tsx (header, nav, phone tabs)
-  screens/      Home, Booth, Report — built; the rest show a "next" page inside the frame
-```
+## The engine
 
 **The engine** owns one run and touches neither the DOM nor storage. It takes its world as ports:
 `AudioPort` (open, probe, record, tick), `ClockPort` (now, frame, wait), the listener from
@@ -356,20 +318,6 @@ The caller saves the result with `recordRun()` (history, diction cards, today's 
 `saveRecord()`. `begin()` is only called from a click, and the AudioContext is created before the
 first await, so iOS counts it as part of the gesture; `dispose()` orphans everything in flight,
 which makes StrictMode's double mount harmless.
-
-**Storage.** The same whole-record model as before, as one IndexedDB value. The first load copies
-`localStorage["speakeasy.v1"]` across through the backup validator (`migrateLegacy()`) and leaves
-the original in place; without IndexedDB it falls back to that key.
-
-**Tests.** `npm test` in `frontend/` (Vitest): `lib/lib.test.js` is `test.js` ported case for case
-(minus the label page and `stageHtml`), plus `engine/session.test.ts`, which drives whole runs with
-a scripted fake mic, a hand-driven clock and a fake recogniser — pauses, speaking time, the
-buzzer, live marking, the audio-only path, a refused mic, dispose mid-countdown, and saving.
-`node scripts/smoke-frontend.mjs` runs the built app in headless Chrome with Chrome's fake
-microphone: a real run end to end (calibration, countdown, MediaRecorder, score, IndexedDB) and the
-migration, plus the live logo, the goal pack, one Reel per screen, and Home and Report at phone width
-(checked against 390 px: mobile emulation widens the viewport to fit overflow). Both smoke tests
-share `scripts/cdp.mjs`. CI runs all of it.
 
 ---
 

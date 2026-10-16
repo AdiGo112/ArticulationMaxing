@@ -1,5 +1,5 @@
 /* browser.ts — The real ports for createSession(): microphone, clock, voice.
-   Ported from src/audio.js. Not unit-tested (Node has no Web Audio); the
+   Ported from the old app's audio.js. Not unit-tested (Node has no Web Audio); the
    logic it feeds is, through session.test.ts.                           */
 
 import type { AudioPort, ClockPort, Probe, SpeakerPort } from "./session.ts";

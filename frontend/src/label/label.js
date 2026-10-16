@@ -1,6 +1,6 @@
 /* label.js — Pure helpers for the filler labelling page (label.html).
    Dev tool for building the F15 filler-detector dataset; never deployed.
-   No DOM, so test.js can check it. */
+   No DOM, so label.test.js can check it. */
 
 export const TYPES = ["um", "uh", "other"];          // other: er, erm, ah, hmm, mm
 export const QUICK_LEAD = 0.35, QUICK_LEN = 0.45;    // reaction time, typical filler length (s)

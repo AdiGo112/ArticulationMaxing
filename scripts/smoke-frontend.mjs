@@ -2,7 +2,8 @@
    microphone (a test tone), so a run goes all the way through: room check,
    countdown, the frame loop, MediaRecorder, scoring, the report, and the save
    to IndexedDB. Also: the one-time move of the old app's history, the goal
-   pack, the live logo, and the phone layout. Run after a build:
+   pack, the live logo, the phone layout, and the label page (a dev page, served
+   by the Vite dev server since it is never built). Run after a build:
    cd frontend && npm run build && node ../scripts/smoke-frontend.mjs      */
 
 import { spawn } from "node:child_process";
@@ -12,6 +13,13 @@ import { check, failures, launch, sleep } from "./cdp.mjs";
 const dir = join(import.meta.dirname, "..", "frontend");
 const PORT = 4173, origin = `http://localhost:${PORT}`;
 const server = spawn(process.execPath, [join(dir, "node_modules/vite/bin/vite.js"), "preview", "--port", PORT, "--strictPort"], { cwd: dir });
+const DEV = 5174, devOrigin = `http://localhost:${DEV}`;
+const dev = spawn(process.execPath, [join(dir, "node_modules/vite/bin/vite.js"), "--port", DEV, "--strictPort"], { cwd: dir });
+await new Promise((res, rej) => {
+  dev.stdout.on("data", d => String(d).includes(String(DEV)) && res());
+  dev.on("exit", c => rej(new Error("vite dev exited with " + c)));
+  setTimeout(() => rej(new Error("vite dev did not start")), 15000);
+});
 await new Promise((res, rej) => {
   server.stdout.on("data", d => String(d).includes(String(PORT)) && res());
   server.on("exit", c => rej(new Error("vite preview exited with " + c + " — did you build frontend/ first?")));
@@ -76,7 +84,37 @@ check("phone: home fits the width", await ev(`document.documentElement.scrollWid
 await open(origin + "/#/report");
 check("phone: the report fits the width", await until(`!!document.querySelector("[aria-label^='Score ']") && document.documentElement.scrollWidth <= 391`), await ev(`document.documentElement.scrollWidth + " px wide on a 390 px phone"`));
 
-close(); server.kill();
+/* the label page, driven with real input events */
+await send("Emulation.clearDeviceMetricsOverride");
+await open(devOrigin + "/label.html#demo");
+const loaded = await until(`document.querySelectorAll("#list tr").length === 3`, 8000);
+check("label: demo take loads with 3 labels", loaded, await text());
+if(loaded){
+  const box = await ev(`(() => { const r = document.getElementById("main").getBoundingClientRect(); return { x:r.x, y:r.y, w:r.width, h:r.height }; })()`);
+  const x = t => box.x + t / 12 * box.w, y = box.y + box.h / 2;
+  const mouse = (type, px) => send("Input.dispatchMouseEvent", { type, x: px, y, button: "left", buttons: type === "mouseReleased" ? 0 : 1, clickCount: 1 });
+  const click = async t => { await mouse("mousePressed", x(t)); await mouse("mouseReleased", x(t)); };
+  const drag = async (a, b) => { await mouse("mousePressed", x(a)); for(let k = 1; k <= 6; k++) await mouse("mouseMoved", x(a) + (x(b) - x(a)) * k / 6); await mouse("mouseReleased", x(b)); };
+  const key = async (k, code, vk) => {
+    await send("Input.dispatchKeyEvent", { type: "keyDown", key: k, code, windowsVirtualKeyCode: vk, text: k.length === 1 ? k : undefined });
+    await send("Input.dispatchKeyEvent", { type: "keyUp", key: k, code, windowsVirtualKeyCode: vk });
+  };
+  const rows = () => ev(`[...document.querySelectorAll("#list tr")].map(tr => [...tr.children].slice(0, 3).map(td => td.textContent.trim()).join(" ")).join(" | ")`);
+  await drag(6.0, 6.5); await key("2", "Digit2", 50);
+  check("label: drag + 2 adds an uh", (await rows()).includes("uh 0:06.00 0:06.50"));
+  await click(1.4); await key("Delete", "Delete", 46);
+  check("label: click + Delete removes a label", !(await rows()).includes("um 0:01.20"));
+  await click(4.2); await key("3", "Digit3", 51);
+  check("label: select + 3 retypes", (await rows()).includes("other 0:04.05"));
+  await drag(8.9, 9.5);
+  check("label: dragging an edge resizes", (await rows()).includes("other 0:08.30 0:09.50"));
+  await key("Escape", "Escape", 27); await click(11.0); await key("1", "Digit1", 49);
+  check("label: 1 drops a quick label behind the playhead", (await rows()).includes("um 0:10.65 0:11.10"));
+  check("label: labels autosave", await ev(`JSON.parse(localStorage.getItem("speakeasy.label.demo.wav:12.00")).labels.length === 4`));
+}
+check("label: no script errors", errors.length === 0, errors.join(" | "));
+
+close(); server.kill(); dev.kill();
 await sleep(300);                  // Chrome may still hold its profile on Windows
 console.log(failures() ? `\n${failures()} check(s) failed` : "\nsmoke ok");
 process.exit(failures() ? 1 : 0);
