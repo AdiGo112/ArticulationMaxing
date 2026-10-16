@@ -32,6 +32,27 @@ test("a refusal and API failures come back as plain words", async () => {
   await expect(say(500, { type: "error", error: { type: "api_error", message: "oops" } })).rejects.toThrow("The API returned an error (500)");
 });
 
+test("a 400 shows the API's reason, and out-of-credit says what to do", async () => {
+  const say = (body: unknown) => askClaude("x", { key: "k", fetch: (async () => reply(400, body)) as typeof fetch });
+  await expect(say({ type: "error", error: { type: "invalid_request_error", message: "Your credit balance is too low to access the Anthropic API." } }))
+    .rejects.toThrow("out of credit");
+  await expect(say({ type: "error", error: { type: "invalid_request_error", message: "max_tokens: too large" } }))
+    .rejects.toThrow("The API returned an error (400): max_tokens: too large");
+});
+
+test("an org without the fallback beta gets the review anyway, asked once more without it", async () => {
+  const bodies: Record<string, unknown>[] = [];
+  const fake = (async (_u: unknown, init?: RequestInit) => {
+    const body = JSON.parse(String(init?.body)); bodies.push(body);
+    return body.fallbacks
+      ? reply(400, { type: "error", error: { type: "invalid_request_error", message: "Unexpected value(s) `server-side-fallback-2026-07-01` for the `anthropic-beta` header." } })
+      : reply(200, message("## Next\nBreathe."));
+  }) as typeof fetch;
+  expect(await askClaude("x", { key: "k", fetch: fake })).toBe("## Next\nBreathe.");
+  expect(bodies.length).toBe(2);
+  expect(bodies[1].fallbacks).toBeUndefined();
+});
+
 test("no network says so", async () => {
   const offline = (async () => { throw new TypeError("Failed to fetch"); }) as typeof fetch;
   await expect(askClaude("x", { key: "k", fetch: offline })).rejects.toThrow("Couldn't reach the API");

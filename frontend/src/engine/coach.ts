@@ -54,17 +54,23 @@ export async function askClaude(prompt: string, opts: { key?: string; fetch?: ty
   // the SDK is a separate chunk: it downloads the first time someone asks
   const { default: Anthropic } = await import("@anthropic-ai/sdk");
   const client = new Anthropic({ apiKey: opts.key ?? readKey(), dangerouslyAllowBrowser: true, fetch: opts.fetch, maxRetries: opts.fetch ? 0 : 2 });
+  // the refusal fallback is a beta: an org that can't use it gets a 400, so ask once more without it
+  const send = (fallback: boolean) => client.beta.messages.create({
+    model: "claude-opus-5-5",
+    max_tokens: 16000,
+    ...(fallback ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const } : {}),
+    thinking: { type: "adaptive" },
+    output_config: { effort: "high" },         // Opus 5.5 defaults to medium
+    system: COACH_SYSTEM,
+    messages: [{ role: "user", content: prompt }],
+  });
   try {
-    const res = await client.beta.messages.create({
-      model: "claude-opus-5-5",
-      max_tokens: 16000,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",                     // a policy decline is re-run on a fallback model
-      thinking: { type: "adaptive" },
-      output_config: { effort: "high" },       // Opus 5.5 defaults to medium
-      system: COACH_SYSTEM,
-      messages: [{ role: "user", content: prompt }],
-    });
+    let res;
+    try { res = await send(true); }
+    catch (e) {
+      if (e instanceof Anthropic.BadRequestError && /fallback|beta/i.test(apiMessage(e))) res = await send(false);
+      else throw e;
+    }
     if (res.stop_reason === "refusal") throw new Error("The model declined to review this transcript.");
     return res.content.flatMap(b => (b.type === "text" ? [b.text] : [])).join("\n").trim();
   } catch (e) {
@@ -73,7 +79,14 @@ export async function askClaude(prompt: string, opts: { key?: string; fetch?: ty
     if (e instanceof Anthropic.PermissionDeniedError) throw new Error("That key isn't allowed to use this model.");
     if (e instanceof Anthropic.RateLimitError) throw new Error("Rate limited by the API. Wait a moment and try again.");
     if (e instanceof Anthropic.APIConnectionError) throw new Error("Couldn't reach the API. Check your connection — this one feature needs the network.");
-    if (e instanceof Anthropic.APIError) throw new Error(`The API returned an error (${e.status ?? "no status"}). Try again in a moment.`);
+    if (e instanceof Anthropic.BadRequestError && /credit balance/i.test(apiMessage(e)))
+      throw new Error("Your Anthropic account is out of credit. Add some under Billing at console.anthropic.com, then try again.");
+    // anything else: the API's own reason, which says what to fix
+    if (e instanceof Anthropic.APIError) throw new Error(`The API returned an error (${e.status ?? "no status"})${apiMessage(e) ? ": " + apiMessage(e) : ". Try again in a moment."}`);
     throw e;
   }
 }
+
+/* The reason in the API's error body: { type: "error", error: { message } }. */
+const apiMessage = (e: { error?: unknown }) =>
+  String((e.error as { error?: { message?: unknown } } | undefined)?.error?.message ?? "");
