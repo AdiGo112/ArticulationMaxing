@@ -185,6 +185,21 @@ a cast on nearly every partial session; fake-indexeddb for `db.ts` — the smoke
 the real thing. **Consequences.** Until the old app is retired, a logic fix lands in both
 `src/` and `frontend/src/lib/`.
 
+## D-021 · Visual direction and mascot: the terminal booth, with Reel — 2026-10-16
+
+**Context.** The redesign (D-014) needed a direction before any screen is rebuilt; the owner's
+references were Duolingo, Claude's pixel doodles and black-and-white ASCII art. **Decision.** A
+near-black, monospace "terminal booth" with one amber accent; Duolingo's structure (daily path,
+goals, streak) in an adult voice; ASCII as decoration only — every number, chart and control is
+real UI (the owner asked for this after the first mockups put graphs and the score in ASCII).
+Mascot: **Reel**, an original coral cassette with legs, small eyes and a prop per moment.
+Fillers moved from coral to `#FF3D6E` so the mascot's colour means nothing else. Details:
+DESIGN.md. **Rejected.** Using Clawd itself — it is Anthropic's mascot, not ours to ship; Mic (a
+stand microphone; the owner didn't like it); Dial, Tempo, Pip, Hum and Sonar (the other five
+options); a tape-recorder Reel with keys and a reel window (the owner preferred the plain
+cassette); purple and mint bodies. **Consequences.** Fonts change to Bricolage Grotesque and
+JetBrains Mono, still to be self-hosted; Reel's paint function becomes a tested module in the port.
+
 ---
 
 ## Open questions

@@ -15,14 +15,15 @@ test in both suites; new features go into the port only (ARCHITECTURE → The po
 
 ## Now
 
-1. **UI redesign** — waiting on the owner's inspirations (see Design).
-2. Meanwhile: owner records and labels takes (see Waiting on the owner).
+1. **Build the screens in `frontend/`** to `docs/DESIGN.md`: Home, Booth and Report are mocked; port
+   Reel's paint function as a tested module first.
+2. **Design the rest** on the canvas: Drills, Progress, Your texts, Guide, countdown, mic errors, phone.
+3. Meanwhile: owner records and labels takes (see Waiting on the owner).
 
 ## Waiting on the owner
 
 These need a person, an account or a microphone.
 
-- [ ] Share UI inspirations: screenshots/links, what you like in each, what you hate now, phone or desktop first.
 - [ ] Deploy: Netlify → Import from Git → this repo; `netlify.toml` does the rest. Then **Site
       configuration → Forms → enable form detection**, or the waitlist form posts into nothing.
 - [ ] One Diction Gym run in Chrome, then check `JSON.parse(localStorage["speakeasy.v1"])` — the
@@ -69,9 +70,10 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
 
 ## Design
 
-- [ ] Inspirations from the owner.
-- [ ] `docs/DESIGN.md`: direction, tokens (type, colour, spacing, motion), screen inventory.
-- [ ] Clickable prototype of home, booth (live run), report, progress; iterate until approved.
+- [x] Inspirations from the owner: Duolingo (structure), Claude's pixel doodles, ASCII art.
+- [x] `docs/DESIGN.md`: direction, ASCII rules, colour, type, shape, Reel, screen inventory (D-021).
+- [~] Mockups on the design canvas: Home, Booth, Report and Reel's twelve moves done. Left: Drills,
+      Progress, Your texts, Guide, countdown, mic errors, phone layouts.
 
 ## Phase 2 — port to Vite + React + TypeScript
 
@@ -81,6 +83,8 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
       (`useSession`); safe under StrictMode double-mount; AudioContext created inside the click (iOS).
       Whole runs tested in Node with fake ports, and in headless Chrome on its fake mic.
 - [ ] Screens built to `DESIGN.md` — `frontend/src/main.tsx` is a bare test booth until then.
+- [ ] Reel: port the canvas's paint function to `frontend/src/lib/reel.ts` with a test; a React
+      component around it; first frame only under `prefers-reduced-motion`.
 - [ ] Port the rest of the old UI logic that isn't pure yet: canvas drawing (ribbon, tape, history),
       the coach tiers (`coach.js`), the follow-along transcript, own-text editor (F1), facts cards (F2).
 - [ ] Self-host the fonts (Google Fonts sends every visitor's IP to Google).

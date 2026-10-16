@@ -22,8 +22,8 @@ free tiers.
 - **Building or changing a feature** → `docs/PRD.md` (goals, non-goals, specs F0–F16 with "done when").
 - **Choosing a library, service or approach** → `docs/DECISIONS.md`; append an entry when you choose
   between real alternatives.
-- **UI work** → `docs/DESIGN.md`, once it exists; it is written from the owner's inspirations before
-  any screen is rebuilt.
+- **UI work** → `docs/DESIGN.md` (direction, ASCII rules, colour and type tokens, Reel the mascot);
+  the mockups are on the design canvas it links. Read it before building or changing a screen.
 
 ## Rules
 
