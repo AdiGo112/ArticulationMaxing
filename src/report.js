@@ -6,7 +6,7 @@ import { CRUTCH, HARD } from "./content.js";
 import { READ_LAG, esc, norm, readStats, tokens, wordAt } from "./text.js";
 import { asrProblem, listener } from "./speech.js";
 import { drillById, nextInPlan } from "./drills.js";
-import { readPlan } from "./storage.js";
+import { readPlan, store } from "./storage.js";
 import { coachNotes, verdict } from "./scoring.js";
 import { css, drawTape } from "./canvas.js";
 import { S, fmt, paint, view } from "./run.js";
@@ -68,7 +68,8 @@ export function showReport(sess){
     m.usedWord!=null ? row("Used the target word", m.usedWord?"yes":"no", m.usedWord?"g":"r") : ""
   ].join("");
 
-  $("r-notes").innerHTML = coachNotes(m, S.run, sess.drill, sess.score)
+  $("r-notes").innerHTML = (sess.retry ? [["Retry cards.", sess.retry]] : [])
+    .concat(coachNotes(m, S.run, sess.drill, sess.score))
     .map(([h,b])=>`<li><b>${esc(h)}</b> ${esc(b)}</li>`).join("");
   $("r-said")._cur = undefined;
   renderRead(sess);
@@ -169,14 +170,28 @@ export function buildSetup(){
   const len = S.run.target ? "" :
     `<span class="lab">Length</span>` + Object.keys(DUR_LABEL).map(d =>
       `<button class="pill" data-dur="${d}" aria-pressed="${+d === S.dur}">${DUR_LABEL[d]}</button>`).join("");
+  // the filler buzzer (F3) hears fillers in the transcript, and never runs on a set passage
+  const buzzPill = S.run.target ? "" :
+    `<span class="lab" style="margin-left:12px">Tick on “um”</span>` + (listener.supported
+      ? `<button class="pill" data-buzz aria-pressed="${S.buzz}">${S.buzz ? "On" : "Off"}</button>`
+      : `<button class="pill" disabled title="Needs live transcription — Chrome or Edge">Off</button>`);
   row.innerHTML = len +
     `<span class="lab"${len ? ' style="margin-left:12px"' : ""}>Mic</span>` +
     SENS.map(([k,v]) =>
-      `<button class="pill" data-sens="${v}" aria-pressed="${S.vad.sens === v}">${k}</button>`).join("");
+      `<button class="pill" data-sens="${v}" aria-pressed="${S.vad.sens === v}">${k}</button>`).join("") +
+    buzzPill;
 }
 $("setupRow").addEventListener("click", e => {
+  if(S.running) return;
+  const t = e.target.closest("[data-buzz]");
+  if(t){
+    S.buzz = !S.buzz;
+    store.set("buzz", { ...store.read().buzz, [S.drill.id]: S.buzz });
+    t.setAttribute("aria-pressed", S.buzz); t.textContent = S.buzz ? "On" : "Off";
+    return;
+  }
   const b = e.target.closest("[data-dur],[data-sens]");
-  if(!b || S.running) return;
+  if(!b) return;
   const group = b.dataset.dur ? "dur" : "sens";
   if(group === "dur"){ S.dur = +b.dataset.dur; $("clock").textContent = fmt(S.dur); }
   else S.vad.sens = +b.dataset.sens;

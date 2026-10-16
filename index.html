@@ -76,8 +76,23 @@
         <span class="lbl">Start today</span>
       </button>
       <div class="planstrip" id="planStrip" data-reveal style="--i:9"></div>
+      <div class="setup packs" id="packRow" role="group" aria-label="Practising for" data-reveal style="--i:9"></div>
       <p class="note" id="quickNote" data-reveal style="--i:10">Three drills, about ten minutes.</p>
     </div>
+
+    <!-- Netlify Forms finds this form in the deployed HTML; ui.js posts it with fetch -->
+    <form class="block waitlist" id="waitlist" name="waitlist" method="POST" data-netlify="true" netlify-honeypot="company">
+      <input type="hidden" name="form-name" value="waitlist">
+      <p hidden><label>Leave this empty <input name="company" tabindex="-1" autocomplete="off"></label></p>
+      <h3>What would you use this for?</h3>
+      <p class="said">An interview, a talk, a habit? Tell us, and leave an email if you want to hear when
+        accounts and sync arrive. This form is the one thing on the page sent anywhere: to our host,
+        Netlify, when you press Send. No recordings, scores or transcripts go with it.</p>
+      <label>What you’re practising for<textarea name="use" rows="2" maxlength="500" required></textarea></label>
+      <label>Email (optional)<input type="email" name="email" maxlength="200" autocomplete="email"></label>
+      <button class="btn primary" type="submit">Send</button>
+      <p class="backupmsg" id="waitMsg" role="status" aria-live="polite"></p>
+    </form>
   </div>
 </section>
 

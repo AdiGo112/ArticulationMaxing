@@ -13,6 +13,7 @@ import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { INTERVIEW_PROMPTS } from "../src/content.js";
 
 const root = join(import.meta.dirname, "..");
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -91,6 +92,30 @@ console.log(`Speakeasy smoke test — ${origin}`);
 await open("#home");
 check("home renders today's plan", await until(`document.querySelectorAll(".planstep").length === 3`));
 check("home: no script errors", errors.length === 0, errors.join(" | "));
+
+// goal packs (F8): picking one rebuilds today's untouched plan around it
+await ev(`document.querySelector('[data-pack="interview"]').click(), true`);
+check("pack: the plan takes two of the pack's drills", await until(
+  `(p => p.includes("impromptu") && p.includes("filler"))([...document.querySelectorAll(".planstep")].map(b => b.dataset.drill))`));
+check("pack: the choice is remembered", await ev(`JSON.parse(localStorage["speakeasy.v1"]).pack === "interview"`));
+await open("#drill-impromptu");
+check("pack: Impromptu serves an interview question", await until(
+  `${JSON.stringify(INTERVIEW_PROMPTS.map(p => p.x))}.some(x => document.getElementById("promptBox").textContent.includes(x))`));
+await open("#home");
+await ev(`document.querySelector('[data-pack=""]').click(), true`);
+
+// waitlist: posts to the server (serve.js answers any path with 200)
+await ev(`(f => { f.use.value = "an interview"; f.requestSubmit(); return true; })(document.getElementById("waitlist"))`);
+check("waitlist: confirms and clears", await until(`document.getElementById("waitMsg").textContent === "Thanks — got it." && !document.getElementById("waitlist").use.value`),
+  await ev(`document.getElementById("waitMsg").textContent`));
+
+// filler buzzer (F3): on by default in Filler Hunt, a remembered toggle, absent on a set passage
+await open("#drill-filler");
+check("buzzer: on by default in Filler Hunt", await until(`document.querySelector("[data-buzz]")?.getAttribute("aria-pressed") === "true"`));
+await ev(`document.querySelector("[data-buzz]").click(), true`);
+check("buzzer: toggle is remembered", await ev(`JSON.parse(localStorage["speakeasy.v1"]).buzz.filler === false`));
+await open("#drill-pace");
+check("buzzer: no toggle on a set passage", await until(`!!document.querySelector("#setupRow .pill") && !document.querySelector("#setupRow [data-buzz], #setupRow [disabled]")`));
 
 // each stage opens with its own heading; checking the text rather than "some
 // text" stops the previous drill's leftover stage from passing for this one

@@ -1,7 +1,7 @@
 /* drills.js — The six drills, local language analysis, and the daily plan.
    Speakeasy. Native ES modules, no build step: the browser loads these directly. */
 
-import { CRUTCH, EASY_PROMPTS, ECHOES, FRAMEWORKS, HARD, PROMPTS, READINGS, STOP, TWISTERS, WORDS } from "./content.js";
+import { CRUTCH, EASY_PROMPTS, ECHOES, FRAMEWORKS, HARD, INTERVIEW_PROMPTS, PITCH_PROMPTS, PROMPTS, READINGS, STOP, TWISTERS, WORDS } from "./content.js";
 import { autoBreaths, countFillers, norm, readStats, tokens, words } from "./text.js";
 
 /* ══ DRILLS ═══════════════════════════════════════════════════════ */
@@ -48,8 +48,12 @@ export const drillById = id => DRILLS.find(d=>d.id===id);
 export function buildRun(id, opts){
   opts = opts || {};
   if(id==="impromptu"){
-    const p = pick(PROMPTS), f = pick(FRAMEWORKS);
-    return { drill:id, promptId:p.id, dur:90, target:null, framework:f, prompt:p.x, cd:p.x };
+    // goal packs (F8): interview questions want a story or a position, so STAR
+    // or PREP; a pitch is sixty seconds, not ninety
+    const pool = opts.pool === "interview" ? INTERVIEW_PROMPTS : opts.pool === "pitch" ? PITCH_PROMPTS : PROMPTS;
+    const p = pick(pool);
+    const f = pick(opts.pool === "interview" ? FRAMEWORKS.filter(x => x.id === "star" || x.id === "prep") : FRAMEWORKS);
+    return { drill:id, promptId:p.id, dur: opts.pool === "pitch" ? 60 : 90, target:null, framework:f, prompt:p.x, cd:p.x };
   }
   if(id==="filler"){
     // an easy topic on purpose: see EASY_PROMPTS
@@ -217,29 +221,57 @@ export function metricAverages(sessions, window){
 }
 
 /* Three drills, worst weakness first. Falls back to the least-practised drills
-   when there is not enough history to know what is weak yet. */
-export function buildPlan(sessions, size){
+   when there is not enough history to know what is weak yet. A goal pack (F8)
+   takes every slot but the last, weakest of its drills first; the last slot
+   stays on your weakest metric overall, so a pack never hides it. */
+export function buildPlan(sessions, size, pack){
   size = size || 3;
   const avg = metricAverages(sessions);
-  const ranked = Object.keys(avg).sort((a,b) => avg[a] - avg[b]);
-  const drills = [], why = {};
-  for(const k of ranked){
+  const order = [], reason = {};
+  for(const k of Object.keys(avg).sort((a,b) => avg[a] - avg[b])){
     const d = METRIC_DRILL[k];
-    if(!d || drills.includes(d)) continue;
-    drills.push(d); why[d] = { metric:k, score:avg[k] };
-    if(drills.length === size) break;
+    if(!d || order.includes(d)) continue;
+    order.push(d); reason[d] = { metric:k, score:avg[k] };
   }
-  if(drills.length < size){
-    // not enough data: favour whatever has been practised least
-    const count = {};
-    DRILLS.forEach(d => count[d.id] = 0);
-    sessions.forEach(s => { if(count[s.drill] != null) count[s.drill]++; });
-    DRILLS.slice().sort((a,b) => count[a.id] - count[b.id]).forEach(d => {
-      if(drills.length < size && !drills.includes(d.id)) drills.push(d.id);
-    });
-  }
+  // not enough data: favour whatever has been practised least
+  const count = {};
+  DRILLS.forEach(d => count[d.id] = 0);
+  sessions.forEach(s => { if(count[s.drill] != null) count[s.drill]++; });
+  DRILLS.slice().sort((a,b) => count[a.id] - count[b.id]).forEach(d => order.includes(d.id) || order.push(d.id));
+
+  const inPack = pack ? pack.drills.map(x => x.drill) : [];
+  const drills = order.filter(d => inPack.includes(d)).slice(0, size - 1);
+  for(const d of order) if(drills.length < size && !drills.includes(d)) drills.push(d);
+  const why = {};
+  drills.forEach(d => { if(reason[d]) why[d] = reason[d]; });
   return { drills, why };
 }
+
+/* ══ GOAL PACKS (F8) ═════════════════════════════════════════════
+   People arrive with a goal, not a drill name. A pack biases the daily plan
+   (buildPlan) and, where it says so, the prompts a drill draws from. */
+
+export const PACKS = [
+  { id:"interview", name:"Job interview",
+    blurb:"The questions panels actually ask, answered in a shape they can follow, without the ums.",
+    drills:[{ drill:"impromptu", pool:"interview" }, { drill:"filler" }] },
+  { id:"presentation", name:"Presentation",
+    blurb:"A pace a room can follow, pauses that land, and a voice that carries.",
+    drills:[{ drill:"pace" }, { drill:"echo" }] },
+  { id:"pitch", name:"Pitch / sales",
+    blurb:"Sixty seconds to sell something to a named listener, in precise words.",
+    drills:[{ drill:"impromptu", pool:"pitch" }, { drill:"word" }] },
+  { id:"clarity", name:"Everyday clarity",
+    blurb:"Consonants that land, rhythm that carries, and fewer fillers.",
+    drills:[{ drill:"diction" }, { drill:"echo" }, { drill:"filler" }] }
+];
+export const packById = id => PACKS.find(p => p.id === id) || null;
+
+/* buildRun options for a drill under a pack: which prompt pool, if any. */
+export const packRunOpts = (pack, drill) => {
+  const d = pack && pack.drills.find(x => x.drill === drill);
+  return d && d.pool ? { pool: d.pool } : undefined;
+};
 
 /* Per-metric trend. One composite score can't tell you that your pace is
    improving while your fillers are not — which is exactly the thing worth
@@ -302,13 +334,13 @@ export function dictionOutcome(spoken, target){
   return { hit:[...hit], missed:[...missed] };
 }
 
-/* Apply one Diction Gym result to the card set; returns { cards, retired }.
+/* Apply one Diction Gym result to the card set; returns { cards, retired, cleared }.
    A miss always sends the card back to box 1. A hit only promotes a card
    that was due — repeating the twister the same afternoon proves nothing
    about next week. Passing box 5 retires a card; so do five misses in a
    row, because some words the recogniser can't produce for anyone. */
 export function updateCards(cards, twisterId, outcome, now){
-  const out = (cards || []).map(c => ({...c})), retired = [];
+  const out = (cards || []).map(c => ({...c})), retired = [], cleared = [];
   const find = w => out.find(c => c.word === w && c.twisterId === twisterId);
   for(const w of outcome.missed){
     const c = find(w);
@@ -318,17 +350,30 @@ export function updateCards(cards, twisterId, outcome, now){
   for(const w of outcome.hit){
     const c = find(w);
     if(!c || c.dueAt > now) continue;
-    c.misses = 0;
+    c.misses = 0; cleared.push(w);
     if(c.box >= BOX_DAYS.length){ retired.push({ word:w, why:"learned" }); c.gone = true; }
     else { c.box++; c.dueAt = now + BOX_DAYS[c.box - 1] * DAY; }
   }
   for(const c of out) if(!c.gone && c.misses >= 5){ retired.push({ word:c.word, why:"recogniser" }); c.gone = true; }
-  return { cards: out.filter(c => !c.gone), retired };
+  return { cards: out.filter(c => !c.gone), retired, cleared };
 }
 
 /* Due cards, most overdue first. */
 export const dueCards = (cards, now) =>
   (cards || []).filter(c => c.dueAt <= now).sort((a,b) => a.dueAt - b.dueAt);
+
+/* The report line for one updateCards() result, or null when nothing changed:
+   "“sixth”, “sheikh's” came back clean — 2 sounds retired." */
+export function retryNote(res){
+  const q = ws => ws.map(w => `“${w}”`).join(", ");
+  const learned = res.retired.filter(r => r.why === "learned").length;
+  const hard = res.retired.filter(r => r.why === "recogniser").map(r => r.word);
+  const out = [];
+  if(res.cleared.length) out.push(`${q(res.cleared)} came back clean` +
+    (learned ? ` — ${learned} sound${learned > 1 ? "s" : ""} retired.` : "."));
+  if(hard.length) out.push(`Retired ${q(hard)}: the recogniser struggles with ${hard.length > 1 ? "these" : "this one"}, not you.`);
+  return out.length ? out.join(" ") : null;
+}
 
 /* ══ PROGRESS AS FACTS (F2) ══════════════════════════════════════
    "Fillers down 58% since 4 Sep" lands harder than any chart. Compares the
@@ -412,4 +457,25 @@ export function recordFor(sessions){
   if(Number.isFinite(best) && rate(last) < best)
     return { kind:"filler", text:"Your lowest filler rate yet" };
   return null;
+}
+
+/* ══ FILLER BUZZER (F3) ══════════════════════════════════════════
+   A soft tick the moment an "um" lands, to interrupt the habit rather than
+   the speaker. Off by default, on by default in Filler Hunt; a choice made
+   per drill is remembered. Never on a set passage: there the words aren't
+   yours, so a filler in them isn't a habit.                              */
+
+export const BUZZ_GAP = 600;                     // ms between ticks
+
+export const buzzOn = (prefs, drill) =>
+  prefs && typeof prefs[drill] === "boolean" ? prefs[drill] : drill === "filler";
+
+/* One transcript update → { fire, state }. Fires on a rise in the hard-filler
+   count (every filler with `crutch`), debounced. The count only ever grows:
+   Chrome revises interim text, and a revision must not tick twice. */
+export function buzz(state, f, now, opts){
+  opts = opts || {};
+  const count = opts.crutch ? f.total : f.hard;
+  const fire = !opts.reading && count > state.count && now - state.at >= BUZZ_GAP;
+  return { fire, state: { count: Math.max(count, state.count), at: fire ? now : state.at } };
 }

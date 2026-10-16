@@ -65,6 +65,19 @@ export const audio = {
       this.recorder.stop();
     });
   },
+  /* The filler buzzer (F3): a 60 ms sine at 880 Hz with a soft envelope.
+     Played through the same context, so echo cancellation can subtract it
+     from the mic. */
+  tick(){
+    if(!this.ctx) return;
+    const t = this.ctx.currentTime, o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.frequency.value = 880;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.18, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+    o.connect(g).connect(this.ctx.destination);
+    o.start(t); o.stop(t + 0.07);
+  },
   close(){ if(this.stream){ this.stream.getTracks().forEach(t=>t.stop()); this.stream=null; }
            if(this.ctx){ this.ctx.close(); this.ctx=null; } }
 };

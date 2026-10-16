@@ -130,6 +130,77 @@ export const EASY_PROMPTS = [
   { id:"easy-022", x:"Talk about the last time you cooked something. What you made, what went in, what you'd change." },
 ];
 
+/* Goal packs (F8) draw Impromptu from these instead of PROMPTS. Interview
+   questions are the ones panels actually ask, phrased the way they ask them —
+   most want a story, which is what STAR is for. */
+export const INTERVIEW_PROMPTS = [
+  { id:"int-001", x:"Tell me about yourself." },
+  { id:"int-002", x:"Why do you want this job?" },
+  { id:"int-003", x:"Why are you leaving your current role?" },
+  { id:"int-004", x:"What's your greatest strength? Give an example of it at work." },
+  { id:"int-005", x:"What's a weakness you're working on, and what are you doing about it?" },
+  { id:"int-006", x:"Tell me about a time you disagreed with your manager. What happened?" },
+  { id:"int-007", x:"Describe a project that failed. What was your part in it?" },
+  { id:"int-008", x:"Tell me about a time you had to learn something quickly." },
+  { id:"int-009", x:"Give an example of a time you led without having authority." },
+  { id:"int-010", x:"Describe a conflict with a colleague and how you resolved it." },
+  { id:"int-011", x:"Tell me about a decision you made with incomplete information." },
+  { id:"int-012", x:"What's the achievement you're proudest of, and why that one?" },
+  { id:"int-013", x:"Tell me about a time you missed a deadline." },
+  { id:"int-014", x:"Describe a time you received hard feedback. What did you change?" },
+  { id:"int-015", x:"Where do you see yourself in five years?" },
+  { id:"int-016", x:"Walk me through your CV, and tell me why each move made sense." },
+  { id:"int-017", x:"Tell me about a time you had too much to do. How did you choose what to drop?" },
+  { id:"int-018", x:"Describe a time you persuaded someone who started out against you." },
+  { id:"int-019", x:"Tell me about a mistake you made that nobody else noticed. What did you do?" },
+  { id:"int-020", x:"What would your last manager say you should improve?" },
+  { id:"int-021", x:"Describe a time you went beyond what your role asked of you." },
+  { id:"int-022", x:"Tell me about a time you had to deliver bad news." },
+  { id:"int-023", x:"How do you handle a stakeholder who keeps changing their mind?" },
+  { id:"int-024", x:"Describe the most complex problem you've solved. Explain it so I can follow." },
+  { id:"int-025", x:"Tell me about a time you worked with someone very different from you." },
+  { id:"int-026", x:"What do you know about our company, and what would you change about it?" },
+  { id:"int-027", x:"Tell me about a time you improved a process nobody asked you to touch." },
+  { id:"int-028", x:"Describe a time you had to say no to someone senior." },
+  { id:"int-029", x:"Tell me about a goal you set and didn't reach." },
+  { id:"int-030", x:"How do you decide when something is good enough to ship?" },
+  { id:"int-031", x:"Tell me about a time you helped a struggling teammate." },
+  { id:"int-032", x:"Describe a situation where you had to adapt to a big change at work." },
+  { id:"int-033", x:"What kind of work environment brings out your best, and what drains you?" },
+  { id:"int-034", x:"Tell me about a time you took a calculated risk. How did it turn out?" },
+  { id:"int-035", x:"Describe a time you used data to change someone's mind." },
+  { id:"int-036", x:"Tell me about a time you were wrong and had to admit it." },
+  { id:"int-037", x:"What's a piece of work you'd redo if you could, and how?" },
+  { id:"int-038", x:"Why should we hire you over the other candidates?" },
+  { id:"int-039", x:"Tell me about a time you had to work under real pressure." },
+  { id:"int-040", x:"Do you have any questions for us? Ask two, and say why you're asking them." }
+];
+
+/* Pitch prompts are sixty seconds to sell something to a stated listener.
+   Naming the listener is the point: a pitch is shaped by who is hearing it. */
+export const PITCH_PROMPTS = [
+  { id:"pitch-001", x:"Pitch your current project to an investor who has one minute before their next meeting." },
+  { id:"pitch-002", x:"Sell your favourite book to a friend who says they don't have time to read." },
+  { id:"pitch-003", x:"Pitch yourself for a job you'd love, to the hiring manager, in an elevator." },
+  { id:"pitch-004", x:"Convince your team to drop a weekly meeting." },
+  { id:"pitch-005", x:"Pitch a small app idea to a developer you want to build it with you." },
+  { id:"pitch-006", x:"Sell a used bicycle to a stranger who is about to walk away." },
+  { id:"pitch-007", x:"Ask your manager for a budget to try something new. Say what it costs and what it returns." },
+  { id:"pitch-008", x:"Pitch your town as a holiday destination to someone who's never heard of it." },
+  { id:"pitch-009", x:"Convince a sceptical customer to try a product you use every day." },
+  { id:"pitch-010", x:"Pitch a charity you care about to someone deciding where to give this year." },
+  { id:"pitch-011", x:"Sell a new feature to the people who will have to support it." },
+  { id:"pitch-012", x:"Pitch a fix for a problem at your workplace to the person who can approve it." },
+  { id:"pitch-013", x:"Convince a friend to come to an event they've already said no to." },
+  { id:"pitch-014", x:"Pitch a podcast or channel you'd start, to the first guest you want on it." },
+  { id:"pitch-015", x:"Sell a service you could offer this week, to your first paying customer." },
+  { id:"pitch-016", x:"Pitch a change to how your household runs, to the people you live with." },
+  { id:"pitch-017", x:"Convince a conference to give you a speaking slot. Say what the room will leave with." },
+  { id:"pitch-018", x:"Pitch a partnership to a business next door to yours." },
+  { id:"pitch-019", x:"Sell a tool you rely on to a colleague who swears by the old way." },
+  { id:"pitch-020", x:"Pitch the one habit that changed your year, to someone who has tried everything." }
+];
+
 export const READINGS = [
   { id:"read-001", t:"On being understood", s:"", x:"The purpose of speech is not to prove that you know something. | It is to move an idea from one head into another | without losing its shape on the way. | Every extra word is friction. | Every unnecessary clause is a place where the listener can slip. | Say the thing, | then stop talking, | and let the silence do the underlining. | Most people speak as though they are being graded on effort. | They add qualifications nobody asked for, | and hedges that guard against objections | which were never coming. | The result sounds careful | and lands as noise. | Try the opposite. | Decide the one sentence you want the room to repeat afterwards, | and build everything else as a road towards it. | If a phrase carries no weight, | cut it before it reaches your mouth. | You will feel exposed doing this, | because there is nowhere to hide in a plain sentence. | That exposure is the point. | Clarity is a form of courage, | and a room hears courage | long before it follows an argument." },
 

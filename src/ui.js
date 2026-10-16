@@ -6,7 +6,7 @@ import { exportBackup, mergeBackup, parseBackup, readPlan, store, streak } from 
 import { esc } from "./text.js";
 import { audio } from "./audio.js";
 import { listener } from "./speech.js";
-import { DRILLS, METRIC_NAME, drillById, nextInPlan, trendFor } from "./drills.js";
+import { DRILLS, METRIC_NAME, PACKS, drillById, dueCards, nextInPlan, trendFor } from "./drills.js";
 import { css, drawHistory, drawTape } from "./canvas.js";
 import { S, armCancel, begin, finish, newRun, view } from "./run.js";
 import { reveal, scoreColor } from "./report.js";
@@ -26,8 +26,9 @@ export function renderHome(){ renderPlan(); }
 
 /* #practice — all six drills, to browse and choose from. */
 export function renderDrills(){
-  const ss = store.read().sessions;
+  const d = store.read(), ss = d.sessions;
   const best = id => { const r = ss.filter(s=>s.drill===id); return r.length ? Math.max(...r.map(s=>s.score)) : null; };
+  const due = dueCards(d.cards, Date.now()).length;     // diction retry (F5)
   $("drillGrid").innerHTML = DRILLS.map((dr,i)=>{
     const b = best(dr.id);
     return `<button class="card" data-drill="${dr.id}" data-reveal style="--accent:${dr.accent};--i:${i}">
@@ -37,6 +38,7 @@ export function renderDrills(){
       <h3>${dr.name}</h3>
       <p class="d">${dr.desc}</p>
       <span class="meta"><span class="tag">${dr.tag}</span>
+      ${dr.id === "diction" && due ? `<span class="tag">${due} due today</span>` : ""}
       ${b!=null ? `<span class="best">best ${b}</span>` : `<span class="best" style="opacity:.55">new</span>`}</span>
     </button>`;
   }).join("");
@@ -74,6 +76,14 @@ function renderPlan(){
   $("quickNote").textContent = !next
     ? "All three done today. Come back tomorrow, or pick any drill below."
     : `${total - done} of ${total} left · about ${(total - done) * 3} minutes`;
+
+  // goal packs (F8): one at a time, or none
+  const pack = store.read().pack || "";
+  $("packRow").innerHTML = `<span class="lab">Practising for</span>` +
+    [["", "No goal"], ...PACKS.map(k => [k.id, k.name])].map(([id, name]) => {
+      const blurb = id ? PACKS.find(k => k.id === id).blurb : "The plan follows your weakest metrics alone.";
+      return `<button class="pill" data-pack="${id}" title="${esc(blurb)}" aria-pressed="${id === pack}">${esc(name)}</button>`;
+    }).join("");
 
   box.innerHTML = p.drills.map((id, i) => {
     const d = drillById(id);
@@ -316,6 +326,32 @@ document.addEventListener("keydown", e => {
   if(e.key === "Escape" && $("side").classList.contains("open")){
     closeMenu(); $("menuBtn").setAttribute("aria-expanded", "false"); $("menuBtn").focus();
   }
+});
+
+/* Choosing a pack rebuilds today's plan if none of it is done yet; otherwise
+   it takes effect from tomorrow, so finished work doesn't move. */
+$("packRow").addEventListener("click", e => {
+  const b = e.target.closest("[data-pack]");
+  if(!b) return;
+  store.set("pack", b.dataset.pack || null);
+  if(!readPlan().done.length) store.set("plan", null);
+  renderPlan();
+  $("quickNote").textContent += readPlan().done.length ? " · the new focus starts tomorrow" : "";
+});
+
+/* Waitlist (Netlify Forms). Posted with fetch so the page doesn't reload; Netlify
+   accepts a urlencoded POST to any path when it carries form-name. */
+$("waitlist").addEventListener("submit", async e => {
+  e.preventDefault();
+  const form = e.currentTarget, msg = $("waitMsg"), btn = form.querySelector("button");
+  btn.disabled = true; msg.textContent = "Sending…";
+  try{
+    const r = await fetch("/", { method:"POST", body: new URLSearchParams(new FormData(form)),
+      headers:{ "Content-Type":"application/x-www-form-urlencoded" } });
+    if(!r.ok) throw new Error(r.status);
+    form.reset(); msg.textContent = "Thanks — got it.";
+  }catch(err){ msg.textContent = "That didn't send. Check your connection and try again."; }
+  btn.disabled = false;
 });
 
 document.addEventListener("click", e=>{

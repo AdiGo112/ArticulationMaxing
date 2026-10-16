@@ -157,6 +157,7 @@ the reason.
 
 **Done when.** In Filler Hunt with the buzzer on, saying "um" produces exactly one tick within ~1 s, and
 a 60-second take with the tick firing does not change the VAD's speaking-time measurement by > 2%.
+*(Logic and toggle met, with unit and smoke tests; the tick and the VAD check need a real mic run.)*
 
 ---
 
@@ -204,13 +205,14 @@ real takes, and shown on the tape.
 - Practice card shows "3 due today".
 
 **Stores.** `{ word, twisterId, box, misses, dueAt }`. No job: due cards are a query at pick time.
-Cards are collected and due twisters served today; the report line and practice card need the UI.
+Cards are collected, due twisters served, the report says what came back clean, and the Diction Gym
+card shows how many are due.
 
 **Edge cases.** Some words the recogniser can't produce for anyone. A word missed five times in a
 row is retired with a note: "the recogniser struggles with this one, not you".
 
 **Done when.** Unit tests on box transitions and due selection with a fixed clock *(met)*, and the
-report and practice card show it.
+report and practice card show it *(met)*.
 
 ---
 
@@ -272,17 +274,18 @@ gaze detection (ARCHITECTURE → What leaves the device).
 | Pack | Contents |
 |---|---|
 | Job interview | Impromptu with STAR/PREP on interview-style prompts, Filler Hunt, F13 interview mode |
-| Presentation | Your text (F1), Pace & Pause, pitch focus (F4) |
+| Presentation | Your text (F1), Pace & Pause, pitch focus (F4) — Echo stands in for the last two until they have screens |
 | Pitch / sales | 60-second impromptu, Word Forge, then-vs-now on one prompt |
 | Everyday clarity | Diction Gym + retry (F5), Echo, Filler Hunt |
 
-**How.** A pack is data: `{ id, name, blurb, drills: [{ drill, promptPool?, weight }] }`. Choosing a
+**How.** A pack is data: `{ id, name, blurb, drills: [{ drill, pool? }] }`, in priority order. Choosing a
 pack biases the daily plan (`buildPlan`) toward its drills while still targeting the weakest metric.
 One active pack at a time, changeable any time.
 
-**Needs content:** ~40 interview prompts, ~20 pitch prompts, each with an F0 id.
+**Content:** 40 interview prompts (`int-`) and 20 pitch prompts (`pitch-`), each with an F0 id *(met)*.
 
 **Done when.** Selecting a pack changes the next day's plan to ≥ 2 of 3 drills from the pack.
+*(Met: unit-tested for every pack, and the picker on `#home` checked in the smoke test.)*
 
 ---
 

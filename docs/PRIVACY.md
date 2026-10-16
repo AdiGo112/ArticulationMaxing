@@ -22,8 +22,9 @@ few cases where something is sent elsewhere.
 - No account, no sign-up, no cookies, no ads, no tracking.
 - Your voice is analysed **in your browser**. Recordings are never uploaded.
 - Your history is stored **in your browser only**. We never see it.
-- Two features send data to other companies, and both are described below: live transcription
-  in Chrome and Edge (Google) and the optional Claude review (Anthropic, with your own key).
+- Three things send data to other companies, all described below: the optional waitlist form
+  (Netlify), live transcription in Chrome and Edge (Google), and the optional Claude review
+  (Anthropic, with your own key).
 
 ### Your microphone
 
@@ -55,12 +56,20 @@ In your browser's local storage, on your device only:
 
 - your practice history: date, drill, prompt id, scores and measurements (pace, filler counts,
   pauses and similar numbers) — **not** transcripts or recordings;
-- your daily plan, diction-practice words, and theme;
+- your daily plan, goal pack, diction-practice words, buzzer and theme settings;
 - your Anthropic API key, if you added one.
 
 You can download a backup file of your history from *Progress → Your data*, and delete everything
 by clearing this site's data in your browser settings. Browsers may also delete it on their own
 (for example, Safari after seven days without a visit).
+
+### The waitlist form
+
+The home page has an optional form: what you're practising for, and an email address if you want
+to hear when accounts and sync arrive. It is sent only when you press *Send*, to Netlify Forms,
+which stores it for us; see [Netlify's privacy policy](https://www.netlify.com/privacy/). No
+recordings, scores or transcripts are sent with it. We use the email only to tell you about
+Speakeasy, and delete it on request: [contact address].
 
 ### Hosting and fonts
 
@@ -72,8 +81,9 @@ above.]
 
 ### Children
 
-Speakeasy has no accounts and collects no personal information, so it can be used without one at
-any age. [When accounts exist: see the age rules below.]
+Speakeasy has no accounts. The only personal information it can receive is an email address you
+choose to leave in the waitlist form; if you are under 13, please leave it blank. [When accounts
+exist: see the age rules below.]
 
 ### Changes and contact
 

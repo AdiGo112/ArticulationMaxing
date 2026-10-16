@@ -7,7 +7,7 @@ import { markPlanDone, store } from "./storage.js";
 import { clamp, countFillers, esc, FILLER_RE, matchTarget, projFromRms, readStats, tokens, usedWord, variety, words } from "./text.js";
 import { audio, makeVAD } from "./audio.js";
 import { asrProblem, listener } from "./speech.js";
-import { buildRun, dictionOutcome, drillById, dueCards, updateCards } from "./drills.js";
+import { buildRun, buzz, buzzOn, dictionOutcome, drillById, dueCards, packById, packRunOpts, retryNote, updateCards } from "./drills.js";
 import { stageHtml } from "./stage.js";
 import { band, scoreRun, SCORING_VERSION } from "./scoring.js";
 import { css, drawRibbon } from "./canvas.js";
@@ -22,7 +22,7 @@ export const S = {
   vad:makeVAD(1), roomFrames:0, noiseFrames:0, wordTimes:[],
   voiced:false, silentSince:0, speakTime:0, lastFrame:0,
   levelSum:0, levelN:0, rmsSum:0, rmsN:0, goodPauses:0, longPause:0,
-  flashUntil:0, lastFillers:0, wEls:[], coachAt:0, playhead:null, audioURL:null,
+  flashUntil:0, lastFillers:0, buzz:false, buzzState:null, wEls:[], coachAt:0, playhead:null, audioURL:null,
   /* Room calibration and the countdown run before the clock starts, so S.running
      is still false through all of it. Everything else guards on S.running, which
      left the whole prep phase wide open. */
@@ -86,9 +86,11 @@ export function view(name){
    mutates the run object, so replaying it restores clean markup. */
 export function newRun(id, reuse){
   S.drill = drillById(id);
+  const d = store.read();
   S.run = reuse || buildRun(id, id === "diction"
-    ? { twisterId: (dueCards(store.read().cards, Date.now())[0] || {}).twisterId } : undefined);
+    ? { twisterId: (dueCards(d.cards, Date.now())[0] || {}).twisterId } : packRunOpts(packById(d.pack), id));
   S.dur = S.run.dur;
+  S.buzz = buzzOn(d.buzz, id);
   $("boothName").textContent = S.drill.name;
   $("promptBox").innerHTML = stageHtml(S.run);
   S.wEls = [...$("promptBox").querySelectorAll("w")];
@@ -232,6 +234,7 @@ function start(){
   S.goodPauses = 0; S.longPause = 0;
   S.roomFrames = 0; S.noiseFrames = 0; S.wordTimes = [];
   S.voiced = false; S.silentSince = S.t0; S.lastFillers = 0; S.coachAt = 0;
+  S.buzzState = { count:0, at:-Infinity };
   document.body.classList.add("live");
   $("ribbonHint").style.display = "none";
   $("setupRow").style.display = "none";        // length is locked once the clock starts
@@ -343,6 +346,12 @@ function onTranscript(final, interim){
       !wpm ? "" : wpm>=125&&wpm<=175 ? "good" : (wpm>190||wpm<105) ? "hot" : "warn");
   set("fill", f.total, Math.min(100, f.total*9),
       f.hard>0 ? "hot" : f.total>3 ? "warn" : f.total===0 ? "good" : "");
+
+  if(S.buzz){
+    const b = buzz(S.buzzState, f, performance.now(), { reading: !!S.run.target });
+    S.buzzState = b.state;
+    if(b.fire){ audio.tick(); navigator.vibrate?.(40); }
+  }
 
   if(f.total > S.lastFillers){
     S.lastFillers = f.total;
@@ -469,8 +478,9 @@ export async function finish(){
   // diction retry: every Diction Gym run updates the cards, whether or not
   // the screen shows them yet. Without a transcript there is nothing to judge.
   if(sess.drill === "diction" && listener.supported && text){
-    const d = store.read();
-    store.set("cards", updateCards(d.cards, S.run.promptId, dictionOutcome(text, S.run.target), sess.at).cards);
+    const r = updateCards(store.read().cards, S.run.promptId, dictionOutcome(text, S.run.target), sess.at);
+    store.set("cards", r.cards);
+    sess.retry = retryNote(r);
   }
   markPlanDone(sess.drill);
   showReport(sess);

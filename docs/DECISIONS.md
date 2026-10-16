@@ -161,6 +161,15 @@ without a visit), and accounts are phases away. **Decision.** Download/restore a
 restore validates and merges, never overwrites; the validator doubles as the server import check.
 Ask for persistent storage after 5 sessions.
 
+## D-019 · Waitlist on Netlify Forms, posted with fetch — 2026-10-16
+
+**Context.** Phase 0 wants to know who would use this and for what, before building accounts.
+**Decision.** A plain HTML form on `#home` detected by Netlify Forms (on the free plan), with a
+honeypot field; `ui.js` posts it to `/` with `fetch`, so the page doesn't reload and the CSP
+keeps `form-action 'none'` (`connect-src 'self'` already covers it). Email is optional.
+**Rejected.** Tally or a Google Form — a new origin, a third party seeing every answer, and a page
+that looks nothing like the app. Form detection has to be switched on in the Netlify dashboard.
+
 ---
 
 ## Open questions
@@ -172,6 +181,5 @@ Ask for persistent storage after 5 sessions.
 | Repo visibility | before Phase 4 | Public: unlimited Actions minutes; private: 2,000/mo (enough) |
 | PodcastFillers licence | before training F15 | If non-commercial: own + volunteer takes, LibriSpeech for "other speech" |
 | Anthropic terms on training with outputs | before F16 data work | Assume no until confirmed |
-| Waitlist | Phase 0 | Netlify Forms is free with a plain HTML form |
 | Feedback channel | before deploy | GitHub issues (public repo) or a Netlify form; users need somewhere to report a broken mic |
 | Licence | before making the repo public | Open source (e.g. MIT) or all rights reserved |

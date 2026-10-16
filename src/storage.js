@@ -1,7 +1,7 @@
 /* storage.js — The single localStorage record, read and written whole.
    Speakeasy. Native ES modules, no build step: the browser loads these directly. */
 
-import { buildPlan } from "./drills.js";
+import { buildPlan, packById } from "./drills.js";
 
 /* ══ STORAGE ══════════════════════════════════════════════════════ */
 
@@ -44,7 +44,7 @@ const todayKey = () => dayKey(Date.now());
 export function readPlan(){
   const d = store.read(), p = d.plan;
   if(p && p.day === todayKey()) return p;
-  const built = buildPlan(d.sessions || []);
+  const built = buildPlan(d.sessions || [], 3, packById(d.pack));
   const fresh = { day: todayKey(), drills: built.drills, why: built.why, done: [] };
   store.set("plan", fresh);
   return fresh;

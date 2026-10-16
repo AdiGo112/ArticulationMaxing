@@ -497,6 +497,36 @@ t("the plan favours least-practised drills when metrics are missing", () => {
   assert.ok(!drills.includes("impromptu"), "should not pick the most-practised drill");
 });
 
+t("a goal pack puts at least two of its drills in the plan, and keeps the weakest metric", () => {
+  // diction is the weakest by far; no pack below trains it except clarity
+  const ss = Array.from({length:6}, () =>
+    withParts("pace", { acc:20, cover:90, pace:80, pause:75, filler:85, var:88, proj:90 }));
+  for(const pack of X.PACKS){
+    for(const hist of [ss, []]){
+      const { drills } = X.buildPlan(hist, 3, pack);
+      const own = drills.filter(d => pack.drills.some(x => x.drill === d));
+      assert.ok(own.length >= 2, `${pack.id}: only ${own.length} of its drills in ${drills.join(",")}`);
+      assert.strictEqual(new Set(drills).size, 3);
+      if(hist.length) assert.ok(drills.includes("diction"), `${pack.id} hid the weakest metric: ${drills.join(",")}`);
+    }
+  }
+  assert.deepStrictEqual(X.buildPlan(ss, 3, null), X.buildPlan(ss, 3), "no pack, no change");
+});
+
+t("a goal pack's prompt pool reaches Impromptu", () => {
+  const ids = new Set(), pitch = X.packById("pitch"), interview = X.packById("interview");
+  for(let i = 0; i < 100; i++){
+    const r = X.buildRun("impromptu", X.packRunOpts(interview, "impromptu"));
+    ids.add(r.promptId);
+    assert.ok(["STAR", "PREP"].includes(r.framework.name), "interview got " + r.framework.name);
+  }
+  assert.ok([...ids].every(id => id.startsWith("int-")), "an interview run served " + [...ids].find(id => !id.startsWith("int-")));
+  const p = X.buildRun("impromptu", X.packRunOpts(pitch, "impromptu"));
+  assert.ok(p.promptId.startsWith("pitch-") && p.dur === 60);
+  assert.strictEqual(X.packRunOpts(pitch, "word"), undefined);
+  assert.strictEqual(X.packById("nope"), null);
+});
+
 t("metric averages ignore sessions recorded before parts existed", () => {
   const avg = X.metricAverages([
     { drill:"a", score:50 },
@@ -974,7 +1004,7 @@ t("Filler Hunt gives five seconds of prep and a full minute of speaking", () => 
    must never be reused or silently disappear. content-ids.txt is the ledger:
    retiring an item means deleting its line here on purpose.  */
 
-const POOLS = ["PROMPTS","EASY_PROMPTS","READINGS","TWISTERS","WORDS","ECHOES"];
+const POOLS = ["PROMPTS","EASY_PROMPTS","INTERVIEW_PROMPTS","PITCH_PROMPTS","READINGS","TWISTERS","WORDS","ECHOES"];
 const allIds = POOLS.flatMap(k => X[k].map(i => i.id));
 
 t("every content item has a unique id", () => {
@@ -1153,6 +1183,18 @@ t("cards retire after box 5, or after five misses in a row", () => {
   cards = [];
   for(let i = 0; i < 5; i++) ({ cards, retired } = X.updateCards(cards, "tw-009", { hit:[], missed:["sheikh's"] }, D0 + i*DAY));
   assert.deepStrictEqual(retired, [{ word:"sheikh's", why:"recogniser" }]);
+});
+
+t("retry note: names what came back clean and what retired", () => {
+  const cards = [{ word:"sixth", twisterId:"tw-009", box:2, misses:0, dueAt:D0 },
+                 { word:"sheikh's", twisterId:"tw-009", box:5, misses:0, dueAt:D0 },
+                 { word:"sheep", twisterId:"tw-009", box:1, misses:0, dueAt:D0 + DAY }];
+  const r = X.updateCards(cards, "tw-009", { hit:["sixth", "sheikh's", "sheep"], missed:[] }, D0);
+  assert.deepStrictEqual(r.cleared, ["sixth", "sheikh's"], "a card not yet due is not news");
+  assert.strictEqual(X.retryNote(r), "“sixth”, “sheikh's” came back clean — 1 sound retired.");
+  assert.strictEqual(X.retryNote({ cleared:[], retired:[] }), null);
+  assert.strictEqual(X.retryNote({ cleared:[], retired:[{ word:"sixth", why:"recogniser" }] }),
+    "Retired “sixth”: the recogniser struggles with this one, not you.");
 });
 
 t("the same word in two twisters is two cards", () => {
@@ -1336,6 +1378,42 @@ t("backup: a merge keeps only the newest 200 sessions, like the store", () => {
   const m = X.mergeBackup({ sessions: [] }, b);
   assert.strictEqual(m.record.sessions.length, 200);
   assert.strictEqual(m.record.sessions[0].at, full(50).at);
+});
+
+/* ── filler buzzer (F3) ─────────────────────────────────────────────── */
+
+const F = (hard, crutch) => ({ hard, crutch, total: hard + crutch });
+const B0 = { count: 0, at: -Infinity };
+
+t("buzzer: one tick per new hard filler, none for crutch words by default", () => {
+  let s = B0, ticks = 0;
+  const feed = (f, now, o) => { const r = X.buzz(s, f, now, o); s = r.state; if(r.fire) ticks++; };
+  feed(F(0, 0), 0); feed(F(1, 0), 100); feed(F(1, 0), 900);   // the same "um" re-sent in a revision
+  assert.strictEqual(ticks, 1);
+  feed(F(1, 3), 2000);
+  assert.strictEqual(ticks, 1, "crutch words ticked without the option");
+  feed(F(1, 4), 3000, { crutch: true });
+  assert.strictEqual(ticks, 2, "the crutch option counts every filler");
+});
+
+t("buzzer: debounced, and never fires while a revision shrinks the count", () => {
+  let r = X.buzz(B0, F(1, 0), 1000);
+  assert.ok(r.fire);
+  r = X.buzz(r.state, F(2, 0), 1300);
+  assert.ok(!r.fire, "two ticks 300 ms apart");
+  r = X.buzz(r.state, F(1, 0), 2000);                          // Chrome dropped a word
+  r = X.buzz(r.state, F(2, 0), 2100);
+  assert.ok(!r.fire, "a revision back up to a count already heard ticked again");
+  r = X.buzz(r.state, F(3, 0), 2200);
+  assert.ok(r.fire);
+});
+
+t("buzzer: silent on a set passage; on by default only in Filler Hunt", () => {
+  assert.ok(!X.buzz(B0, F(2, 0), 0, { reading: true }).fire);
+  assert.strictEqual(X.buzzOn(undefined, "filler"), true);
+  assert.strictEqual(X.buzzOn({}, "impromptu"), false);
+  assert.strictEqual(X.buzzOn({ filler: false, word: true }, "filler"), false);
+  assert.strictEqual(X.buzzOn({ filler: false, word: true }, "word"), true);
 });
 
 console.log(`ok — ${n} checks passed`);

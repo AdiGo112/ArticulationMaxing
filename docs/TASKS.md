@@ -6,7 +6,7 @@ Where the work stands. Specs: [PRD.md](PRD.md) · design and build: [ARCHITECTUR
 Update this file in the same commit as the work: tick what's done, add what was found, move
 blocked items to **Waiting**. `[x]` done · `[~]` partly done (the line says what's left) · `[ ]` to do.
 
-**Last updated:** 2026-10-14 · **Branch:** `prod/phase-0-1` (on top of `refactor/es-modules`, neither merged to `main`)
+**Last updated:** 2026-10-16 · **Branch:** `prod/phase-0-1` (on top of `refactor/es-modules`, neither merged to `main`)
 
 ---
 
@@ -20,10 +20,14 @@ blocked items to **Waiting**. `[x]` done · `[~]` partly done (the line says wha
 These need a person, an account or a microphone.
 
 - [ ] Share UI inspirations: screenshots/links, what you like in each, what you hate now, phone or desktop first.
-- [ ] Deploy: Netlify → Import from Git → this repo; `netlify.toml` does the rest.
+- [ ] Deploy: Netlify → Import from Git → this repo; `netlify.toml` does the rest. Then **Site
+      configuration → Forms → enable form detection**, or the waitlist form posts into nothing.
 - [ ] One Diction Gym run in Chrome, then check `JSON.parse(localStorage["speakeasy.v1"])` — the
-      latest session has `secs`, `raw`, `promptId`, and `cards` lists any coral words. (Headless
-      tests can't reach the end of a microphone run.)
+      latest session has `secs`, `raw`, `promptId`, and `cards` lists any coral words; the next day,
+      a due run shows a "Retry cards" line on the report. (Headless tests can't reach the end of a
+      microphone run.)
+- [ ] One Filler Hunt run in Chrome with the buzzer on (the default): one soft tick per "um", and
+      the report's speaking time looks right — the tick must not register as your voice (F3).
 - [ ] First real take in `label.html` — confirms recording and decoding (headless can't).
 - [ ] Record and label **20 takes** with hand-counted fillers (Whisper gate, F9).
 - [ ] Record and label **~200 takes** over the coming weeks (F15 training data).
@@ -41,7 +45,7 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
 - [x] `netlify.toml`: publishes only `index.html`, `style.css`, `src/`; CSP and security headers.
 - [x] Coach on `claude-opus-5-5`; SDK pinned on esm.sh.
 - [ ] Deploy (owner).
-- [ ] Waitlist / "what would you use this for?" — Netlify Forms.
+- [x] Waitlist / "what would you use this for?" — Netlify Forms on `#home` (D-019).
 - [ ] Analytics snippet once the Cloudflare account exists; privacy page names it.
 
 ## Groundwork (not tied to a phase)
@@ -81,12 +85,12 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
 |---|---|---|---|
 | F1 Your own text | [x] | [ ] | editor, preview, "Your texts" list |
 | F2 Progress facts | [x] | [ ] | fact cards on `#progress`, record line on the report |
-| F3 Filler buzzer | [ ] | [ ] | tick + vibrate + per-drill toggle |
+| F3 Filler buzzer | [x] | [x] | mic check (owner); a toggle for the crutch-word option (logic has it) |
 | F4 Pitch | [~] | [ ] | run YIN in a Worker during runs; calibrate on 10 flat + 10 expressive takes; score component (+ `SCORING_VERSION`) |
-| F5 Diction retry | [x] | [~] | live: cards collected, due twisters served. Left: report line, "3 due" card |
+| F5 Diction retry | [x] | [x] | — (report line and "N due today" tag live) |
 | F6 Then vs now | [ ] | [ ] | needs F10 |
 | F7 Webcam self-view | [ ] | [ ] | local only |
-| F8 Goal packs | [ ] | [ ] | write ~40 interview + ~20 pitch prompts with ids |
+| F8 Goal packs | [x] | [x] | picker on `#home`; restyle in the redesign; interview mode joins with F13 |
 | F9 Whisper | [ ] | [ ] | spike, then the 20-take filler gate |
 | F10 Local recording store | [ ] | [ ] | IndexedDB |
 | F15 Filler detector | [~] | [ ] | [x] labelling tool · [ ] licence check · [ ] data · [ ] training · [ ] gate |

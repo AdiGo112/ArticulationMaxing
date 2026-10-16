@@ -29,8 +29,8 @@ src/
                 accuracy, variety, own-text cleaning and breath marks
   audio.js      mic stream, per-frame probe, voice-activity detection, YIN pitch
   speech.js     Web Speech wrapper and its error messages
-  drills.js     DRILLS, buildRun() (pure data), own-text runs, local language analysis,
-                the daily plan's logic, progress facts, diction cards
+  drills.js     DRILLS, buildRun() (pure data), own-text runs, local language analysis, goal packs,
+                the daily plan's logic, progress facts, diction cards, the filler buzzer rule
   stage.js      stageHtml(run): the booth's markup for one run
   scoring.js    curves, scoreRun(), verdicts, coaching notes, SCORING_VERSION
   storage.js    the localStorage record, streak, plan persistence
@@ -230,6 +230,8 @@ value of the wrong shape is discarded rather than trusted.
                promptId, reading, raw, v, secs }],      // these five since scoring v1
   cards:    [{ word, twisterId, box, misses, dueAt }], // diction retry
   plan:     { day, drills, why, done },
+  pack:     string | null,                              // goal pack id (F8)
+  buzz:     { [drillId]: boolean },                     // filler buzzer choices (F3)
   theme:    string | null
 }
 ```
@@ -267,7 +269,19 @@ Tested logic for four PRD features exists without screens; it lands with the red
 - **Diction retry (F5)** — *live*. `dictionOutcome()` judges content words you reached;
   `updateCards()` runs Leitner boxes at 1/3/7/14/30 days (a miss resets to box 1; a hit promotes
   only a due card; box 5 passed or five misses in a row retires it); `dueCards()` orders by
-  overdue.
+  overdue. `retryNote()` turns one result into the report line ("“sixth” came back clean — 1 sound
+  retired."); the Diction Gym card on `#practice` shows how many are due today.
+- **Filler buzzer (F3)** — *live*. `buzz()` fires on a rise in the hard-filler count (all fillers
+  with the crutch option), at most once per 600 ms, never on a set passage, and never twice for a
+  count Chrome revised down and back up. `audio.tick()` plays a 60 ms 880 Hz sine through the
+  mic's own `AudioContext`; `navigator.vibrate(40)` where supported. `buzzOn()`: on by default in
+  Filler Hunt only; a per-drill choice is kept in the record's `buzz`. Needs a live transcript, so
+  the toggle is disabled without one.
+- **Goal packs (F8)** — *live*. `PACKS` is data; `buildPlan(sessions, size, pack)` gives a pack
+  every slot but the last (weakest of its drills first) and keeps the last on the weakest metric
+  overall. `packRunOpts()` points Impromptu at `INTERVIEW_PROMPTS` (STAR or PREP) or
+  `PITCH_PROMPTS` (60 s). The choice is the record's `pack`, picked on `#home`; picking one
+  rebuilds today's plan if none of it is done, otherwise it applies from tomorrow.
 
 ## Interface (current — to be replaced by the redesign)
 
@@ -298,13 +312,14 @@ from Google send each visitor's IP to Google, so they are self-hosted in the red
 
 `node scripts/smoke.mjs` loads the real app in headless Chrome over the DevTools protocol (no
 dependencies): every route and drill renders without script errors, the label page's mouse and
-keyboard handling works, and backup restore works through the real file input. CI
+keyboard handling works, backup restore works through the real file input, and the goal-pack
+picker, waitlist form and buzzer toggle behave. CI
 (`.github/workflows/ci.yml`) runs it and `node test.js` on every push.
 
 `node test.js` — `node:assert`, no framework. Covers the pure modules: filler counting, matching,
 accuracy, variety, scoring and its spread, VAD gating and calibration, timings, the plan and trends,
 language analysis, the recogniser's recovery paths, content ids, rescoring from `raw`, and the
-F1/F2/F4/F5 logic, backup, and label helpers. Neither suite reaches a real microphone run —
+F1/F2/F3/F4/F5/F8 logic, backup, and label helpers. Neither suite reaches a real microphone run —
 headless Chrome has no mic — so run the app for that.
 
 ---
@@ -363,6 +378,7 @@ state changes only on phase changes. The AudioContext is created inside the clic
 | Webcam video | IndexedDB | never |
 | Claude review | — | transcript only, to Anthropic, on button press, user's key |
 | Training donations (F15/F16) | — | per-take opt-in, separate from cloud storage |
+| Waitlist form: what you practise for, optional email | — | to Netlify Forms, only when you press Send |
 | Request data (IP address, browser) | — | to Netlify serving the page and Cloudflare Web Analytics (no cookies); fonts self-hosted so none goes to Google |
 
 No voiceprints, speaker identification, embeddings or face analysis. Error reports carry no
