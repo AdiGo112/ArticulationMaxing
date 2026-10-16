@@ -40,8 +40,8 @@ export function Progress() {
   const stats: [string, string, string][] = [
     [String(h.sessions), "sessions", "var(--ink)"],
     [String(streak(all)), "day streak", "var(--amber)"],
-    [String(h.avg), "average, last 30", scoreColor(h.avg)],
-    [String(h.best), "personal best", scoreColor(h.best)],
+    [String(h.avg), "average score /100, last 30", scoreColor(h.avg)],
+    [String(h.best), "best score /100", scoreColor(h.best)],
     [h.pace ? String(h.pace) : "—", "recent pace, wpm", "var(--cyan)"],
   ];
   const found = facts(all, 3);
@@ -92,12 +92,12 @@ export function Progress() {
         </div>
         <div className="card" style={{ padding: 16 }}>
           <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label={`Scores of the last ${pts.length} sessions, from ${pts[0]?.score} to ${pts[pts.length - 1]?.score}; best ${pts[best]?.score}`} style={{ display: "block", height: "auto" }}>
-            {[25, 50, 75].map(v => <line key={v} x1="0" x2={W} y1={Y(v)} y2={Y(v)} stroke="var(--line)" strokeDasharray="4 6" />)}
-            {pts.length > 1 && <path d={line + ` L${X(pts.length - 1)} ${H} L${X(0)} ${H} Z`} fill="var(--amber)" opacity="0.08" />}
-            <path d={line} fill="none" stroke="var(--amber)" strokeWidth="3" strokeLinejoin="round" />
+            {[25, 50, 75].map(v => <g key={v}><line x1="28" x2={W} y1={Y(v)} y2={Y(v)} stroke="var(--line)" strokeDasharray="4 6" /><text x="0" y={Y(v) + 4} fill="var(--faint)" fontSize="13" fontFamily="var(--mono)">{v}</text></g>)}
+            {pts.length > 2 && <path d={line + ` L${X(pts.length - 1)} ${H} L${X(0)} ${H} Z`} fill="var(--amber)" opacity="0.08" />}
+            {pts.length > 2 && <path d={line} fill="none" stroke="var(--amber)" strokeWidth="3" strokeLinejoin="round" />}
             {pts.map((s, i) => <circle key={s.at} cx={X(i)} cy={Y(s.score)} r={i === best ? 7 : 4} fill={i === best ? "var(--cyan)" : "var(--amber)"} />)}
           </svg>
-          <div className="axis"><span>{pts.length ? ago(pts[0].at) : ""}</span><span>best {pts[best]?.score} · <span style={{ color: "var(--cyan)" }}>●</span></span><span>latest</span></div>
+          <div className="axis"><span>{pts.length ? ago(pts[0].at) : ""}</span><span>score out of 100 · <span style={{ color: "var(--cyan)" }}>●</span> best {pts[best]?.score}</span><span>{ago(pts[pts.length - 1]?.at)}</span></div>
         </div>
       </section>
 

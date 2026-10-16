@@ -6,7 +6,7 @@ import { ASPECT, FIXED, REEL_CORAL, SLOTS, VIEWBOX, frames, shade, type ReelStat
 import { HARD } from "../lib/content.ts";
 import { FILLER_RE } from "../lib/text.ts";
 
-export const scoreColor = (v: number) => v >= 76 ? "var(--cyan)" : v >= 55 ? "var(--amber)" : "var(--alert)";
+export const scoreColor = (v: number) => v >= 76 ? "var(--cyan)" : v >= 55 ? "var(--amber)" : "var(--ink)";
 
 export function useReducedMotion() {
   const q = typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : null;

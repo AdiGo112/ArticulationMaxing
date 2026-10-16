@@ -49,6 +49,8 @@ button { font: inherit; color: inherit; }
 .main { flex: 999 1 600px; min-width: 0; display: flex; flex-direction: column; gap: 32px; }
 .rail { flex: 1 1 300px; max-width: 360px; display: flex; flex-direction: column; gap: 18px; }
 .tabs, .subnav { display: none; }
+.actionbar { position: sticky; bottom: 0; z-index: 4; display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
+  padding: 14px 0; background: linear-gradient(transparent, var(--ground) 30%); }
 @media (max-width: 760px) {
   .top { padding: 14px 18px; }
   .frame { padding: 18px 18px 96px; gap: 22px; }
@@ -67,6 +69,7 @@ button { font: inherit; color: inherit; }
   .onair span { font-size: 13px; letter-spacing: 0.2em; }
   .hero { padding: 22px 18px !important; }
   .wave { gap: 1px; }
+  .actionbar { bottom: calc(64px + env(safe-area-inset-bottom)); }
 }
 
 /* ── the on-air logo ──────────────────────────────────────────── */

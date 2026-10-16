@@ -35,14 +35,14 @@ export function Drills() {
           return (
             <li key={d.id}>
               <a href={"#/drill/" + d.id} className="card" style={{ height: "100%", textDecoration: "none", color: "var(--ink)", borderColor: lit ? "var(--amber)" : undefined }}>
-                <div className="row" style={{ justifyContent: "space-between" }}>
+                <div className="row" style={{ justifyContent: "space-between", minHeight: 24 }}>
                   <span className="label" style={{ fontSize: 11 }}>{String(i + 1).padStart(2, "0")} · {d.tag}</span>
                   {badge && <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.1em", padding: "3px 9px", borderRadius: 999, color: badge[1], background: badge[2] }}>{badge[0]}</span>}
                 </div>
                 <span className="h2">{d.name}</span>
                 <span className="body" style={{ fontSize: 13, lineHeight: 1.6, flexGrow: 1 }}>{d.desc}</span>
                 <div className="row" style={{ justifyContent: "space-between", fontSize: 12.5, borderTop: "1px solid var(--line)", paddingTop: 12 }}>
-                  <span className="muted">best <b style={{ color: s ? scoreColor(s.best) : "var(--faint)" }}>{s ? s.best : "new"}</b></span>
+                  <span className="muted">best <b style={{ color: s ? scoreColor(s.best) : "var(--faint)" }}>{s ? s.best + "/100" : "none yet"}</b></span>
                   <span className="muted">{LENGTH[d.id] || `${d.dur} s · ${d.prep} s prep`}</span>
                   <span className="muted">{ago(s?.last)}</span>
                 </div>

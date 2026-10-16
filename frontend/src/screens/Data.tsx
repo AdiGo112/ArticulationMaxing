@@ -12,9 +12,9 @@ import { useApp } from "../app/state.tsx";
 
 const SENS = [["strict", 0.7], ["normal", 1], ["quiet voice", 1.5]] as const;
 const LEAVES: [string, string, string, boolean][] = [
-  ["Your voice, for scoring", "nowhere — analysed here", "never", false],
+  ["Your voice, for scoring", "nowhere — scored here", "never", false],
   ["Recordings, scores, texts", "nowhere — this browser only", "never", false],
-  ["Live transcript (Chrome, Edge)", "Google, via the browser's recogniser", "while a run records", true],
+  ["Your voice, for live captions (Chrome, Edge)", "Google, via the browser's speech service", "while a run records", true],
   ["One take's transcript", "Anthropic, with your key", "only when you press Review", true],
   ["The waitlist form", "Netlify, our host", "only when you press Send", true],
 ];

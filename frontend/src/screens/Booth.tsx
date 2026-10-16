@@ -205,7 +205,7 @@ function BoothFor({ drill }: { drill: Drill }) {
         </p>
       </section>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center" }}>
+      <div className="actionbar">
         {running
           ? <button type="button" className="btn stop" onClick={() => void s.finish()}>■ STOP</button>
           : <button type="button" className="btn primary" onClick={start}>▶ START SPEAKING</button>}
@@ -246,7 +246,7 @@ function Stage({ run, live }: { run: Run; live: Live | null }) {
     return (
       <p style={{ margin: 0, fontSize: 21, lineHeight: 1.8, maxWidth: 900 }}>
         {tokens(run.display || run.target).map((w, k) => {
-          if (w === "|") return <b key={k} style={{ color: "var(--amber)" }} aria-label="pause here"> ‖ </b>;
+          if (w === "|") return <b key={k} role="img" style={{ color: "var(--amber)" }} aria-label="pause"> ‖ </b>;
           const hit = live?.hits[i++];
           return <span key={k} style={{ color: hit ? "var(--cyan)" : undefined }}>{w} </span>;
         })}

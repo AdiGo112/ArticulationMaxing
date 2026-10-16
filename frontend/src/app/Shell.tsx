@@ -36,7 +36,7 @@ export function Shell({ page, sub, children, rail, live = false, top, inert = fa
               <a href={"#/" + href} aria-current={href === page ? (sub ? "true" : "page") : undefined}>
                 {href === page ? "> " : "  "}{label}{href === "interview" && <span className="soon">soon</span>}
               </a>
-              {href === "drills" && (
+              {href === "drills" && page === "drills" && (
                 <ul className="sub" aria-label="Drills">
                   {SUB.map(([h, name]) => (
                     <li key={h}><a href={"#/" + h} aria-current={h === sub ? "page" : undefined}>{name}</a></li>

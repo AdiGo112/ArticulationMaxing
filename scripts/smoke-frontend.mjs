@@ -148,7 +148,7 @@ const typeInto = (sel, value) => ev(`(() => { const i = document.querySelector($
   Object.getOwnPropertyDescriptor(proto.prototype, "value").set.call(i, ${JSON.stringify(value)}); i.dispatchEvent(new Event("input", { bubbles: true })); return true; })()`);
 await typeInto("input[type=text]", "Best man speech");
 await typeInto("textarea", "Good evening, everyone. For those who don't know me, I'm Sam, and I've known Arjun since we were eleven and basically terrible at football.");
-check("texts: preview places breath marks and flags crutch words", await until(`document.querySelectorAll("[aria-label='pause here']").length >= 2 && document.body.innerText.includes("1 crutch word")`), await text());
+check("texts: preview places breath marks and flags crutch words", await until(`document.querySelectorAll("[aria-label='pause']").length >= 2 && document.body.innerText.includes("1 crutch word")`), await text());
 await press("save");
 await press("▶ REHEARSE THIS");
 check("texts: rehearsing opens the booth on your text", await until(`location.hash === "#/drill/pace" && document.body.innerText.includes("known Arjun since")`), await text());

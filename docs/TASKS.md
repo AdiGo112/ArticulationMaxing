@@ -111,6 +111,22 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
       Your texts; INTERVIEW is its own tab (a placeholder for F13 that starts Impromptu on interview
       questions). On phones, the More tab holds Interview, Guide and Your data.
 - [ ] First-run screen.
+- **UI/UX review (2026-10-17)** — fixed: privacy wording (scoring local; live captions go to Google),
+  Start sticks to the bottom of the booth, scores read /100 and low ones aren't red, chart has a y
+  scale and no line under 3 points, drill list opens only inside DRILLS, drill-card badges aligned,
+  pause marks announced as "pause", disabled Rehearse says why. Still to do:
+  - [ ] Each drill shows only the meters it scores; "—" not "0" before the take starts.
+  - [ ] One source of truth for length and the um-tick (Word Forge shows no length chip selected).
+  - [ ] Echo: a replay button; hide the sentence until the first listen.
+  - [ ] Today: path in order, done items ticked in place; pack list puts the current pack first.
+  - [ ] Interview copy: no developer phrasing ("no key, no network"); lighter nav weight while "soon".
+  - [ ] Recording mode: only prompt, timer and Stop while a take runs.
+  - [ ] Report: lead with the single biggest problem.
+  - [ ] First run in two clicks, with a mic check and a 30 s drill.
+  - [ ] Accessibility pass: contrast of muted/faint on ground, label size, legends not colour-only,
+        focus rings, live regions; Guide habits grid orphan at mid widths.
+  - [ ] Stronger warning on the stored API key before real users; two-step Delete everything.
+  - [ ] Real mobile pass at 390 px (drill grid, meters rail, type sizes).
 - [ ] Exit: the list above done; audio-only path passes in Firefox; deployed.
 
 ## Phase 3 — free on-device features

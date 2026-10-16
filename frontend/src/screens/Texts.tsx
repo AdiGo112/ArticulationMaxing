@@ -75,7 +75,7 @@ export function Texts() {
                 </div>
                 <p style={{ margin: 0, fontSize: 17, lineHeight: 1.8, maxHeight: 320, overflowY: "auto" }}>
                   {tokens(run.display!).map((w, k) => w === "|"
-                    ? <b key={k} style={{ color: "var(--amber)" }} aria-label="pause here"> ‖ </b>
+                    ? <b key={k} role="img" style={{ color: "var(--amber)" }} aria-label="pause"> ‖ </b>
                     : <span key={k}>{w} </span>)}
                 </p>
                 <p className="muted" style={{ margin: 0, fontSize: 12.5, lineHeight: 1.6 }}>
@@ -87,7 +87,7 @@ export function Texts() {
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-end", justifyContent: "space-between" }}>
             <div className="row">
-              <button type="button" className="btn primary" disabled={!run} onClick={rehearse}>▶ REHEARSE THIS</button>
+              <button type="button" className="btn primary" disabled={!run} title={run ? undefined : "Write or paste some text first"} onClick={rehearse}>▶ REHEARSE THIS</button>
               <button type="button" className="btn ghost" disabled={!dirty || !cur.text.trim()} onClick={save}>{dirty ? "save" : "saved"}</button>
               {(saved || cur.text) && <button type="button" className="btn ghost" onClick={remove}>delete</button>}
             </div>

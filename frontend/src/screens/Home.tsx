@@ -53,7 +53,7 @@ export function Home() {
       </section>
       <section className="card" style={{ borderStyle: "dashed", borderColor: "#3A3833", flexDirection: "row", alignItems: "center", gap: 16 }}>
         <pre aria-hidden="true" style={{ fontSize: 11, lineHeight: 1.15, color: "var(--cyan)" }}>{" .--.\n|[]|\n'--'"}</pre>
-        <p className="body" style={{ margin: 0, fontSize: 12.5, lineHeight: 1.6 }}>Your voice is analysed on this device. Nothing leaves it unless you ask.</p>
+        <p className="body" style={{ margin: 0, fontSize: 12.5, lineHeight: 1.6 }}>Scoring happens on this device. Live captions in Chrome and Edge use the browser's speech service, which sends audio to Google.</p>
       </section>
     </>
   );
