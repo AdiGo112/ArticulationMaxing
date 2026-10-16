@@ -15,8 +15,8 @@ Until the items under **Phase 2 → Back from the old app** land, it does less t
 
 ## Now
 
-1. **Bring back what the old app had** (Phase 2 → Back from the old app): Progress, backup and
-   restore, the coach, the guide, the waitlist — then the new screens: Drills, Your texts, first run.
+1. **Finish Phase 2** (Phase 2 → Back from the old app): the report's follow-along transcript and
+   passage marks, the booth's due twister and mid-run transcription errors, then the first-run screen.
 2. Meanwhile: owner records and labels takes (see Waiting on the owner).
 
 ## Waiting on the owner
@@ -91,30 +91,34 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
 - [x] Old app retired (D-023): `src/`, `index.html`, `style.css`, `test.js`, `serve.js` and its smoke test
       removed; the dev pages and `label.js` moved into `frontend/`; CI and Netlify build the app.
 - **Back from the old app** — what it did that the new one doesn't yet:
-  - [ ] Progress: stats, score history, per-metric trends, recent sessions, facts (F2).
-  - [ ] Your data: backup download and restore, Claude key, start over.
+  - [x] Progress: headline numbers, facts (F2) with the drill that trains a slip, score chart by
+        drill, per-metric trends, recent sessions.
+  - [x] Your data: backup download and restore (now with your texts), Claude key, what leaves the
+        device, booth settings (mic sensitivity is remembered), start over.
   - [x] Coach on the report: local findings, Chrome's on-device model, Claude review (own key), with
         the transcript wrapped as data; SDK bundled and lazy (D-024).
   - [ ] Report: follow-along transcript (click a word to jump), the passage marked hit / missed /
         unread on reading drills, the record line (`recordFor()`).
   - [ ] Booth: serve the most overdue diction twister; transcription errors (network, blocked, Brave)
         shown while running.
-  - [ ] Guide page; the waitlist card.
+  - [x] Guide page; the waitlist card (on the Guide).
   - Not coming back: the light theme (DESIGN.md is dark only).
 - [x] Self-host the fonts: Bricolage Grotesque and JetBrains Mono from `@fontsource` (OFL), bundled.
 - [x] `localStorage` → IndexedDB with a one-time migration (validated; the old copy stays).
-- [ ] New screens: Drills, Your texts (F1), first run.
+- [x] New screens: Drills (best, length, last done; today / pack / words-due badges), Your texts (F1).
+      On phones, the More tab holds Your texts, Guide and Your data.
+- [ ] First-run screen.
 - [ ] Exit: the list above done; audio-only path passes in Firefox; deployed.
 
 ## Phase 3 — free on-device features
 
 | Feature | Logic | UI / wiring | Left |
 |---|---|---|---|
-| F1 Your own text | [x] | [ ] | editor, preview, "Your texts" list |
-| F2 Progress facts | [x] | [ ] | fact cards on `#progress`, record line on the report |
+| F1 Your own text | [x] | [x] | owner: rehearse a real talk once |
+| F2 Progress facts | [x] | [~] | fact cards on `#/progress` live; record line on the report |
 | F3 Filler buzzer | [x] | [x] | mic check (owner); a toggle for the crutch-word option (logic has it) |
 | F4 Pitch | [~] | [ ] | run YIN in a Worker during runs; calibrate on 10 flat + 10 expressive takes; score component (+ `SCORING_VERSION`) |
-| F5 Diction retry | [x] | [~] | report line live; due twister in the booth and "N due" on Drills come back (Phase 2) |
+| F5 Diction retry | [x] | [~] | report line and "N due" on Drills live; due twister in the booth (Phase 2) |
 | F6 Then vs now | [ ] | [ ] | needs F10 |
 | F7 Webcam self-view | [ ] | [ ] | local only |
 | F8 Goal packs | [x] | [x] | picker on Home; interview mode joins with F13 |

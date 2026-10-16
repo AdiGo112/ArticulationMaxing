@@ -121,18 +121,18 @@ Reel speaks only in the ASCII bubbles, one short line at a time, in the coach's 
 
 | Screen | Status |
 |---|---|
-| Home — hero, today's path, streak, goals, goal pack, privacy note | mocked |
-| Booth — prompt, live waveform, filler/pause timeline, transcript, meters, coach + Reel | mocked |
-| Report — score, breakdown, the take with markers, one thing to fix, since you started | mocked |
-| Drills — six cards: best score, length, last done; badges for today, your pack, words due | mocked |
-| Progress — headline numbers, facts (F2) with the drill that fixes a slip, score chart, trend tiles, recent sessions | mocked |
-| Your texts (F1) — saved list, editor, the run preview with breath marks and crutch words | mocked |
-| Guide — four habits (ASCII sketches), what each number means (real diagrams) | mocked |
-| Your data — backup, Claude coaching (opt-in key), what leaves the device, booth settings, start over | mocked |
-| Before a run — room check with a noise meter, countdown ring and captions | mocked |
-| Problems — mic refused (blocks), no transcript (runs, says what still works), noisy room (banner) | mocked |
+| Home — hero, today's path, streak, goals, goal pack, privacy note | built |
+| Booth — prompt, live waveform, filler/pause timeline, transcript, meters, coach + Reel | built |
+| Report — score, breakdown, the take with markers, one thing to fix, since you started | built |
+| Drills — six cards: best score, length, last done; badges for today, your pack, words due | built |
+| Progress — headline numbers, facts (F2) with the drill that fixes a slip, score chart, trend tiles, recent sessions | built |
+| Your texts (F1) — saved list, editor, the run preview with breath marks and crutch words | built |
+| Guide — four habits (ASCII sketches), what each number means (real diagrams) | built |
+| Your data — backup, Claude coaching (opt-in key), what leaves the device, booth settings, start over | built |
+| Before a run — room check with a noise meter, countdown ring and captions | built |
+| Problems — mic refused (blocks), no transcript (runs, says what still works), noisy room (banner) | built |
 | First run — welcome, mic primer before the browser asks, the first score as a baseline | mocked |
-| Phone — Home, Booth, Report at 390 px: tab bar, Stop in thumb reach | mocked |
+| Phone — Home, Booth, Report at 390 px: tab bar, Stop in thumb reach | built |
 
 On a phone the side nav becomes a four-tab bar (Today, Drills, Progress, More); the booth's Stop
 button and the report's next step sit at the bottom.

@@ -63,7 +63,7 @@ export const DRILLS: Drill[] = [
 
   { id: "pace", name: "Pace & Pause", accent: M, dur: 0, prep: 5, tag: "Delivery",
     icon: "M12 20a8 8 0 1 1 8-8M12 12l5-3",
-    desc: "Read a passage aloud inside a 130–170 word-per-minute band. Amber marks are breath points — hold each one for a full beat.",
+    desc: "Read a passage aloud inside a 138–165 word-per-minute band. Amber marks are breath points — hold each one for a full beat.",
     hint: "The marks aren’t decoration. Stop completely at each one." },
 
   { id: "diction", name: "Diction Gym", accent: T, dur: 0, prep: 3, tag: "Clarity",
@@ -487,6 +487,38 @@ export function recordFor(sessions: Session[] | null | undefined) {
   if (Number.isFinite(best) && rate(last) < best)
     return { kind: "filler" as const, text: "Your lowest filler rate yet" };
   return null;
+}
+
+/* ══ PROGRESS NUMBERS ═══════════════════════════════════════════
+   What the Progress and Drills pages show. Pace is a median, so one rushed
+   take doesn't move it; sessions without a pace (reading-free drills that
+   heard nothing) are left out rather than counted as zero.             */
+
+export function headline(sessions: Session[]) {
+  if (!sessions.length) return null;
+  const last30 = sessions.slice(-30), paces = sessions.map(s => s.wpm).filter((w): w is number => !!w).slice(-10);
+  return { sessions: sessions.length,
+    avg: Math.round(last30.reduce((a, s) => a + s.score, 0) / last30.length),
+    best: Math.max(...sessions.map(s => s.score)),
+    pace: paces.length ? Math.round(median(paces)) : null };
+}
+
+/* Per drill: best score, when last done, how many runs. */
+export function drillStats(sessions: Session[]): Record<string, { best: number; last: number; n: number }> {
+  const out: Record<string, { best: number; last: number; n: number }> = {};
+  for (const s of sessions) {
+    const d = out[s.drill] ||= { best: 0, last: 0, n: 0 };
+    d.best = Math.max(d.best, s.score); d.last = Math.max(d.last, s.at); d.n++;
+  }
+  return out;
+}
+
+/* "today", "yesterday", "3 days ago", "last week", "12 Sep" — by calendar day. */
+export function ago(t: number | null | undefined, now = Date.now()): string {
+  if (!t) return "never";
+  const day = (x: number) => { const d = new Date(x); return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()); };
+  const n = Math.round((day(now) - day(t)) / DAY);
+  return n <= 0 ? "today" : n === 1 ? "yesterday" : n < 7 ? n + " days ago" : n < 14 ? "last week" : shortDate(t);
 }
 
 /* ══ FILLER BUZZER (F3) ══════════════════════════════════════════

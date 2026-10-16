@@ -4,13 +4,12 @@ import { useMemo, useRef, useState } from "react";
 import { drillById, facts, nextInPlan } from "../lib/drills.ts";
 import { coachNotes, verdict } from "../lib/scoring.ts";
 import { todayPlan } from "../lib/storage.ts";
-import { Bar, Marked, Reel, Timeline, Wave } from "../ui/parts.tsx";
+import { Bar, Marked, Reel, Timeline, Wave, scoreColor } from "../ui/parts.tsx";
 import { Shell } from "../app/Shell.tsx";
 import { go, useApp } from "../app/state.tsx";
 import { Coach } from "./Coach.tsx";
 
 const fmt = (s: number) => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
-const scoreColor = (v: number) => v >= 76 ? "var(--cyan)" : v >= 55 ? "var(--amber)" : "var(--alert)";
 
 /* The take's 20 Hz loudness, reduced to `n` bars by the loudest moment in each. */
 const buckets = (tape: number[], n: number) =>

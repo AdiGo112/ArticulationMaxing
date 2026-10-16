@@ -7,7 +7,7 @@
    cd frontend && npm run build && node ../scripts/smoke-frontend.mjs      */
 
 import { spawn } from "node:child_process";
-import { readdirSync } from "node:fs";
+import { readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { check, failures, launch, sleep } from "./cdp.mjs";
 
@@ -27,7 +27,7 @@ await new Promise((res, rej) => {
   setTimeout(() => rej(new Error("vite preview did not start")), 15000);
 });
 
-const { ev, until, errors, open, close, send, on } = await launch([
+const { ev, until, errors, open, close, send, on, profile } = await launch([
   "--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream", "--autoplay-policy=no-user-gesture-required"]);
 const text = () => ev(`document.body.innerText`);
 const reels = () => ev(`document.querySelectorAll("svg[aria-label^='Reel']").length`);   // DESIGN.md: one per screen
@@ -96,6 +96,7 @@ const REPLY = { id: "msg_smoke", type: "message", role: "assistant", model: "cla
 const CORS = [{ name: "access-control-allow-origin", value: "*" }, { name: "access-control-allow-headers", value: "*" }, { name: "access-control-allow-methods", value: "POST, OPTIONS" }];
 let asked = null;
 on("Fetch.requestPaused", p => {
+  if (!p.request.url.startsWith("https://api.anthropic.com")) return;
   if (p.request.method === "OPTIONS") return send("Fetch.fulfillRequest", { requestId: p.requestId, responseCode: 204, responseHeaders: CORS });
   asked = JSON.parse(p.request.postData || "{}");
   send("Fetch.fulfillRequest", { requestId: p.requestId, responseCode: 200, responseHeaders: [...CORS, { name: "content-type", value: "application/json" }],
@@ -120,14 +121,78 @@ check("run: no script errors", errors.length === 0, errors.join(" | "));
 await press("↻ same prompt again");
 check("again: back in the booth for the same drill", await until(`location.hash === "#/drill/diction" && document.body.innerText.includes("START SPEAKING")`));
 
+/* every nav item lands on a real page, each with one Reel */
+for (const [page, h1] of [["drills", "Pick the one"], ["progress", "What's actually changed"], ["texts", "Rehearse the talk"], ["guide", "How to actually get better"], ["data", "Your data"]]) {
+  await open(origin + "/#/" + page);
+  check(`${page}: renders`, await until(`document.querySelector("h1")?.textContent.startsWith(${JSON.stringify(h1)}) && !document.body.innerText.includes("is next.")`), await text());
+  check(`${page}: one Reel`, (await reels()) === 1, "found " + (await reels()));
+}
+await open(origin + "/#/drills");
+check("drills: six cards, each opens its booth", await until(`document.querySelectorAll("a[href^='#/drill/']").length === 6`));
+await open(origin + "/#/progress");
+check("progress: counts both sessions and lists the run", await until(`document.body.innerText.includes("Diction Gym") && [...document.querySelectorAll("b.big")].some(b => b.textContent === "2")`), await text());
+
+/* your texts: breath marks and crutch words in the preview, saved, rehearsed in the booth */
+await open(origin + "/#/texts");
+const typeInto = (sel, value) => ev(`(() => { const i = document.querySelector(${JSON.stringify(sel)}); const proto = i.tagName === "TEXTAREA" ? HTMLTextAreaElement : HTMLInputElement;
+  Object.getOwnPropertyDescriptor(proto.prototype, "value").set.call(i, ${JSON.stringify(value)}); i.dispatchEvent(new Event("input", { bubbles: true })); return true; })()`);
+await typeInto("input[type=text]", "Best man speech");
+await typeInto("textarea", "Good evening, everyone. For those who don't know me, I'm Sam, and I've known Arjun since we were eleven and basically terrible at football.");
+check("texts: preview places breath marks and flags crutch words", await until(`document.querySelectorAll("[aria-label='pause here']").length >= 2 && document.body.innerText.includes("1 crutch word")`), await text());
+await press("save");
+await press("▶ REHEARSE THIS");
+check("texts: rehearsing opens the booth on your text", await until(`location.hash === "#/drill/pace" && document.body.innerText.includes("known Arjun since")`), await text());
+check("texts: the text is kept in IndexedDB", await ev(`new Promise(res => { const r = indexedDB.open("speakeasy"); r.onsuccess = () =>
+  { const g = r.result.transaction("kv").objectStore("kv").get("record"); g.onsuccess = () => { res(g.result.texts?.[0]?.title === "Best man speech"); r.result.close(); }; }; })`));
+
+/* your data: download, restore through the file input, then start over */
+await send("Browser.setDownloadBehavior", { behavior: "deny" });
+await open(origin + "/#/data");
+await press("↓ DOWNLOAD A BACKUP");
+check("data: download reports what it saved", await until(`document.body.innerText.includes("Saved 2 sessions") && /last backup: today/i.test(document.body.innerText)`), await text());
+const backupFile = join(profile, "backup.json");
+writeFileSync(backupFile, JSON.stringify({ kind: "speakeasy-backup", version: 1, sessions: [
+  { at: Date.UTC(2026, 8, 1), drill: "echo", name: "Echo", score: 77, wpm: null, fillers: 0 }, { at: "broken" }],
+  texts: [{ id: "q3", title: "Q3 update", text: "Revenue is up.", at: Date.UTC(2026, 8, 1) }] }));
+const { root } = (await send("DOM.getDocument")).result;
+const { nodeId } = (await send("DOM.querySelector", { nodeId: root.nodeId, selector: "input[type=file]" })).result;
+await send("DOM.setFileInputFiles", { nodeId, files: [backupFile] });
+check("data: restore merges and says what it skipped", await until(`document.body.innerText.includes("Restored 1 new session") && document.body.innerText.includes("1 damaged entry was skipped")`), await text());
+check("data: restored session is stored", (await stored()) === 3);
+await ev(`window.confirm = () => true`);
+await press("DELETE EVERYTHING");
+check("data: start over empties the record", await until(`document.body.innerText.includes("Everything is gone")`) && (await stored()) === 0);
+
+/* the waitlist posts to Netlify Forms (answered here by Chrome) */
+let posted = null;
+on("Fetch.requestPaused", p => {
+  if (!p.request.url.startsWith(origin)) return;
+  if (p.request.method !== "POST") return send("Fetch.continueRequest", { requestId: p.requestId });
+  posted = p.request.postData;
+  send("Fetch.fulfillRequest", { requestId: p.requestId, responseCode: 200, body: "" });
+});
+await open(origin + "/#/guide");
+await send("Fetch.enable", { patterns: [{ urlPattern: origin + "/" }] });
+await typeInto("textarea[name=use]", "a job interview");
+await press("Send");
+check("guide: waitlist sends to Netlify Forms", await until(`document.body.innerText.includes("Thanks — got it.")`) && /form-name=waitlist/.test(posted) && /use=a\+job\+interview/.test(posted), posted);
+await send("Fetch.disable");
+check("pages: no script errors", errors.length === 0, errors.join(" | "));
+
 /* phone: the side nav becomes a tab bar. Widths are checked against 390, not innerWidth:
    mobile emulation widens the layout viewport to fit content that overflows. */
 await send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
 await open(origin + "/#/");
 check("phone: tab bar shown, side nav hidden", await until(`getComputedStyle(document.querySelector(".tabs")).display === "grid" && getComputedStyle(document.querySelector(".side")).display === "none"`));
 check("phone: home fits the width", await ev(`document.documentElement.scrollWidth <= 391`), await ev(`document.documentElement.scrollWidth + " px wide on a 390 px phone"`));
+await open(origin + "/#/data");
+check("phone: More leads to your texts and the guide", await until(`getComputedStyle(document.querySelector(".subnav")).display === "flex" && !!document.querySelector(".subnav a[href='#/guide']") && !!document.querySelector(".subnav a[href='#/texts']")`));
+for (const page of ["drills", "progress", "texts", "guide", "data"]) {
+  await open(origin + "/#/" + page);
+  check(`phone: ${page} fits the width`, await until(`!!document.querySelector("h1") && document.documentElement.scrollWidth <= 391`), await ev(`document.documentElement.scrollWidth + " px wide on a 390 px phone"`));
+}
 await open(origin + "/#/report");
-check("phone: the report fits the width", await until(`!!document.querySelector("[aria-label^='Score ']") && document.documentElement.scrollWidth <= 391`), await ev(`document.documentElement.scrollWidth + " px wide on a 390 px phone"`));
+check("phone: the report fits the width", await until(`!!document.querySelector("[aria-label^='Score ']") && document.documentElement.scrollWidth <= 391`), await ev(`document.documentElement.scrollWidth + " px wide on a 390 px phone: " + document.body.innerText.slice(0, 300)`));
 
 /* the label page, driven with real input events */
 await send("Emulation.clearDeviceMetricsOverride");

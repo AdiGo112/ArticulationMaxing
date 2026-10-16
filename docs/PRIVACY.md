@@ -56,16 +56,17 @@ In your browser's storage (IndexedDB), on your device only:
 
 - your practice history: date, drill, prompt id, scores and measurements (pace, filler counts,
   pauses and similar numbers) — **not** transcripts or recordings;
-- your daily plan, goal pack, diction-practice words, buzzer and theme settings;
+- texts you saved to rehearse (*Your texts*);
+- your daily plan, goal pack, diction-practice words, mic sensitivity and buzzer settings;
 - your Anthropic API key, if you added one.
 
-You can download a backup file of your history from *Progress → Your data*, and delete everything
-by clearing this site's data in your browser settings. Browsers may also delete it on their own
+You can download a backup file of your history and texts from *Your data*, and delete everything
+there with *Start over* (or by clearing this site's data in your browser settings). Browsers may also delete it on their own
 (for example, Safari after seven days without a visit).
 
 ### The waitlist form
 
-The home page has an optional form: what you're practising for, and an email address if you want
+The Guide page has an optional form: what you're practising for, and an email address if you want
 to hear when accounts and sync arrive. It is sent only when you press *Send*, to Netlify Forms,
 which stores it for us; see [Netlify's privacy policy](https://www.netlify.com/privacy/). No
 recordings, scores or transcripts are sent with it. We use the email only to tell you about

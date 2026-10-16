@@ -6,12 +6,19 @@ import { buildPlan, dictionOutcome, packById, retryNote, updateCards, type Card,
 
 export interface Plan extends PlanPick { day: string; done: string[] }
 
+/* A talk the user pasted in to rehearse (F1). Runs are stored as sessions
+   with promptId "text-<id>". */
+export interface SavedText { id: string; title: string; text: string; at: number }
+
 export interface UserRecord {
   sessions: Session[];
   cards: Card[];                                 // diction retry (F5)
   plan?: Plan | null;
   pack?: string | null;                          // goal pack (F8)
   buzz?: Record<string, boolean>;                // filler buzzer per drill (F3)
+  texts?: SavedText[];                           // your own texts (F1)
+  sens?: number;                                 // mic sensitivity: 0.7 strict, 1, 1.5 quiet voice
+  backedUpAt?: number | null;                    // when a backup was last downloaded
   theme?: string | null;
 }
 
@@ -106,7 +113,7 @@ export const BACKUP_KIND = "speakeasy-backup";
 
 export const exportBackup = (record: Partial<UserRecord>, now: number) => ({
   kind: BACKUP_KIND, version: 1, exportedAt: new Date(now).toISOString(),
-  sessions: record.sessions || [], cards: record.cards || []
+  sessions: record.sessions || [], cards: record.cards || [], texts: record.texts || []
 });
 
 const num = (v: unknown, lo: number, hi: number): v is number =>
@@ -141,6 +148,13 @@ export function cleanSession(x: unknown, drills: string[]): Session | null {
   return out;
 }
 
+export function cleanSavedText(x: unknown): SavedText | null {
+  if (!x || typeof x !== "object") return null;
+  const t = x as Loose;
+  return str(t.id, 40) && str(t.text, 30000) && num(t.at, 1e12, 1e13) && (t.title === "" || str(t.title, 80))
+    ? { id: t.id, title: t.title as string, text: t.text, at: t.at } : null;
+}
+
 export function cleanCard(x: unknown): Card | null {
   if (!x || typeof x !== "object") return null;
   const c = x as Loose;
@@ -158,15 +172,18 @@ export function parseBackup(text: string, drillIds: string[]) {
   if (d.version !== 1) throw new Error("This backup comes from a newer version of Speakeasy. Reload the page and try again.");
   const rawS = Array.isArray(d.sessions) ? d.sessions.slice(-5000) : [];
   const rawC = Array.isArray(d.cards) ? d.cards.slice(-2000) : [];
+  const rawT = Array.isArray(d.texts) ? d.texts.slice(-500) : [];   // backups before F1 have none
   const sessions = rawS.map(s => cleanSession(s, drillIds)).filter((s): s is Session => !!s);
   const cards = rawC.map(cleanCard).filter((c): c is Card => !!c);
-  return { sessions, cards, dropped: rawS.length - sessions.length + rawC.length - cards.length };
+  const texts = rawT.map(cleanSavedText).filter((t): t is SavedText => !!t);
+  return { sessions, cards, texts,
+    dropped: rawS.length - sessions.length + rawC.length - cards.length + rawT.length - texts.length };
 }
 
 /* Merge a parsed backup into the current record. Sessions match by time and
    drill, so restoring the same file twice changes nothing; the newest
-   MAX_SESSIONS are kept. A card already here wins — it is the fresher copy. */
-export function mergeBackup(record: UserRecord, backup: { sessions: Session[]; cards: Card[] }) {
+   MAX_SESSIONS are kept. A card or text already here wins — it is the fresher copy. */
+export function mergeBackup(record: UserRecord, backup: { sessions: Session[]; cards: Card[]; texts?: SavedText[] }) {
   const key = (s: Session) => s.at + "|" + s.drill;
   const have = new Set((record.sessions || []).map(key));
   const added = backup.sessions.filter(s => !have.has(key(s)));
@@ -174,7 +191,9 @@ export function mergeBackup(record: UserRecord, backup: { sessions: Session[]; c
   const cardKey = (c: Card) => c.twisterId + "|" + c.word;
   const haveCard = new Set((record.cards || []).map(cardKey));
   const cards = (record.cards || []).concat(backup.cards.filter(c => !haveCard.has(cardKey(c))));
-  return { record: { ...record, sessions, cards }, added: added.length };
+  const haveText = new Set((record.texts || []).map(t => t.id));
+  const texts = (record.texts || []).concat((backup.texts || []).filter(t => !haveText.has(t.id)));
+  return { record: { ...record, sessions, cards, texts }, added: added.length };
 }
 
 /* Monday to Sunday of the current week: practised that day or not. */

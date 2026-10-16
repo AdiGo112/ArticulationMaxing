@@ -44,7 +44,7 @@ frontend/
     label/          label.js, the labelling page's pure helpers (tested)
     ui/             parts.tsx (Reel, logo, Bar, Wave, Timeline, Marked) · art.ts (ripples)
     app/            state.tsx (record, last result, hash routes) · Shell.tsx (header, nav, tabs)
-    screens/        Home, Booth, Report; the other pages show "next" until they are built
+    screens/        Home, Booth, Report (+ Coach), Drills, Progress, Texts, Guide (+ waitlist), Data
     styles.css      DESIGN.md's tokens; fonts self-hosted from @fontsource
 ```
 
@@ -236,6 +236,10 @@ whole on change; last 200 sessions. A value of the wrong shape is replaced, not 
   plan:     { day, drills, why, done },
   pack:     string | null,                              // goal pack id (F8)
   buzz:     { [drillId]: boolean },                     // filler buzzer choices (F3)
+  texts:    [{ id, title, text, at }],                  // your own texts (F1); runs are sessions
+                                                        //   with promptId "text-<id>"
+  sens:     number,                                     // mic sensitivity, 0.7 / 1 / 1.5
+  backedUpAt: number | null,                            // last backup download
   theme:    string | null
 }
 ```
@@ -244,10 +248,12 @@ whole on change; last 200 sessions. A value of the wrong shape is replaced, not 
 backup validator (`migrateLegacy()`) and left in place. Without IndexedDB the record lives in that
 key instead. Recordings live in memory for the page only.
 
-**Backup.** `parseBackup()` accepts only `{ kind: "speakeasy-backup", version: 1, sessions, cards }`,
-copies known fields and drops the rest; `mergeBackup()` matches sessions by time and drill and caps
-at 200. The same validator is the shape a server import must accept (PRD → F11). The download and
-restore buttons return with the Your data page. After 5 sessions the app calls
+**Backup.** `parseBackup()` accepts only `{ kind: "speakeasy-backup", version: 1, sessions, cards,
+texts }` (texts optional, so older files restore), copies known fields and drops the rest;
+`mergeBackup()` matches sessions by time and drill and caps at 200; a card or text already here
+wins. The same validator is the shape a server import must accept (PRD → F11). Download and restore
+are on Your data, which also has **Start over**: the record, the old app's localStorage copy and the
+Claude key, all gone. After 5 sessions the app calls
 `navigator.storage.persist()`.
 
 ## Feature logic

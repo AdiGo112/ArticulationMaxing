@@ -46,3 +46,9 @@ function saveTo(db: IDBDatabase, r: UserRecord) {
 function safeLocal(): string | null {
   try { return localStorage.getItem(LEGACY); } catch { return null; }
 }
+
+/* Start over: the old app's copy goes too, or the history it holds would
+   still be sitting in this browser. */
+export function forgetLegacy() {
+  try { localStorage.removeItem(LEGACY); } catch { /* blocked: nothing to remove */ }
+}

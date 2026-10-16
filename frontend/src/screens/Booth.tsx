@@ -31,7 +31,8 @@ function BoothFor({ drill }: { drill: Drill }) {
   const fresh = () => buildRun(drill.id, packRunOpts(packById(record.pack), drill.id));
   const [run, setRun] = useState<Run>(() => { const a = app.again; app.setAgain(null); return a && a.drill === drill.id ? a : fresh(); });
   const [dur, setDur] = useState(run.dur);
-  const [sens, setSens] = useState(1);
+  const sens = record.sens ?? 1;                      // remembered; also set on Your data
+  const setSens = (v: number) => update(r => ({ ...r, sens: v }));
   const buzz = buzzOn(record.buzz, drill.id);
   const levels = useRef<number[]>(new Array(N).fill(0));
   const liveRef = useRef<Live | null>(null);
