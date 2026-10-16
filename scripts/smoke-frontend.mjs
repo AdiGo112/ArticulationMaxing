@@ -82,6 +82,11 @@ check("run: the logo goes live", await ev(`!!document.querySelector(".onair.live
 check("run: REC shows the clock", await until(`/REC \\d+:\\d\\d/.test(document.body.innerText)`, 3000));
 await sleep(2500);
 await press("■ STOP");
+check("run: a 2.5 s take is too short to score, and nothing is saved", await until(`document.body.innerText.includes("Too short to score")`, 6000) && (await stored()) === 1, await text());
+await press("▶ START SPEAKING");
+check("run: a second take starts", await until(`[...document.querySelectorAll("button")].some(b => b.textContent.includes("STOP"))`, 10000), await text());
+await sleep(11000);
+await press("■ STOP");
 check("run: ends on the report with a score", await until(`location.hash === "#/report" && !!document.querySelector("[aria-label^='Score ']")`, 6000), await text());
 check("report: the heard 'um' is marked as a hard filler", await ev(`[...document.querySelectorAll("mark.hard")].some(m => m.textContent === "um")`));
 check("coach: on the report", await ev(`!!document.querySelector("[aria-label=Coach]")`));

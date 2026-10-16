@@ -113,3 +113,15 @@ export function coachNotes(m: Measurements, run: Pick<Run, "target" | "requireWo
     "No single metric is dragging. Make it harder: cut the prep time in half, or take a prompt you actively don’t want."]);
   return n.slice(0, 4);
 }
+
+/* Too little to score: a number from a take this short would be confident and
+   wrong (a 2 s Filler Hunt once scored 62, its fillers unscored because pace
+   needs 5 s). Free speech needs 10 s; a set passage can be read in a few
+   seconds, so it needs voice and, with a transcript, a few of its words.
+   Without a transcript (Firefox) only time and voice count. Returns why, or null. */
+export function tooShort(o: { secs: number; speakSecs: number; words: number; transcript: boolean; reading: boolean }): string | null {
+  if (o.speakSecs < 1.5) return "Reel didn't hear enough of your voice to score.";
+  if (!o.reading && o.secs < 10) return "Under ten seconds is too short to score. Keep going for at least ten.";
+  if (o.transcript && o.words < (o.reading ? 3 : 8)) return "Too few words came through to score.";
+  return null;
+}

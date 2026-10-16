@@ -34,6 +34,7 @@ function BoothFor({ drill }: { drill: Drill }) {
   const sens = record.sens ?? 1;                      // remembered; also set on Your data
   const setSens = (v: number) => update(r => ({ ...r, sens: v }));
   const buzz = buzzOn(record.buzz, drill.id);
+  const [short, setShort] = useState<string | null>(null);
   const levels = useRef<number[]>(new Array(N).fill(0));
   const liveRef = useRef<Live | null>(null);
   const [, redraw] = useState(0);
@@ -49,6 +50,8 @@ function BoothFor({ drill }: { drill: Drill }) {
       if (now - lastDraw.current > 100) { lastDraw.current = now; redraw(x => x + 1); }
     },
     onFinish: r => {
+      // too short to score: nothing saved, straight back to try again
+      if (r.short) { s.cancel(); setShort(r.short); return; }
       const saved = recordRun(record, { session: r.session, text: r.text, target: r.run.target, promptId: r.run.promptId });
       update(() => saved.record);
       app.setLast({ result: r, retry: saved.retry });
@@ -88,7 +91,7 @@ function BoothFor({ drill }: { drill: Drill }) {
     listener.onError = code => setAsrErr(code);
     return () => { listener.onError = null; };
   }, []);
-  useEffect(() => { if (running) setAsrErr(null); }, [running]);
+  useEffect(() => { if (running) { setAsrErr(null); setShort(null); } }, [running]);
   // a network error retries twice before it is fatal; say so on the first one if nothing has come through yet
   const asrCode = asrErr || (running && listener.err && !listener.gotAny ? listener.err : null);
   const isBrave = !!(navigator as { brave?: unknown }).brave;
@@ -141,6 +144,13 @@ function BoothFor({ drill }: { drill: Drill }) {
         <section className="card" style={{ borderColor: "var(--amber)" }}>
           <span className="label amber">no transcript in this browser · the run still scores</span>
           <p className="body" style={{ margin: 0 }}>{asrProblem(null).d}</p>
+        </section>
+      )}
+      {short && (
+        <section className="card" style={{ borderColor: "var(--amber)" }} role="alert">
+          <span className="label amber">not scored · nothing saved</span>
+          <h2 className="h2">Too short to score — try again.</h2>
+          <p className="body" style={{ margin: 0 }}>{short}</p>
         </section>
       )}
       {asrCode && listener.supported && (

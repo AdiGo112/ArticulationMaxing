@@ -9,7 +9,7 @@
    session.test.ts drive a whole run without a microphone.               */
 
 import { buzz, coachLine, countdownTitle, frameworkStep, type BuzzState, type Drill, type Run, type Session } from "../lib/drills.ts";
-import { band, scoreRun, SCORING_VERSION, type Measurements, type Part } from "../lib/scoring.ts";
+import { band, scoreRun, SCORING_VERSION, tooShort, type Measurements, type Part } from "../lib/scoring.ts";
 import { FILLER_RE, countFillers, matchTarget, norm, projFromRms, readStats, tokens, usedWord, variety, words, type FillerCount } from "../lib/text.ts";
 import { makeVAD } from "../lib/vad.ts";
 import type { Listener } from "../lib/speech.ts";
@@ -57,6 +57,7 @@ export interface Live {
 
 export interface RunResult {
   session: Session;                              // what goes into history
+  short: string | null;                          // why this take is too short to score, if it is
   run: Run; drill: Drill;
   text: string; m: Measurements; parts: Part[]; score: number;
   elapsed: number; tape: number[]; tapeV: number[]; marks: Mark[]; wordTimes: number[];
@@ -260,7 +261,8 @@ export function createSession(o: SessionOpts) {
       parts: Object.fromEntries(parts.map(p => [p.k, p.v])),
       promptId: run.promptId || null, reading: !!run.target, raw: m, v: SCORING_VERSION,
       secs: Math.round(elapsed) };
-    const result: RunResult = { session, run, drill, text, m, parts, score, elapsed,
+    const short = tooShort({ secs: elapsed, speakSecs: speakTime, words: wCount, transcript: listener.supported, reading: !!run.target });
+    const result: RunResult = { session, short, run, drill, text, m, parts, score, elapsed,
       tape, tapeV, marks, wordTimes: wordTimes.slice(), audioURL };
     setPhase({ kind: "done" });
     o.onFinish?.(result);

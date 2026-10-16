@@ -117,10 +117,8 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
   first visit, Impromptu booth, a Filler Hunt run, its report, Home and the report at 390 px.
   Verdict: the identity and copy are strong, and the booth while speaking and the report are the
   best screens. A first-timer bounces off Home (no focal point) and off a confident wrong score.
-  - [ ] **Too short to score.** A 2 s Filler Hunt with 5 fillers scored 62: the filler part needs
-        `wpm`, which is null on a short take, so it was dropped and projection + pausing carried the
-        score. Under ~10 s or 8 words, show "Too short to score — try again" instead of a number, and
-        don't save the session. Test it in `lib/` (+ `SCORING_VERSION` if `scoreRun()` changes).
+  - [x] **Too short to score** (`tooShort()` in lib/scoring.ts; free speech under 10 s, under 1.5 s of
+        voice, or too few words; the booth says why and saves nothing).
   - [ ] **Home redesign.**
         - Hero: the headline and Start on the left, Reel on the right, ASCII art behind both and never
           under the text, no translucent box.
