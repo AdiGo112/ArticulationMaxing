@@ -15,10 +15,9 @@ test in both suites; new features go into the port only (ARCHITECTURE → The po
 
 ## Now
 
-1. **Build the screens in `frontend/`** to `docs/DESIGN.md`: Home, Booth and Report are mocked; port
+1. **Build the screens in `frontend/`** to `docs/DESIGN.md` — all are mocked on the canvas. Port
    Reel's paint function as a tested module first.
-2. **Design the rest** on the canvas: Drills, Progress, Your texts, Guide, countdown, mic errors, phone.
-3. Meanwhile: owner records and labels takes (see Waiting on the owner).
+2. Meanwhile: owner records and labels takes (see Waiting on the owner).
 
 ## Waiting on the owner
 
@@ -72,8 +71,7 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
 
 - [x] Inspirations from the owner: Duolingo (structure), Claude's pixel doodles, ASCII art.
 - [x] `docs/DESIGN.md`: direction, ASCII rules, colour, type, shape, Reel, screen inventory (D-021).
-- [~] Mockups on the design canvas: Home, Booth, Report and Reel's twelve moves done. Left: Drills,
-      Progress, Your texts, Guide, countdown, mic errors, phone layouts.
+- [x] Mockups on the design canvas: every screen in DESIGN.md → Screens, phone layouts, Reel, logo.
 
 ## Phase 2 — port to Vite + React + TypeScript
 
