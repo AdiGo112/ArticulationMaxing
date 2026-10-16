@@ -1,11 +1,20 @@
-# Local-only self-signed certificate. localhost-key.pem is a PRIVATE KEY —
-# never commit it, never upload it to a host. Regenerate with the openssl
-# command in the README if you need it again.
-localhost-key.pem
-localhost-cert.pem
-
-# Netlify build output (netlify.toml copies the site here)
-dist/
-
 # dependencies (frontend/ has its own package-lock.json)
 node_modules/
+
+# build output (Vite builds frontend/dist; Netlify publishes it)
+dist/
+.vite/
+coverage/
+
+# secrets and local settings — never commit keys or certificates
+.env
+.env.*
+*.local
+*.pem
+.netlify/
+
+# logs and OS clutter
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
