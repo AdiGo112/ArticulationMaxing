@@ -7,6 +7,7 @@
    cd frontend && npm run build && node ../scripts/smoke-frontend.mjs      */
 
 import { spawn } from "node:child_process";
+import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { check, failures, launch, sleep } from "./cdp.mjs";
 
@@ -26,7 +27,7 @@ await new Promise((res, rej) => {
   setTimeout(() => rej(new Error("vite preview did not start")), 15000);
 });
 
-const { ev, until, errors, open, close, send } = await launch([
+const { ev, until, errors, open, close, send, on } = await launch([
   "--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream", "--autoplay-policy=no-user-gesture-required"]);
 const text = () => ev(`document.body.innerText`);
 const reels = () => ev(`document.querySelectorAll("svg[aria-label^='Reel']").length`);   // DESIGN.md: one per screen
@@ -36,6 +37,20 @@ const stored = () => ev(`new Promise(res => { const r = indexedDB.open("speakeas
   r.onerror = () => res(-2); })`);
 
 console.log(`Speakeasy React port smoke test — ${origin}`);
+
+/* Headless Chrome has no speech recogniser. A stand-in "hears" one fixed sentence
+   shortly after it starts, so a run has a transcript: fillers get marked and the
+   coach has something to read. Installed before the app loads. */
+const HEARD = "so um I wake up at seven and like the kettle goes on first every single morning";
+await send("Page.addScriptToEvaluateOnNewDocument", { source: `
+  class FakeRecogniser {
+    start() { setTimeout(() => this.onstart && this.onstart(), 10);
+      this.t = setTimeout(() => this.onresult && this.onresult({ resultIndex: 0,
+        results: { length: 1, 0: { isFinal: true, 0: { transcript: ${JSON.stringify(HEARD)} } } } }), 600); }
+    stop() { clearTimeout(this.t); setTimeout(() => this.onend && this.onend(), 10); }
+    abort() { this.stop(); }
+  }
+  window.SpeechRecognition = window.webkitSpeechRecognition = FakeRecogniser;` });
 
 /* the old app's history comes across once, damaged entries dropped */
 await open(origin);
@@ -67,6 +82,36 @@ check("run: REC shows the clock", await until(`/REC \\d+:\\d\\d/.test(document.b
 await sleep(2500);
 await press("■ STOP");
 check("run: ends on the report with a score", await until(`location.hash === "#/report" && !!document.querySelector("[aria-label^='Score ']")`, 6000), await text());
+check("report: the heard 'um' is marked as a hard filler", await ev(`[...document.querySelectorAll("mark.hard")].some(m => m.textContent === "um")`));
+check("coach: on the report", await ev(`!!document.querySelector("[aria-label=Coach]")`));
+check("coach: the SDK is its own chunk", readdirSync(join(dir, "dist/assets")).some(f => f.startsWith("sdk-")));
+check("coach: the SDK isn't downloaded until someone asks", await ev(`!performance.getEntriesByType("resource").some(e => e.name.includes("/sdk-"))`));
+await press("Use Claude…");
+check("coach: the key form says what leaves the device", await until(`!!document.querySelector("input[type=password]") && document.body.innerText.includes("the one thing here that leaves your device")`), await text());
+/* Claude review, end to end in the page, with the API call answered by Chrome
+   (Fetch interception): the lazy SDK loads, sends, and the reply renders. No key, no cost. */
+const REPLY = { id: "msg_smoke", type: "message", role: "assistant", model: "claude-opus-5-5", stop_reason: "end_turn", stop_sequence: null,
+  usage: { input_tokens: 1, output_tokens: 1 },
+  content: [{ type: "text", text: "## Structure\nIt had a shape.\n\n## Language\nOne um at the start.\n\n## Rewrite\nI wake at seven; the kettle goes on first.\n\n## Next\nOpen without the um." }] };
+const CORS = [{ name: "access-control-allow-origin", value: "*" }, { name: "access-control-allow-headers", value: "*" }, { name: "access-control-allow-methods", value: "POST, OPTIONS" }];
+let asked = null;
+on("Fetch.requestPaused", p => {
+  if (p.request.method === "OPTIONS") return send("Fetch.fulfillRequest", { requestId: p.requestId, responseCode: 204, responseHeaders: CORS });
+  asked = JSON.parse(p.request.postData || "{}");
+  send("Fetch.fulfillRequest", { requestId: p.requestId, responseCode: 200, responseHeaders: [...CORS, { name: "content-type", value: "application/json" }],
+    body: Buffer.from(JSON.stringify(REPLY)).toString("base64") });
+});
+await send("Fetch.enable", { patterns: [{ urlPattern: "https://api.anthropic.com/*" }] });
+await ev(`(() => { const i = document.querySelector("input[type=password]"); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
+  set.call(i, "sk-ant-smoke"); i.dispatchEvent(new Event("input", { bubbles: true })); return true; })()`);
+await press("Save key");
+await press("Review with Claude");
+check("coach: Claude's review renders as sections", await until(`["Structure", "Language", "Rewrite", "Next"].every(h => [...document.querySelectorAll("[aria-label=Coach] h3")].some(e => e.textContent === h))`, 8000), await text());
+check("coach: it asked Opus 5.5 with the transcript wrapped as data", !!asked && asked.model === "claude-opus-5-5"
+  && /<transcript>[\s\S]*um[\s\S]*<\/transcript>/.test(String(asked.messages?.[0]?.content || "")), JSON.stringify(asked)?.slice(0, 300));
+check("coach: the SDK loaded only now", await ev(`performance.getEntriesByType("resource").some(e => e.name.includes("/sdk-"))`));
+await send("Fetch.disable");
+await ev(`localStorage.removeItem("speakeasy.anthropicKey"), true`);
 check("report: one Reel", (await reels()) === 1, "found " + (await reels()));
 check("run: saved to IndexedDB", (await stored()) === 2);
 check("run: the recording can play", await until(`!!document.querySelector("audio[src^='blob:']")`, 3000));

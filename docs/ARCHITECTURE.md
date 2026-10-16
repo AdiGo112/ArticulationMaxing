@@ -191,9 +191,24 @@ appears in interim results.
 
 ## Coaching
 
-The old app's three tiers — local language analysis (`analyseLanguage()`, in `lib/` and tested),
-Chrome's on-device model, and opt-in Claude review with the user's own key — are being rebuilt on
-the report (TASKS). The local tier needs no network; Claude sends only the transcript, on a button.
+On the report (`screens/Coach.tsx`), three tiers, always leaving something useful:
+
+1. **Local analysis** — `analyseLanguage()`: hedging, placeholder words, intensifiers, one word
+   carried too far, repeated clause openers, a weak opening, and on framework drills a missing
+   reason or example. Silent under 12 words and skipped on set passages (the words are the
+   author's). Quotes your own words. No network.
+2. **Chrome's built-in model** (`LanguageModel`, `engine/coach.ts`) — probed with a 3 s timeout;
+   the panel renders before the probe answers. Nothing leaves the device.
+3. **Claude** — opt-in, the user's own key in `localStorage["speakeasy.anthropicKey"]` (never in the
+   record or a backup), sent only on **Review with Claude**: transcript and drill context, never
+   audio. `claude-opus-5-5`, adaptive thinking, effort `high`, server-side refusal fallback
+   (`fallbacks: "default"`). The SDK (`@anthropic-ai/sdk`) is a separate chunk loaded on first use.
+   Errors are mapped from the SDK's typed classes to plain words.
+
+The prompts and parsing are pure, in `lib/coach.ts`: the transcript sits inside `<transcript>`
+tags that the system prompt marks as data, never instructions, and a tag inside the transcript is
+defused so it can't close its own wrapper. Replies render as text, never HTML; the Rewrite
+section is shown as a quote. The deeper tiers need at least eight transcribed words.
 
 ## The daily plan
 
@@ -297,12 +312,14 @@ of the waitlist form in `index.html` is what Netlify Forms detects at build time
 ## Tests
 
 `npm test` (Vitest): `lib/lib.test.js` (the old suite, case for case), `lib/*.test.ts` (Reel, ASCII,
-storage), `label/label.test.js`, and `engine/session.test.ts`, which drives whole runs with a
-scripted fake mic, a hand-driven clock and a fake recogniser.
+storage, the coach's prompts), `label/label.test.js`, `engine/session.test.ts`, which drives whole
+runs with a scripted fake mic, a hand-driven clock and a fake recogniser, and
+`engine/coach.test.ts`, which checks the Claude request and its error messages against a fake fetch.
 
 `node scripts/smoke-frontend.mjs` (after a build) runs the built app in headless Chrome over the
-DevTools protocol, with Chrome's fake microphone: a real run from the room check to the report and
-IndexedDB, the old-history migration, the goal pack, the live logo, one Reel per screen, Home and
+DevTools protocol, with Chrome's fake microphone and a stand-in recogniser that "hears" one
+sentence: a real run from the room check to the report and IndexedDB, fillers marked, the coach's
+Claude review with the API call answered by Chrome (no key, no cost, the SDK loaded only then), the old-history migration, the goal pack, the live logo, one Reel per screen, Home and
 Report at phone width (checked against 390 px — mobile emulation widens the viewport to fit
 overflow), and the label page's mouse and keyboard handling. CI runs typecheck, tests, build and
 smoke on every push.

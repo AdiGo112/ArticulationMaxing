@@ -226,6 +226,16 @@ Until TASKS → *Back from the old app* is done, the app has no Progress page, b
 guide or waitlist card; the light theme is dropped for good (DESIGN.md). D-020's "a logic fix lands
 in both" no longer applies. The old code stays in git history.
 
+## D-024 · The Anthropic SDK from npm, lazy-loaded — 2026-10-16
+
+**Context.** The coach's Claude review needs the SDK in the browser. **Decision.**
+`@anthropic-ai/sdk` 0.131.0 (MIT) as a pinned npm dependency, imported with `import()` so Vite
+splits it into its own chunk that downloads only on the first Review press. **Rejected.** The old
+app's `import("https://esm.sh/@anthropic-ai/sdk@…")` — a third-party origin in the CSP and code
+fetched at runtime from a CDN; raw `fetch` to the API — the skill and SDK give typed errors and the
+browser-access header for free. **Consequences.** The CSP needs only `api.anthropic.com`; a test
+proves the SDK is a separate chunk and isn't loaded before it's asked for.
+
 ---
 
 ## Open questions

@@ -42,10 +42,11 @@ export async function launch(extraArgs = []){
   const ws = new WebSocket(page.webSocketDebuggerUrl);
   await new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; });
   let seq = 0;
-  const waiting = new Map(), errors = [];
+  const waiting = new Map(), errors = [], listeners = {};
   ws.onmessage = e => {
     const m = JSON.parse(e.data);
     if(m.id && waiting.has(m.id)){ waiting.get(m.id)(m); waiting.delete(m.id); return; }
+    (listeners[m.method] || []).forEach(f => f(m.params));
     if(m.method === "Runtime.exceptionThrown")
       errors.push(m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text);
     if(m.method === "Runtime.consoleAPICalled" && m.params.type === "error")
@@ -64,6 +65,7 @@ export async function launch(extraArgs = []){
   await send("Runtime.enable");
   return {
     send, ev, until, errors, profile,
+    on: (method, f) => { (listeners[method] ||= []).push(f); },
     open: async url => { errors.length = 0; await send("Page.navigate", { url }); await sleep(300); },
     close: () => { ws.close(); chrome.kill(); try{ rmSync(profile, { recursive: true, force: true }); }catch(e){} }
   };

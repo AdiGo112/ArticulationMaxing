@@ -93,7 +93,8 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
 - **Back from the old app** — what it did that the new one doesn't yet:
   - [ ] Progress: stats, score history, per-metric trends, recent sessions, facts (F2).
   - [ ] Your data: backup download and restore, Claude key, start over.
-  - [ ] Coach on the report: local language findings, Chrome's on-device model, Claude review.
+  - [x] Coach on the report: local findings, Chrome's on-device model, Claude review (own key), with
+        the transcript wrapped as data; SDK bundled and lazy (D-024).
   - [ ] Report: follow-along transcript (click a word to jump), the passage marked hit / missed /
         unread on reading drills, the record line (`recordFor()`).
   - [ ] Booth: serve the most overdue diction twister; transcription errors (network, blocked, Brave)
@@ -149,7 +150,7 @@ From the security and privacy review; general information, not legal advice.
 - [ ] R2 uploads: server picks the key under `u/{userId}/`, short expiry, content type pinned, size
       checked after upload; bucket private; every signed GET checks ownership.
 - [x] Model output rendered as text, never HTML (current coach escapes it) — keep it so after the port.
-- [ ] Transcripts wrapped and labelled as data in every model prompt.
+- [x] Transcripts wrapped and labelled as data in every model prompt (`lib/coach.ts`, tested).
 - [ ] Imported history validated server-side (shape, size cap, idempotent).
 - [ ] Magic links single-use, 15 minutes; sign-in emails rate-limited per IP.
 - [~] CSP and security headers (done for the static app; redo for the SPA + API); `security.txt`.

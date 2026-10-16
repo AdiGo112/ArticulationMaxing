@@ -7,6 +7,7 @@ import { todayPlan } from "../lib/storage.ts";
 import { Bar, Marked, Reel, Timeline, Wave } from "../ui/parts.tsx";
 import { Shell } from "../app/Shell.tsx";
 import { go, useApp } from "../app/state.tsx";
+import { Coach } from "./Coach.tsx";
 
 const fmt = (s: number) => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
 const scoreColor = (v: number) => v >= 76 ? "var(--cyan)" : v >= 55 ? "var(--amber)" : "var(--alert)";
@@ -110,6 +111,8 @@ export function Report() {
             : <p className="muted" style={{ margin: 0, fontSize: 13, lineHeight: 1.6 }}>After six sessions over three days, this shows what has actually moved.</p>}
         </section>
       </div>
+
+      <Coach r={r} />
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center" }}>
         {nextDrill
