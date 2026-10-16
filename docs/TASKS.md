@@ -15,9 +15,11 @@ Until the items under **Phase 2 → Back from the old app** land, it does less t
 
 ## Now
 
-1. **Finish Phase 2** (Phase 2 → Back from the old app): the report's follow-along transcript and
-   passage marks, the booth's due twister and mid-run transcription errors, then the first-run screen.
-2. Meanwhile: owner records and labels takes (see Waiting on the owner).
+1. **First five minutes** (Phase 2 → Walkthrough fixes, in order): the too-short-to-score guard, the
+   Home redesign, per-drill meters — then the rest of that list.
+2. **Finish Phase 2** (Phase 2 → Back from the old app): the report's follow-along transcript and
+   passage marks, the booth's due twister, then the first-run screen.
+3. Meanwhile: owner records and labels takes (see Waiting on the owner).
 
 ## Waiting on the owner
 
@@ -111,6 +113,36 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
       Your texts; INTERVIEW is its own tab (a placeholder for F13 that starts Impromptu on interview
       questions). On phones, the More tab holds Interview, Guide and Your data.
 - [ ] First-run screen.
+- **Walkthrough fixes (2026-10-17)** — from a full pass in headless Chrome (fake mic and recogniser):
+  first visit, Impromptu booth, a Filler Hunt run, its report, Home and the report at 390 px.
+  Verdict: the identity and copy are strong, and the booth while speaking and the report are the
+  best screens. A first-timer bounces off Home (no focal point) and off a confident wrong score.
+  - [ ] **Too short to score.** A 2 s Filler Hunt with 5 fillers scored 62: the filler part needs
+        `wpm`, which is null on a short take, so it was dropped and projection + pausing carried the
+        score. Under ~10 s or 8 words, show "Too short to score — try again" instead of a number, and
+        don't save the session. Test it in `lib/` (+ `SCORING_VERSION` if `scoreRun()` changes).
+  - [ ] **Home redesign.**
+        - Hero: the headline and Start on the left, Reel on the right, ASCII art behind both and never
+          under the text, no translucent box.
+        - Path: a straight list in order, with done items ticked in place. Today it shows "now:
+          Impromptu" above a "done" Filler Hunt.
+        - Streak and goal pack become one compact strip under the hero, and the "psst" tip moves
+          into the hero.
+        - On phones, streak and pack come up near the top instead of below everything.
+  - [ ] **Per-drill meters.**
+        - Each drill shows only what it scores: no Pace on Filler Hunt; nothing filler-related on
+          Diction or Echo.
+        - Show "—", not a red "0", before the take starts.
+  - [ ] **Report clutter.**
+        - Drop the "OUT OF 100" label (the score already says /100).
+        - Hide "Since you started" until it has facts.
+        - Shorten the take caption so it isn't cut off on phones.
+  - [ ] **Timeline.** Keep filler pills off the waveform and the playhead.
+  - [ ] **Booth before a run.**
+        - Collapse the empty waveform to a thin strip until recording starts.
+        - Fold length, mic and the "um" tick into one setup row, so the order is prompt, then Start.
+  - [ ] **Refactor.** Move repeated inline styles (page header, card label, stat tile) into CSS
+        classes before the redesign.
 - **UI/UX review (2026-10-17)** — fixed: privacy wording (scoring local; live captions go to Google),
   Start sticks to the bottom of the booth, scores read /100 and low ones aren't red, chart has a y
   scale and no line under 3 points, drill list opens only inside DRILLS, drill-card badges aligned,
