@@ -6,10 +6,13 @@
 import { useEffect } from "react";
 import { METRIC_NAME, PACKS, drillById, nextInPlan } from "../lib/drills.ts";
 import { practisedThisWeek, streak, todayPlan } from "../lib/storage.ts";
-import { RIPPLES } from "../ui/art.ts";
+import { ripples } from "../lib/ascii.ts";
 import { Reel } from "../ui/parts.tsx";
 import { Shell } from "../app/Shell.tsx";
 import { go, useApp } from "../app/state.tsx";
+
+// big enough to cover the hero from wherever Reel stands; the card clips it
+const RINGS = ripples(340, 70);
 
 export function Home() {
   const { record, update } = useApp();
@@ -47,7 +50,7 @@ export function Home() {
           <p className="faint" style={{ margin: 0, fontSize: 13 }}><span className="amber" style={{ color: "var(--amber)" }}>psst ·</span> a pause is free. An “um” costs you authority.</p>
         </div>
         <div className="home-art">
-          <pre aria-hidden="true">{RIPPLES}</pre>
+          <pre aria-hidden="true">{RINGS}</pre>
           <Reel state={next ? "play" : "cheer"} size={200} />
         </div>
       </section>
