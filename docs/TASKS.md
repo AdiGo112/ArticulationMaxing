@@ -99,8 +99,9 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
         the transcript wrapped as data; SDK bundled and lazy (D-024).
   - [ ] Report: follow-along transcript (click a word to jump), the passage marked hit / missed /
         unread on reading drills, the record line (`recordFor()`).
-  - [ ] Booth: serve the most overdue diction twister; transcription errors (network, blocked, Brave)
-        shown while running.
+  - [x] Booth: transcription errors (network, blocked, mic busy, Brave) shown while running, and a
+        transcript chip that says starting / listening / hearing you / failing.
+  - [ ] Booth: serve the most overdue diction twister.
   - [x] Guide page; the waitlist card (on the Guide).
   - Not coming back: the light theme (DESIGN.md is dark only).
 - [x] Self-host the fonts: Bricolage Grotesque and JetBrains Mono from `@fontsource` (OFL), bundled.

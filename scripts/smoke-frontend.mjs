@@ -14,7 +14,7 @@ import { check, failures, launch, sleep } from "./cdp.mjs";
 const dir = join(import.meta.dirname, "..", "frontend");
 const PORT = 4173, origin = `http://localhost:${PORT}`;
 const server = spawn(process.execPath, [join(dir, "node_modules/vite/bin/vite.js"), "preview", "--port", PORT, "--strictPort"], { cwd: dir });
-const DEV = 5174, devOrigin = `http://localhost:${DEV}`;
+const DEV = 5199, devOrigin = `http://localhost:${DEV}`;
 const dev = spawn(process.execPath, [join(dir, "node_modules/vite/bin/vite.js"), "--port", DEV, "--strictPort"], { cwd: dir });
 await new Promise((res, rej) => {
   dev.stdout.on("data", d => String(d).includes(String(DEV)) && res());
@@ -45,6 +45,7 @@ const HEARD = "so um I wake up at seven and like the kettle goes on first every 
 await send("Page.addScriptToEvaluateOnNewDocument", { source: `
   class FakeRecogniser {
     start() { setTimeout(() => this.onstart && this.onstart(), 10);
+      if (window.__asrFail) { this.t = setTimeout(() => this.onerror && this.onerror({ error: window.__asrFail }), 60); return; }
       this.t = setTimeout(() => this.onresult && this.onresult({ resultIndex: 0,
         results: { length: 1, 0: { isFinal: true, 0: { transcript: ${JSON.stringify(HEARD)} } } } }), 600); }
     stop() { clearTimeout(this.t); setTimeout(() => this.onend && this.onend(), 10); }
@@ -120,6 +121,13 @@ check("run: no script errors", errors.length === 0, errors.join(" | "));
 
 await press("↻ same prompt again");
 check("again: back in the booth for the same drill", await until(`location.hash === "#/drill/diction" && document.body.innerText.includes("START SPEAKING")`));
+
+/* a recogniser that fails says why while the run carries on */
+await ev(`window.__asrFail = "network", true`);
+await press("▶ START SPEAKING");
+check("booth: a failing recogniser is explained while running", await until(`document.body.innerText.includes("Transcription can't reach its service") && document.body.innerText.includes("STOP")`, 12000), await text());
+await ev(`window.__asrFail = null, dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })), true`);
+check("booth: Esc leaves the failed run", await until(`document.body.innerText.includes("START SPEAKING")`));
 
 /* every nav item lands on a real page, each with one Reel */
 for (const [page, h1] of [["drills", "Pick the one"], ["progress", "What's actually changed"], ["texts", "Rehearse the talk"], ["guide", "How to actually get better"], ["data", "Your data"]]) {

@@ -82,9 +82,20 @@ function BoothFor({ drill }: { drill: Drill }) {
     : live && !live.speaking && live.elapsed > 2 ? "pause" : "record";
   const noisy = (live?.room ?? 0) >= 34;
 
+  // the recogniser's own failures: shown as they happen, kept after the run so the report isn't a mystery
+  const [asrErr, setAsrErr] = useState<string | null>(null);
+  useEffect(() => {
+    listener.onError = code => setAsrErr(code);
+    return () => { listener.onError = null; };
+  }, []);
+  useEffect(() => { if (running) setAsrErr(null); }, [running]);
+  // a network error retries twice before it is fatal; say so on the first one if nothing has come through yet
+  const asrCode = asrErr || (running && listener.err && !listener.gotAny ? listener.err : null);
+  const isBrave = !!(navigator as { brave?: unknown }).brave;
+
   const top = (
     <>
-      <span className="chip">transcript <b style={{ color: listener.supported ? "var(--cyan)" : "var(--amber)" }}>{listener.supported ? "on" : "off"}</b></span>
+      <span className="chip">transcript <b style={{ color: listener.supported && !asrCode ? "var(--cyan)" : "var(--amber)" }}>{!listener.supported ? "off" : asrCode ? "failing" : running ? (listener.gotAny ? "hearing you" : listener.live ? "listening" : "starting") : "on"}</b></span>
       {running && <span className="chip" style={{ borderColor: "var(--alert)", color: "var(--alert)", fontWeight: 700 }}>● REC {fmt(live?.elapsed ?? 0)}{total ? " / " + fmt(total) : ""}</span>}
     </>
   );
@@ -130,6 +141,14 @@ function BoothFor({ drill }: { drill: Drill }) {
         <section className="card" style={{ borderColor: "var(--amber)" }}>
           <span className="label amber">no transcript in this browser · the run still scores</span>
           <p className="body" style={{ margin: 0 }}>{asrProblem(null).d}</p>
+        </section>
+      )}
+      {asrCode && listener.supported && (
+        <section className="card" style={{ borderColor: "var(--amber)" }} role="alert">
+          <span className="label amber">no transcript · the run still scores what audio can measure</span>
+          <h2 className="h2">{asrProblem(asrCode, isBrave).t}</h2>
+          <p className="body" style={{ margin: 0, lineHeight: 1.6 }}>{asrProblem(asrCode, isBrave).d}</p>
+          <span className="faint" style={{ fontSize: 12 }}>recogniser said: {asrCode}</span>
         </section>
       )}
       {noisy && running && (
