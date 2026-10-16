@@ -110,6 +110,10 @@ of anyone's mascot.
 | `rewind` | tape runs backwards, `◀◀` | "Run it again" |
 | `sleep` | sinks, eyes shut, `z Z` | a broken streak — wakes when you next talk |
 
+**One Reel per screen.** A screen shows Reel once, in the state that fits the moment; a tip or
+a side card gets words, not a second Reel. A full-screen overlay brings its own Reel and the page's
+is hidden behind it. The smoke test counts them.
+
 Reel speaks only in the ASCII bubbles, one short line at a time, in the coach's words
 (`coachLine()`), never in its own catchphrases.
 

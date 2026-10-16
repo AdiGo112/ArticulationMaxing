@@ -339,7 +339,12 @@ frontend/src/
     browser.ts  the real ports: mic + MediaRecorder + buzzer tick, clock, speech synthesis
     db.ts       the record in IndexedDB; first load copies the old localStorage record
     useSession.ts  React's handle: the engine in a ref, state only on phase changes
-  main.tsx      a bare test booth until the screens are built to DESIGN.md
+  lib/reel.ts   Reel's pixels: frames(state) → one SVG path per colour per frame (tested)
+  lib/ascii.ts  ASCII decoration around real words (the speech bubble)
+  styles.css    DESIGN.md's tokens and rules; fonts self-hosted from @fontsource
+  ui/parts.tsx  Reel, the on-air logo, Bar, Wave, Timeline, Marked (fillers in text)
+  app/          state.tsx (record, last result, hash routes) · Shell.tsx (header, nav, phone tabs)
+  screens/      Home, Booth, Report — built; the rest show a "next" page inside the frame
 ```
 
 **The engine** owns one run and touches neither the DOM nor storage. It takes its world as ports:
@@ -362,7 +367,9 @@ a scripted fake mic, a hand-driven clock and a fake recogniser — pauses, speak
 buzzer, live marking, the audio-only path, a refused mic, dispose mid-countdown, and saving.
 `node scripts/smoke-frontend.mjs` runs the built app in headless Chrome with Chrome's fake
 microphone: a real run end to end (calibration, countdown, MediaRecorder, score, IndexedDB) and the
-migration. Both smoke tests share `scripts/cdp.mjs`. CI runs all of it.
+migration, plus the live logo, the goal pack, one Reel per screen, and Home and Report at phone width
+(checked against 390 px: mobile emulation widens the viewport to fit overflow). Both smoke tests
+share `scripts/cdp.mjs`. CI runs all of it.
 
 ---
 

@@ -40,6 +40,8 @@ export function useSession(run: Run | null, drill: Drill | null, opts: {
     phase,
     begin: () => ref.current?.begin(),           // call from a click handler (iOS audio)
     finish: () => ref.current?.finish(),
+    // leave before or during a run without saving it
+    cancel: () => { ref.current?.dispose(); setPhase({ kind: "idle" }); },
     live: () => ref.current?.live ?? null,
     setDuration: (s: number) => ref.current?.setDuration(s),
     setSensitivity: (s: number) => ref.current?.setSensitivity(s),

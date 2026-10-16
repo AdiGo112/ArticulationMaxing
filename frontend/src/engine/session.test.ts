@@ -160,3 +160,12 @@ test("recordRun saves the session, updates diction cards, and ticks off the plan
   expect(record.plan!.done).toEqual(["diction"]);
   expect(record.cards.map(c => [c.word, c.twisterId])).toEqual([["sea", "tw-001"]]);
 });
+
+test("fillers and pauses show live, and a filler mark names its word", async () => {
+  const r = rig({ voiced: t => t % 3 < 2 });
+  const { s } = session(r, "filler");
+  await s.begin();
+  r.play(4); r.say("so I went like");
+  expect(s.live.marks.some(m => m.type === "pause")).toBe(true);
+  expect(s.live.marks.filter(m => m.type === "filler").map(m => m.word)).toEqual(["like"]);
+});

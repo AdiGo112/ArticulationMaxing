@@ -10,7 +10,7 @@
 
 import { buzz, coachLine, countdownTitle, frameworkStep, type BuzzState, type Drill, type Run, type Session } from "../lib/drills.ts";
 import { band, scoreRun, SCORING_VERSION, type Measurements, type Part } from "../lib/scoring.ts";
-import { countFillers, matchTarget, projFromRms, readStats, tokens, usedWord, variety, words, type FillerCount } from "../lib/text.ts";
+import { FILLER_RE, countFillers, matchTarget, norm, projFromRms, readStats, tokens, usedWord, variety, words, type FillerCount } from "../lib/text.ts";
 import { makeVAD } from "../lib/vad.ts";
 import type { Listener } from "../lib/speech.ts";
 
@@ -38,7 +38,7 @@ export type Phase =
   | { kind: "running" }
   | { kind: "done" };
 
-export interface Mark { t: number; type: "pause" | "filler" }
+export interface Mark { t: number; type: "pause" | "filler"; word?: string }
 
 /* What the booth shows, updated every frame. One object, mutated in place:
    read it in onTick and copy what you draw. */
@@ -52,6 +52,7 @@ export interface Live {
   step: number;                                  // framework step, -1 without one
   coach: [string, string];
   room: number;                                  // 0–100, measured before the run
+  marks: Mark[];                                 // fillers and deliberate pauses so far
 }
 
 export interface RunResult {
@@ -87,7 +88,7 @@ export function createSession(o: SessionOpts) {
 
   const live: Live = { elapsed: 0, left: dur, level: 0, speaking: false, proj: 0, wpm: 0, goodPauses: 0,
     fillers: NO_FILLERS, lastFillerAt: -Infinity, hits: [], acc: null, final: "", interim: "", wordCount: 0,
-    step: -1, coach: ["", drill.hint], room: 0 };
+    step: -1, coach: ["", drill.hint], room: 0, marks: [] };
 
   const setPhase = (p: Phase) => { phase = p.kind; o.onPhase?.(p); };
 
@@ -132,6 +133,7 @@ export function createSession(o: SessionOpts) {
     t0 = clock.now(); lastFrame = t0; lastSample = 0; coachAt = 0;
     speakTime = 0; rmsSum = 0; rmsN = 0; goodPauses = 0; longPause = 0;
     tape = []; tapeV = []; marks = []; wordTimes = [];
+    live.marks = marks;
     voiced = false; silentSince = t0; lastFillers = 0;
     buzzState = { count: 0, at: -Infinity };
     live.coach = ["Go.", ""];
@@ -205,7 +207,8 @@ export function createSession(o: SessionOpts) {
     if (f.total > lastFillers) {
       lastFillers = f.total;
       live.lastFillerAt = clock.now();
-      marks.push({ t: live.elapsed, type: "filler" });
+      const found = [...norm(all).matchAll(FILLER_RE)];
+      marks.push({ t: live.elapsed, type: "filler", word: found.length ? found[found.length - 1][0].replace(/s+/g, " ") : undefined });
     }
     if (run.target) {
       live.hits = matchTarget(all, run.target);

@@ -203,6 +203,17 @@ pixel wordmark, Reel beside a wordmark, a cassette label, a two-tone wordmark, a
 **Consequences.** Fonts change to Bricolage Grotesque and JetBrains Mono, still to be self-hosted;
 Reel's paint function becomes a tested module in the port.
 
+## D-022 · Self-hosted fonts from @fontsource; hash routes, no router — 2026-10-16
+
+**Context.** The port's screens need the two DESIGN.md fonts without sending visitors' IPs to
+Google, and a handful of pages. **Decision.** `@fontsource-variable/bricolage-grotesque` and
+`@fontsource-variable/jetbrains-mono` (5.3.0, OFL-1.1), imported by `styles.css`; Vite bundles the
+woff2 files, so no font request leaves our origin. Routes are `#/…` hashes read by a 20-line hook
+(`app/state.tsx`): the static host needs no rewrites. **Rejected.** Downloading woff2 files by hand —
+the same files without versions or a licence file; React Router — a dependency for six routes and
+one parameter. **Consequences.** The CSP for the port needs no font origin; revisit routing if
+nested layouts or route data loading arrive.
+
 ---
 
 ## Open questions

@@ -176,3 +176,11 @@ export function mergeBackup(record: UserRecord, backup: { sessions: Session[]; c
   const cards = (record.cards || []).concat(backup.cards.filter(c => !haveCard.has(cardKey(c))));
   return { record: { ...record, sessions, cards }, added: added.length };
 }
+
+/* Monday to Sunday of the current week: practised that day or not. */
+export function practisedThisWeek(sessions: Session[], now = Date.now()): boolean[] {
+  const d = new Date(now), monday = new Date(d.getFullYear(), d.getMonth(), d.getDate() - (d.getDay() + 6) % 7);
+  const days = new Set(sessions.map(s => dayKey(s.at)));
+  return Array.from({ length: 7 }, (_, i) =>
+    days.has(dayKey(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i).getTime())));
+}

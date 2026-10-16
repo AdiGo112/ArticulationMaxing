@@ -29,3 +29,11 @@ test("migration of nothing, or of junk, is an empty record", () => {
   for (const junk of [null, "", "{", "5", "[]", '"x"', '{"sessions":"lots"}'])
     expect(migrateLegacy(junk, IDS)).toEqual({ sessions: [], cards: [], theme: null });
 });
+
+test("this week runs Monday to Sunday and marks the days practised", async () => {
+  const { practisedThisWeek } = await import("./storage.ts");
+  const wed = new Date(2026, 9, 14, 12).getTime();                 // Wednesday 14 Oct 2026
+  const at = (d: number) => ({ at: new Date(2026, 9, d, 9).getTime(), drill: "pace", name: "", score: 50, wpm: null, fillers: null });
+  // Sun 11 Oct is last week; Mon 12 and Wed 14 are this week
+  expect(practisedThisWeek([at(11), at(12), at(14)], wed)).toEqual([true, false, true, false, false, false, false]);
+});

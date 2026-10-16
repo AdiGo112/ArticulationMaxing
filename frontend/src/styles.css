@@ -1,0 +1,121 @@
+/* styles.css — the terminal booth. Tokens and rules from docs/DESIGN.md. */
+@import "@fontsource-variable/bricolage-grotesque/index.css";
+@import "@fontsource-variable/jetbrains-mono/index.css";
+
+:root {
+  --ground: #0A0A0B; --panel: #0E0E10; --line: #26262B; --track: #1E1E22; --edge: #33333A;
+  --ink: #ECE9E2; --body: #B8B4AA; --muted: #9A968D; --faint: #6E6B63;
+  --amber: #FFB224; --amber-key: #8A5A12; --cream: #FFE6A6; --cyan: #7CC8FF;
+  --alert: #FF3D6E; --alert-key: #8A1F3D; --alert-dim: #8A1F3D;
+  --mono: "JetBrains Mono Variable", ui-monospace, monospace;
+  --display: "Bricolage Grotesque Variable", system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--ground); color: var(--ink); }
+body { font-family: var(--mono); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+pre { margin: 0; font-family: inherit; }
+a { color: var(--amber); }
+a:hover { color: var(--cream); }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ── type ─────────────────────────────────────────────────────── */
+.label { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.label.amber { color: var(--amber); } .label.cyan { color: var(--cyan); } .label.alert { color: var(--alert); }
+.rule { font-size: 12px; font-weight: 500; letter-spacing: 0.14em; color: var(--muted); margin: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: clip; }                /* the dashes run to the edge, never onto a second line */
+.h1 { font-family: var(--display); font-size: clamp(34px, 4vw, 46px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.02; margin: 0; }
+.h2 { font-family: var(--display); font-size: 24px; font-weight: 800; margin: 0; }
+.big { font-family: var(--display); font-weight: 800; line-height: 1; }
+.muted { color: var(--muted); } .body { color: var(--body); } .faint { color: var(--faint); }
+
+/* ── shell: header, side nav, main; a tab bar on phones ───────── */
+.shell { min-height: 100vh; display: flex; flex-direction: column; }
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 16px 32px; border-bottom: 1px solid var(--line); }
+.top .grow { flex-grow: 1; }
+.frame { display: flex; flex-wrap: wrap; gap: 32px; padding: 32px; width: 100%; max-width: 1440px; margin: 0 auto; flex-grow: 1; }
+.side { flex: 1 1 180px; max-width: 220px; display: flex; flex-direction: column; gap: 4px; }
+.side a { text-decoration: none; color: var(--ink); padding: 12px 14px; border-radius: 10px; letter-spacing: 0.06em; }
+.side a[aria-current="page"] { color: var(--ground); background: var(--amber); font-weight: 700; }
+.main { flex: 999 1 600px; min-width: 0; display: flex; flex-direction: column; gap: 32px; }
+.rail { flex: 1 1 300px; max-width: 360px; display: flex; flex-direction: column; gap: 18px; }
+.tabs { display: none; }
+@media (max-width: 760px) {
+  .top { padding: 14px 18px; }
+  .frame { padding: 18px 18px 96px; gap: 22px; }
+  .side { display: none; }
+  .rail { max-width: none; }
+  .tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); position: fixed; left: 0; right: 0; bottom: 0;
+    background: var(--ground); border-top: 1px solid var(--line); padding: 8px 8px calc(10px + env(safe-area-inset-bottom)); z-index: 5; }
+  .tabs a { text-decoration: none; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 8px 0; font-size: 11px; letter-spacing: 0.08em; }
+  .tabs a[aria-current="page"] { color: var(--amber); }
+  .tabs b { font-size: 16px; }
+  .onair { padding: 4px 10px; gap: 8px; }
+  .onair span { font-size: 13px; letter-spacing: 0.2em; }
+  .hero { padding: 22px 18px !important; }
+  .wave { gap: 1px; }
+}
+
+/* ── the on-air logo ──────────────────────────────────────────── */
+.onair { text-decoration: none; color: var(--ink); display: inline-flex; align-items: center; gap: 10px;
+  border: 1.5px solid var(--ink); border-radius: 8px; padding: 6px 14px; }
+.onair:hover { color: var(--ink); }
+.onair span { font-size: 16px; font-weight: 800; letter-spacing: 0.22em; }
+.onair i { width: 10px; height: 10px; border-radius: 50%; background: var(--alert-dim); }
+.onair.live i { background: var(--alert); box-shadow: 0 0 8px var(--alert); animation: pulse 1.6s infinite; }
+@keyframes pulse { 50% { opacity: 0.35; } }
+
+/* ── surfaces and controls ────────────────────────────────────── */
+.card { border: 1px solid var(--line); border-radius: 18px; padding: 20px 22px; display: flex; flex-direction: column; gap: 12px; }
+.card.panel { background: var(--panel); }
+.card.amber { border-color: var(--amber); }
+.chip { border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; font-size: 13px; }
+.btn { border: 0; border-radius: 12px; padding: 15px 24px; font-weight: 700; font-size: 15px; letter-spacing: 0.08em; cursor: pointer;
+  text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: transform 60ms, box-shadow 60ms; }
+.btn.primary { background: var(--amber); color: var(--ground); box-shadow: 0 4px 0 var(--amber-key); }
+.btn.stop { background: var(--alert); color: var(--ground); box-shadow: 0 4px 0 var(--alert-key); }
+.btn.primary:hover, .btn.stop:hover { color: var(--ground); }
+.btn:active { transform: translateY(4px); box-shadow: none; }
+.btn.ghost { background: transparent; border: 1px solid var(--ink); color: var(--ink); font-weight: 400; letter-spacing: 0; font-size: 14px; }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.pill { border: 1px solid var(--edge); background: transparent; border-radius: 999px; padding: 7px 13px; font-size: 13px; cursor: pointer; }
+.pill[aria-pressed="true"] { background: var(--amber); border-color: var(--amber); color: var(--ground); }
+.pill:disabled { opacity: 0.4; cursor: default; }
+kbd { border: 1px solid #3A3833; border-bottom-width: 3px; border-radius: 6px; padding: 1px 7px; font-family: inherit; font-size: 12px; color: var(--ink); }
+
+/* ── bars, waveform, timeline ─────────────────────────────────── */
+.bar { position: relative; height: 12px; border-radius: 999px; background: var(--track); overflow: hidden; }
+.bar > .band { position: absolute; top: 0; bottom: 0; background: #2A3B47; }
+.bar > .fill { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 999px; }
+.wave { position: relative; display: flex; align-items: center; gap: 3px; }
+.wave > span { flex: 1 1 0; min-width: 0; border-radius: 3px; }   /* bars shrink; the take never overflows a phone */
+.wave > .head { position: absolute; top: -4px; bottom: -4px; width: 2px; flex: none; min-width: 0; }
+.marks { position: relative; height: 34px; border-top: 1px solid var(--line); }
+.marks > span { position: absolute; top: 8px; transform: translateX(-50%); }
+.marks .um { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--alert); color: var(--ground); }
+.marks .pause { width: 3px; height: 18px; background: var(--cyan); border-radius: 2px; }
+.axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--faint); }
+mark.hard { background: transparent; color: var(--alert); border-bottom: 2px solid var(--alert); }
+mark.crutch { background: transparent; color: var(--amber); border-bottom: 2px dashed var(--amber); }
+.interim { color: var(--faint); font-style: italic; }
+
+/* ── path nodes ───────────────────────────────────────────────── */
+.node { flex: 0 0 auto; width: 68px; height: 68px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 700; background: #1A1A1E; border: 2px solid var(--edge); box-shadow: 0 5px 0 #0F0F12; color: var(--faint); }
+.node.now { background: var(--amber); border-color: var(--amber); box-shadow: 0 5px 0 var(--amber-key); color: var(--ground); }
+.node.done { background: #141210; border-color: var(--amber-key); color: var(--amber); }
+.node.check { background: #0E1A24; border-color: var(--cyan); box-shadow: 0 5px 0 #0B2A40; color: var(--cyan); }
+.node.later { background: #131316; border-color: var(--line); color: #4A4842; box-shadow: 0 5px 0 #0C0C0E; }
+
+/* ── the full-screen overlay before a run ─────────────────────── */
+.overlay { position: fixed; inset: 0; background: rgba(10, 10, 11, 0.92); display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 18px; padding: 32px; text-align: center; z-index: 10; }
+
+@media (prefers-reduced-motion: reduce) {
+  .onair.live i { animation: none; }
+  .btn { transition: none; }
+}

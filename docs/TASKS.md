@@ -15,8 +15,8 @@ test in both suites; new features go into the port only (ARCHITECTURE → The po
 
 ## Now
 
-1. **Build the screens in `frontend/`** to `docs/DESIGN.md` — all are mocked on the canvas. Port
-   Reel's paint function as a tested module first.
+1. **Finish the screens in `frontend/`**: Drills, Progress, Your texts, Guide, Your data, first run —
+   all mocked on the canvas. Then switch the deploy to the port.
 2. Meanwhile: owner records and labels takes (see Waiting on the owner).
 
 ## Waiting on the owner
@@ -80,12 +80,14 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
 - [x] Session engine `createSession({ onTick, onPhase, onFinish })`; React mounts it via a ref
       (`useSession`); safe under StrictMode double-mount; AudioContext created inside the click (iOS).
       Whole runs tested in Node with fake ports, and in headless Chrome on its fake mic.
-- [ ] Screens built to `DESIGN.md` — `frontend/src/main.tsx` is a bare test booth until then.
-- [ ] Reel: port the canvas's paint function to `frontend/src/lib/reel.ts` with a test; a React
-      component around it; first frame only under `prefers-reduced-motion`.
+- [~] Screens built to `DESIGN.md`: the frame (logo, nav, phone tabs), Home, Booth (with the room check,
+      countdown and problem states) and Report are done and run on the real engine. Left: Drills,
+      Progress, Your texts, Guide, Your data, first run.
+- [x] Reel: `lib/reel.ts` with tests, a React component, first frame only under reduced motion,
+      one per screen.
 - [ ] Port the rest of the old UI logic that isn't pure yet: canvas drawing (ribbon, tape, history),
       the coach tiers (`coach.js`), the follow-along transcript, own-text editor (F1), facts cards (F2).
-- [ ] Self-host the fonts (Google Fonts sends every visitor's IP to Google).
+- [x] Self-host the fonts: Bricolage Grotesque and JetBrains Mono from `@fontsource` (OFL), bundled.
 - [x] `localStorage` → IndexedDB with a one-time migration (validated; the old copy stays).
 - [ ] Exit: feature parity; audio-only path passes in Firefox; deployed.
 
