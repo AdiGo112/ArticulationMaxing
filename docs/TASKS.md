@@ -8,6 +8,9 @@ blocked items to **Waiting**. `[x]` done · `[~]` partly done (the line says wha
 
 **Last updated:** 2026-10-16 · **Branch:** `prod/phase-0-1` (on top of `refactor/es-modules`, neither merged to `main`)
 
+**While the port is in progress:** a logic change goes into both `src/` and `frontend/src/lib/`, with its
+test in both suites; new features go into the port only (ARCHITECTURE → The port).
+
 ---
 
 ## Now
@@ -26,6 +29,8 @@ These need a person, an account or a microphone.
       latest session has `secs`, `raw`, `promptId`, and `cards` lists any coral words; the next day,
       a due run shows a "Retry cards" line on the report. (Headless tests can't reach the end of a
       microphone run.)
+- [ ] Try the port with your real mic: `cd frontend && npm install && npm run dev`, then a drill in
+      the test booth at http://localhost:5173 — it should score and remember the run after a reload.
 - [ ] One Filler Hunt run in Chrome with the buzzer on (the default): one soft tick per "um", and
       the report's speaking time looks right — the tick must not register as your voice (F3).
 - [ ] First real take in `label.html` — confirms recording and decoding (headless can't).
@@ -70,13 +75,16 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
 
 ## Phase 2 — port to Vite + React + TypeScript
 
-- [ ] Monorepo `frontend/` (Vite) + `backend/` (Nest, empty).
-- [ ] Pure modules → `frontend/src/lib/` as TS; `test.js` → Vitest.
-- [ ] Session engine `createSession({ onTick, onPhase, onFinish })`; React mounts it via a ref;
-      safe under StrictMode double-mount; AudioContext created inside the click (iOS).
-- [ ] Screens built to `DESIGN.md`.
+- [x] `frontend/`: Vite + React + TS, pinned (D-020). `backend/` waits for Phase 4 — nothing to put in it yet.
+- [x] Pure modules → `frontend/src/lib/` as TS; `test.js` → Vitest (147 cases, + engine and migration tests).
+- [x] Session engine `createSession({ onTick, onPhase, onFinish })`; React mounts it via a ref
+      (`useSession`); safe under StrictMode double-mount; AudioContext created inside the click (iOS).
+      Whole runs tested in Node with fake ports, and in headless Chrome on its fake mic.
+- [ ] Screens built to `DESIGN.md` — `frontend/src/main.tsx` is a bare test booth until then.
+- [ ] Port the rest of the old UI logic that isn't pure yet: canvas drawing (ribbon, tape, history),
+      the coach tiers (`coach.js`), the follow-along transcript, own-text editor (F1), facts cards (F2).
 - [ ] Self-host the fonts (Google Fonts sends every visitor's IP to Google).
-- [ ] `localStorage` → IndexedDB with a one-time migration.
+- [x] `localStorage` → IndexedDB with a one-time migration (validated; the old copy stays).
 - [ ] Exit: feature parity; audio-only path passes in Firefox; deployed.
 
 ## Phase 3 — free on-device features

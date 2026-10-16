@@ -170,6 +170,21 @@ keeps `form-action 'none'` (`connect-src 'self'` already covers it). Email is op
 **Rejected.** Tally or a Google Form — a new origin, a third party seeing every answer, and a page
 that looks nothing like the app. Form detection has to be switched on in the Netlify dashboard.
 
+## D-020 · How the React port is laid out — 2026-10-16
+
+**Context.** Phase 2 starts before DESIGN.md exists; the logic, the engine and storage don't
+depend on it. **Decision.** `frontend/` is a self-contained npm package with its own lockfile,
+built beside the static app, which keeps shipping until parity. The engine takes mic, clock and
+recogniser as ports so whole runs are unit-tested in Node. The record moves to one IndexedDB
+value, copied once from localStorage. The ported test suite stays plain JS with `node:assert`.
+Pinned: React 19.3.0, Vite 8.3.2, TypeScript 7.0.2, Vitest 5.0.3. `frontend/.npmrc` sets
+`legacy-peer-deps`: npm 11.4 crashes resolving Vitest's optional browser peers, and every peer
+we need is listed. **Rejected.** An empty `backend/` Nest app now — nothing to put in it until
+Phase 4; npm workspaces at the root — one package doesn't need them; typing the test fixtures —
+a cast on nearly every partial session; fake-indexeddb for `db.ts` — the smoke test exercises
+the real thing. **Consequences.** Until the old app is retired, a logic fix lands in both
+`src/` and `frontend/src/lib/`.
+
 ---
 
 ## Open questions

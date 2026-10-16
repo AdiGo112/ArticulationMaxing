@@ -6,3 +6,6 @@ localhost-cert.pem
 
 # Netlify build output (netlify.toml copies the site here)
 dist/
+
+# dependencies (frontend/ has its own package-lock.json)
+node_modules/

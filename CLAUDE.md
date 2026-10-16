@@ -9,7 +9,9 @@ free tiers.
 - `node serve.js` — dev server, https://localhost:8137 (HTTP if the `.pem` files are absent)
 - `node test.js` — unit tests; no `npm install` needed (Node 20.11+)
 - `node scripts/smoke.mjs` — the app in headless Chrome: routes, drills, label page, backup (Node 22+)
-- CI runs both on every push.
+- `frontend/` (the React port): `npm install`, then `npm run dev` (http://localhost:5173), `npm test`
+  (Vitest), `npm run typecheck`, `npm run build`; `node scripts/smoke-frontend.mjs` after a build
+- CI runs all of these on every push.
 
 ## Docs — read before acting
 
@@ -33,11 +35,13 @@ free tiers.
   external origin starts as a DECISIONS entry; a new origin also goes into the CSP in `netlify.toml`.
 - **Content ids are permanent.** Fix text in place (the id stays). Append new items with the next id
   and add it to `content-ids.txt`. Retire an item by deleting it and its ledger line together.
-- **Scoring changes bump `SCORING_VERSION`** (`src/scoring.js`) — any change to `scoreRun()` or its curves.
-- **Logic lives in DOM-free modules with a test in `test.js`.** Break the logic on purpose once and
+- **Scoring changes bump `SCORING_VERSION`** (`src/scoring.js`, and `frontend/src/lib/scoring.ts` to match) — any change
+  to `scoreRun()` or its curves.
+- **Logic lives in DOM-free modules with a test in `test.js`** (and in `frontend/`, its Vitest suite; during the
+  port a logic change goes into both). Break the logic on purpose once and
   watch the new test fail before trusting it.
 - **Only runtime files ship.** `netlify.toml` copies `index.html`, `style.css` and `src/`; a new runtime
   file outside those must be added there. Dev pages (`mic-test.html`, `label.html`) stay out.
-- **Pin CDN imports** to an exact version at least two weeks old.
+- **Pin CDN imports and npm dependencies** to an exact version at least two weeks old (no `^` or `~`).
 - **Commit messages end at the body** — no `Co-Authored-By` or other AI-attribution trailers, and
   none in PR descriptions.

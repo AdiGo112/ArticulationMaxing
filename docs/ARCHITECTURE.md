@@ -324,6 +324,48 @@ headless Chrome has no mic — so run the app for that.
 
 ---
 
+# The port (`frontend/`, Phase 2)
+
+Vite + React + TypeScript, built next to the static app, which keeps shipping until the port
+reaches parity (`netlify.toml` still publishes the old app). Until then **a logic change goes into
+both** `src/` and `frontend/src/lib/`, with its test in both suites; new features go into the port.
+
+```text
+frontend/src/
+  lib/          pure, typed, no DOM — the old pure modules, one-to-one
+    content.ts  text.ts  scoring.ts  drills.ts  vad.ts (VAD + YIN)  speech.ts  storage.ts
+  engine/
+    session.ts  createSession(): arm, calibrate, count down, frame loop, finish → RunResult
+    browser.ts  the real ports: mic + MediaRecorder + buzzer tick, clock, speech synthesis
+    db.ts       the record in IndexedDB; first load copies the old localStorage record
+    useSession.ts  React's handle: the engine in a ref, state only on phase changes
+  main.tsx      a bare test booth until the screens are built to DESIGN.md
+```
+
+**The engine** owns one run and touches neither the DOM nor storage. It takes its world as ports:
+`AudioPort` (open, probe, record, tick), `ClockPort` (now, frame, wait), the listener from
+`createListener(SR)`, and an optional `SpeakerPort` for Echo. It reports through `onPhase`
+(idle → calibrating → countdown → running → done, or error), `onTick(live)` every frame (one
+mutated `Live` object: meters, transcript, live passage marking, coach line), and `onFinish(result)`.
+The caller saves the result with `recordRun()` (history, diction cards, today's plan) and
+`saveRecord()`. `begin()` is only called from a click, and the AudioContext is created before the
+first await, so iOS counts it as part of the gesture; `dispose()` orphans everything in flight,
+which makes StrictMode's double mount harmless.
+
+**Storage.** The same whole-record model as before, as one IndexedDB value. The first load copies
+`localStorage["speakeasy.v1"]` across through the backup validator (`migrateLegacy()`) and leaves
+the original in place; without IndexedDB it falls back to that key.
+
+**Tests.** `npm test` in `frontend/` (Vitest): `lib/lib.test.js` is `test.js` ported case for case
+(minus the label page and `stageHtml`), plus `engine/session.test.ts`, which drives whole runs with
+a scripted fake mic, a hand-driven clock and a fake recogniser — pauses, speaking time, the
+buzzer, live marking, the audio-only path, a refused mic, dispose mid-countdown, and saving.
+`node scripts/smoke-frontend.mjs` runs the built app in headless Chrome with Chrome's fake
+microphone: a real run end to end (calibration, countdown, MediaRecorder, score, IndexedDB) and the
+migration. Both smoke tests share `scripts/cdp.mjs`. CI runs all of it.
+
+---
+
 # Target
 
 The production system, built in phases (see [TASKS.md](TASKS.md)); choices and rejected

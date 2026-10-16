@@ -31,6 +31,15 @@ node scripts/smoke.mjs   # the app in headless Chrome (Node 22+)
 No `npm install`: there are no dependencies; `package.json` only sets `"type": "module"`.
 Needs Node 20.11+.
 
+The React port (Phase 2) lives in `frontend/` and is the one place with dependencies:
+
+```bash
+cd frontend && npm install
+npm run dev       # http://localhost:5173 — a bare test booth until the redesign
+npm test          # Vitest: the ported logic and whole simulated runs
+npm run build && node ../scripts/smoke-frontend.mjs   # a real run on Chrome's fake mic
+```
+
 The microphone needs a secure context, so open the app through the server, not from the file
 system. `serve.js` uses HTTPS when `localhost-cert.pem` and `localhost-key.pem` exist (Chrome's
 speech recogniser prefers it), plain HTTP otherwise:
