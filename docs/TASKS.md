@@ -117,8 +117,8 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
   first visit, Impromptu booth, a Filler Hunt run, its report, Home and the report at 390 px.
   Verdict: the identity and copy are strong, and the booth while speaking and the report are the
   best screens. A first-timer bounces off Home (no focal point) and off a confident wrong score.
-  - [x] **Too short to score** (`tooShort()` in lib/scoring.ts; free speech under 10 s, under 1.5 s of
-        voice, or too few words; the booth says why and saves nothing).
+  - [x] **Too short to score** (`tooShort()` in lib/scoring.ts; free speech under 10 s, too few words,
+        or — without a transcript only — under 1.5 s of voice; the booth says why and saves nothing).
   - [x] **Home redesign** (2026-10-17): one-column hero with Start naming the drill, path in order,
         streak / pack (a select) / privacy as one strip. Kept for reference:
         - Hero: the headline and Start on the left, Reel on the right, ASCII art behind both and never
@@ -128,7 +128,8 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
         - Streak and goal pack become one compact strip under the hero, and the "psst" tip moves
           into the hero.
         - On phones, streak and pack come up near the top instead of below everything.
-  - [ ] **Per-drill meters.**
+  - [x] **Per-drill meters** (Booth `METERS`: Filler Hunt has no Pace; Diction / Echo show Accuracy and
+        Projection; Pace & Pause gains Pauses; "—" until the take starts). Was:
         - Each drill shows only what it scores: no Pace on Filler Hunt; nothing filler-related on
           Diction or Echo.
         - Show "—", not a red "0", before the take starts.

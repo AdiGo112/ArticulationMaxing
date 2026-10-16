@@ -74,6 +74,7 @@ check("pack: the plan takes two of the pack's drills", await until(`document.bod
 
 /* a real run on the fake mic */
 await open(origin + "/#/drill/filler");
+check("booth: Filler Hunt shows its own meters, blank before the take", await until(`(() => { const t = document.querySelector("[aria-label=Meters]")?.innerText || ""; return t.includes("Fillers") && !t.includes("Pace") && !/0 this take/.test(t); })()`), await ev(`document.querySelector("[aria-label=Meters]")?.innerText`));
 check("booth: ready to start", await until(`[...document.querySelectorAll("button")].some(b => b.textContent.includes("START SPEAKING"))`), await text());
 await press("▶ START SPEAKING");
 check("run: room check, then countdown", await until(`!!document.querySelector("[role=dialog]")`, 3000), await text());

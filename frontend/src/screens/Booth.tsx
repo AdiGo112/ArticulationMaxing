@@ -17,6 +17,11 @@ import type { ReelState } from "../lib/reel.ts";
 const N = 90;                                       // waveform buckets across the run
 const fmt = (s: number) => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
 const LENGTHS = [[30, "30 s"], [60, "1 min"], [90, "90 s"], [120, "2 min"]] as const;
+/* The live meters each drill shows: what scoreRun() weighs for it (Projection is always on). */
+const METERS: Record<string, string[]> = {
+  impromptu: ["pace", "fillers", "pauses"], filler: ["fillers", "pauses"], word: ["pace", "fillers", "pauses"],
+  pace: ["pace", "pauses", "acc"], diction: ["acc"], echo: ["acc"],
+};
 const SENS = [["strict", 0.7], ["normal", 1], ["quiet voice", 1.5]] as const;
 
 export function Booth({ id }: { id: string }) {
@@ -107,14 +112,15 @@ function BoothFor({ drill }: { drill: Drill }) {
     <>
       <section className="card" aria-label="Meters">
         <h2 className="rule">METERS</h2>
-        <Meter label="Pace" value={live?.wpm ? String(live.wpm) : "—"} unit="wpm" pct={(live?.wpm || 0) / 220 * 100} band={[63, 75]} color="var(--cyan)"
-          note={listener.supported ? "the shaded band is 138–165" : "needs a transcript"} />
-        <Meter label="Fillers" value={String(live?.fillers.total ?? 0)} unit="this take" pct={Math.min(100, (live?.fillers.total ?? 0) * 9)} color="var(--alert)"
-          note={live && live.fillers.total ? Object.entries(live.fillers.found).map(([w, n]) => `${n} ${w}`).join(" · ") : "every um and like counts"} />
-        <Meter label="Projection" value={String(live?.proj ?? "—")} unit="/ 100" pct={live?.proj ?? 0} band={[55, 78]} color="var(--cyan)" note="carrying, not clipping" />
-        {run.target
-          ? <Meter label="Accuracy" value={live?.acc != null ? live.acc + "%" : "—"} unit="so far" pct={live?.acc ?? 0} color="var(--amber)" note="words that came through" />
-          : <Meter label="Pauses" value={String(live?.goodPauses ?? 0)} unit="so far" pct={Math.min(100, (live?.goodPauses ?? 0) * 12)} color="var(--amber)" note="aim for 5–10 a minute" />}
+        {/* only what this drill scores; "—" until the take starts */}
+        {METERS[drill.id].includes("pace") && <Meter label="Pace" value={live?.wpm ? String(live.wpm) : "—"} unit="wpm" pct={(live?.wpm || 0) / 220 * 100} band={[63, 75]} color="var(--cyan)"
+          note={listener.supported ? "the shaded band is 138–165" : "needs a transcript"} />}
+        {METERS[drill.id].includes("fillers") && <Meter label="Fillers" value={live ? String(live.fillers.total) : "—"} unit="this take" pct={Math.min(100, (live?.fillers.total ?? 0) * 9)}
+          color={live?.fillers.total ? "var(--alert)" : "var(--ink)"}
+          note={live && live.fillers.total ? Object.entries(live.fillers.found).map(([w, n]) => `${n} ${w}`).join(" · ") : "every um and like counts"} />}
+        {METERS[drill.id].includes("acc") && <Meter label="Accuracy" value={live?.acc != null ? live.acc + "%" : "—"} unit="so far" pct={live?.acc ?? 0} color="var(--amber)" note="words that came through" />}
+        {METERS[drill.id].includes("pauses") && <Meter label="Pauses" value={live ? String(live.goodPauses) : "—"} unit="so far" pct={Math.min(100, (live?.goodPauses ?? 0) * 12)} color="var(--amber)" note="aim for 5–10 a minute" />}
+        <Meter label="Projection" value={live ? String(live.proj) : "—"} unit="/ 100" pct={live?.proj ?? 0} band={[55, 78]} color="var(--cyan)" note="carrying, not clipping" />
       </section>
       <section aria-label="Coach" style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start" }}>
         <pre aria-hidden="true" style={{ fontSize: 13, lineHeight: 1.35 }}>{bubble(running && live ? live.coach.join(" ") : drill.hint, 30)}</pre>

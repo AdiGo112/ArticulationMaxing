@@ -7,7 +7,8 @@ const free = { secs: 30, speakSecs: 20, words: 60, transcript: true, reading: fa
 test("a real take scores; a short or silent one doesn't", () => {
   expect(tooShort(free)).toBeNull();
   expect(tooShort({ ...free, secs: 2.5, speakSecs: 2, words: 17 })).toMatch(/ten seconds/);   // the 62 that started this
-  expect(tooShort({ ...free, speakSecs: 0.5 })).toMatch(/voice/);
+  expect(tooShort({ ...free, transcript: false, words: 0, speakSecs: 0.5 })).toMatch(/voice/);
+  expect(tooShort({ ...free, speakSecs: 0.5 })).toBeNull();          // the words came through: voice detection was wrong
   expect(tooShort({ ...free, words: 5 })).toMatch(/few words/);
 });
 

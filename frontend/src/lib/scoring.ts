@@ -120,7 +120,8 @@ export function coachNotes(m: Measurements, run: Pick<Run, "target" | "requireWo
    seconds, so it needs voice and, with a transcript, a few of its words.
    Without a transcript (Firefox) only time and voice count. Returns why, or null. */
 export function tooShort(o: { secs: number; speakSecs: number; words: number; transcript: boolean; reading: boolean }): string | null {
-  if (o.speakSecs < 1.5) return "Reel didn't hear enough of your voice to score.";
+  // voice detection can mistake a steady room for silence; with a transcript, the words decide
+  if (!o.transcript && o.speakSecs < 1.5) return "Reel didn't hear enough of your voice to score.";
   if (!o.reading && o.secs < 10) return "Under ten seconds is too short to score. Keep going for at least ten.";
   if (o.transcript && o.words < (o.reading ? 3 : 8)) return "Too few words came through to score.";
   return null;
