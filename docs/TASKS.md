@@ -119,7 +119,8 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
   best screens. A first-timer bounces off Home (no focal point) and off a confident wrong score.
   - [x] **Too short to score** (`tooShort()` in lib/scoring.ts; free speech under 10 s, under 1.5 s of
         voice, or too few words; the booth says why and saves nothing).
-  - [ ] **Home redesign.**
+  - [x] **Home redesign** (2026-10-17): one-column hero with Start naming the drill, path in order,
+        streak / pack (a select) / privacy as one strip. Kept for reference:
         - Hero: the headline and Start on the left, Reel on the right, ASCII art behind both and never
           under the text, no translucent box.
         - Path: a straight list in order, with done items ticked in place. Today it shows "now:

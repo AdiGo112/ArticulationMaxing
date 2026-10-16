@@ -61,14 +61,15 @@ await ev(`localStorage.setItem("speakeasy.v1", JSON.stringify({ theme: "dark", s
   { at: ${Date.UTC(2026, 9, 1)}, drill: "pace", name: "Pace & Pause", score: 71, wpm: 150, fillers: 1 },
   { at: "broken", drill: "pace", score: 50 }] })), true`);
 await open(origin);
-check("home: logo, path and Reel render", await until(`!!document.querySelector(".onair") && document.querySelectorAll(".node").length >= 5 && !!document.querySelector("svg[aria-label^='Reel']")`, 8000), await text());
+check("home: logo, path and Reel render", await until(`!!document.querySelector(".onair") && document.querySelectorAll(".path .node").length === 3 && !!document.querySelector("svg[aria-label^='Reel']")`, 8000), await text());
 check("home: one Reel", (await reels()) === 1, "found " + (await reels()));
 check("home: the logo's light is off", await ev(`!document.querySelector(".onair.live")`));
 check("migration: old history arrives, damaged entry dropped", (await stored()) === 1);
 check("home: no script errors", errors.length === 0, errors.join(" | "));
 
 /* goal packs: picking one rebuilds today's untouched plan around it */
-await ev(`[...document.querySelectorAll("label")].find(l => l.textContent.trim() === "job interview")?.click(), true`);
+await ev(`(() => { const s = document.querySelector(".home-strip select"); Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(s, "interview");
+  s.dispatchEvent(new Event("change", { bubbles: true })); return true; })()`);
 check("pack: the plan takes two of the pack's drills", await until(`document.body.innerText.includes("Impromptu") && document.body.innerText.includes("Filler Hunt")`));
 
 /* a real run on the fake mic */
