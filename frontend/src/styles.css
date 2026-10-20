@@ -121,10 +121,10 @@ kbd { border: 1px solid #3A3833; border-bottom-width: 3px; border-radius: 6px; p
 .wave { position: relative; display: flex; align-items: center; gap: 3px; }
 .wave > span { flex: 1 1 0; min-width: 0; border-radius: 3px; }   /* bars shrink; the take never overflows a phone */
 .wave > .head { position: absolute; top: -4px; bottom: -4px; width: 2px; flex: none; min-width: 0; }
-.marks { position: relative; height: 34px; border-top: 1px solid var(--line); }
-.marks > span { position: absolute; top: 8px; transform: translateX(-50%); }
-.marks .um { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--alert); color: var(--ground); }
-.marks .pause { width: 3px; height: 18px; background: var(--cyan); border-radius: 2px; }
+.marks { position: relative; height: 44px; border-top: 1px solid var(--line); }
+.marks > span { position: absolute; transform: translateX(-50%); }
+.marks .um { top: 18px; white-space: nowrap; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--alert); color: var(--ground); }
+.marks .pause { top: 4px; width: 3px; height: 10px; background: var(--cyan); border-radius: 2px; }   /* their own lane, never under a pill */
 .axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--faint); }
 mark.hard { background: transparent; color: var(--alert); border-bottom: 2px solid var(--alert); }
 mark.crutch { background: transparent; color: var(--amber); border-bottom: 2px dashed var(--amber); }

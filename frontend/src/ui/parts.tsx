@@ -1,7 +1,7 @@
 /* parts.tsx — The small pieces every screen uses: Reel, the on-air logo,
    bars, the waveform, the filler/pause timeline, and transcript marking. */
 
-import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ASPECT, FIXED, REEL_CORAL, SLOTS, VIEWBOX, frames, shade, type ReelState } from "../lib/reel.ts";
 import { HARD } from "../lib/content.ts";
 import { FILLER_RE } from "../lib/text.ts";
@@ -85,18 +85,34 @@ export function Wave({ levels, height = 120, at, dimAfter, onSeek }: {
 
 export interface TimeMark { t: number; type: "pause" | "filler"; word?: string }
 
-/* Fillers as pills, deliberate pauses as ticks, placed in time. */
+/* Fillers as pills, deliberate pauses as ticks in a lane above them, placed in time. */
 export function Timeline({ marks, dur }: { marks: TimeMark[]; dur: number }) {
   const fillers = marks.filter(m => m.type === "filler").length, pauses = marks.length - fillers;
   const half = Math.round(dur / 2), fmt = (s: number) => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+  const at = (t: number) => Math.min(100, t / dur * 100);
+  const track = useRef<HTMLDivElement>(null), [w, setW] = useState(0);
+  useEffect(() => {
+    const ro = new ResizeObserver(([e]) => setW(e.contentRect.width));
+    if (track.current) ro.observe(track.current);
+    return () => ro.disconnect();
+  }, []);
+  // fillers heard in one phrase share a time: one pill, with a count. A pill that
+  // starts within a pill's width of the last one drops to a second row.
+  // ponytail: a pill is taken as 72 px wide (the widest common one, "like +1", plus a gap); measure each if longer words crowd
+  const pills = marks.filter(m => m.type === "filler").reduce<{ t: number; word: string; n: number; row: number }[]>((a, m) => {
+    const p = a[a.length - 1];
+    if (p && p.t === m.t) p.n++;
+    else a.push({ t: m.t, word: m.word || "um", n: 1, row: p && p.row === 0 && (m.t - p.t) / dur * w < 72 ? 1 : 0 });
+    return a;
+  }, []);
   return (
     <>
-      <div className="marks" role="img" aria-label={`${fillers} filler${fillers === 1 ? "" : "s"} and ${pauses} deliberate pause${pauses === 1 ? "" : "s"}`}>
-        {marks.map((m, i) => (
-          <span key={i} className={m.type === "filler" ? "um" : "pause"} style={{ left: Math.min(100, m.t / dur * 100) + "%" }}>
-            {m.type === "filler" ? m.word || "um" : null}
-          </span>
-        ))}
+      <div ref={track} className="marks" role="img" style={pills.some(p => p.row) ? { height: 68 } : undefined}
+        aria-label={`${fillers} filler${fillers === 1 ? "" : "s"} and ${pauses} deliberate pause${pauses === 1 ? "" : "s"}`}>
+        {marks.filter(m => m.type === "pause").map((m, i) => <span key={"p" + i} className="pause" style={{ left: at(m.t) + "%" }} />)}
+        {/* shifted by their own position, so a pill at either end stays inside the track */}
+        {pills.map((p, i) => <span key={"f" + i} className="um" style={{ left: at(p.t) + "%", top: 18 + p.row * 24, transform: `translateX(-${at(p.t)}%)` }}>
+          {p.word}{p.n > 1 ? ` +${p.n - 1}` : ""}</span>)}
       </div>
       <div className="axis"><span>0:00</span><span>{fmt(half)}</span><span>{fmt(dur)}</span></div>
     </>

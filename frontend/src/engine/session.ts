@@ -206,10 +206,11 @@ export function createSession(o: SessionOpts) {
       if (b.fire) audio.tick();
     }
     if (f.total > lastFillers) {
-      lastFillers = f.total;
       live.lastFillerAt = clock.now();
-      const found = [...norm(all).matchAll(FILLER_RE)];
-      marks.push({ t: live.elapsed, type: "filler", word: found.length ? found[found.length - 1][0].replace(/s+/g, " ") : undefined });
+      // one result can bring several fillers at once; each gets its own mark
+      for (const m of [...norm(all).matchAll(FILLER_RE)].slice(lastFillers, f.total))
+        marks.push({ t: live.elapsed, type: "filler", word: m[0].replace(/\s+/g, " ") });
+      lastFillers = f.total;
     }
     if (run.target) {
       live.hits = matchTarget(all, run.target);

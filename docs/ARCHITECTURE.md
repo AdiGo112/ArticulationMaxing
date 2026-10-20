@@ -185,7 +185,9 @@ appears in interim results.
 ## Report
 
 - **The take** — bar height is the loudest moment in each slice; fillers are pills and deliberate
-  pauses ticks on the timeline below. Click the bars to hear that moment.
+  pauses ticks (in their own lane above the pills) on the timeline below. Every filler gets a mark, at
+  the time its phrase was heard; fillers from one phrase share a pill ("uh +1"), and a pill too close
+  to the last drops to a second row. Click the bars to hear that moment.
 - **Parts** — each component of the score, out of 100, coloured by band.
 - **One thing to fix** — the first of `coachNotes()`; **since you started** lists `facts()`, and is hidden while there are none.
 

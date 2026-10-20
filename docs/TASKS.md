@@ -136,7 +136,11 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
   - [x] **Report clutter** (2026-10-20): no "OUT OF 100" label (only "up / down N on last time" when
         there is a last time); "Since you started" hidden until it has facts; take caption shortened to
         "click to jump", shown only when there is audio to jump in.
-  - [ ] **Timeline.** Keep filler pills off the waveform and the playhead.
+  - [x] **Timeline** (2026-10-20). The pills already sat in their own row, clear of the waveform and
+        playhead; what was wrong underneath: a phrase with several fillers got one mark (8 heard, 5
+        shown, and the label said 5), and the mark's word lost every "s" (`/s+/` for `/\s+/`). Now
+        every filler is marked; one phrase's fillers share a pill ("uh +1"); pauses have their own
+        lane; edge pills stay inside the track; crowded pills drop to a second row (phones).
   - [ ] **Booth before a run.**
         - Collapse the empty waveform to a thin strip until recording starts.
         - Fold length, mic and the "um" tick into one setup row, so the order is prompt, then Start.

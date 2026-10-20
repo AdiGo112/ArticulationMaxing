@@ -84,6 +84,15 @@ test("the buzzer ticks once per new um, and fillers are marked on the tape", asy
   expect(res.marks.filter(m => m.type === "filler")).toHaveLength(2);
 });
 
+test("a phrase with several fillers marks each one, by its own word", async () => {
+  const r = rig();
+  const { s } = session(r, "filler");
+  await s.begin();
+  r.play(2); r.say("um I sort of basically went");
+  const res = (await s.finish())!;
+  expect(res.marks.filter(m => m.type === "filler").map(m => m.word)).toEqual(["um", "sort of", "basically"]);
+});
+
 test("no buzzer unless asked, and never on a set passage", async () => {
   const r = rig();
   const a = session(r, "filler");
