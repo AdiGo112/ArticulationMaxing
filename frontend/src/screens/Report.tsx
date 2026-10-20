@@ -59,7 +59,7 @@ export function Report() {
           <span className="big muted" style={{ fontSize: 28, fontWeight: 600 }}>/100</span>
         </div>
         <div style={{ flex: "1 1 360px", display: "flex", flexDirection: "column", gap: 10 }}>
-          <span className="label">out of 100{prev ? ` · ${r.score >= prev.score ? "up" : "down"} ${Math.abs(r.score - prev.score)} on last time` : ""}</span>
+          {prev && <span className="label">{r.score >= prev.score ? "up" : "down"} {Math.abs(r.score - prev.score)} on last time</span>}
           <h1 className="h1" style={{ fontSize: 52 }}>{title}</h1>
           <p className="body" style={{ margin: 0, fontSize: 15, lineHeight: 1.6, maxWidth: 520 }}>{sub}</p>
           {last.retry && <p style={{ margin: 0, color: "var(--cyan)" }}>{last.retry}</p>}
@@ -81,7 +81,7 @@ export function Report() {
 
       <section aria-label="The take" className="card panel">
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
-          <h2 className="rule">── THE TAKE ── click anywhere to jump there</h2>
+          <h2 className="rule">── THE TAKE ──{r.audioURL ? " click to jump" : ""}</h2>
           {r.audioURL && <button type="button" className="btn ghost" style={{ padding: "10px 18px", borderRadius: 999 }} onClick={toggle}>
             {playing ? "❚❚ pause" : "▶ play"} · {fmt(r.elapsed)}</button>}
         </div>
@@ -95,7 +95,7 @@ export function Report() {
           onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} />}
       </section>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 24 }}>
+      {(fix || since.length > 0) && <div style={{ display: "flex", flexWrap: "wrap", gap: 24 }}>
         {fix && (
           <section aria-label="Fix next" className="card amber" style={{ flex: "1 1 420px" }}>
             <span className="label amber">the one thing to fix</span>
@@ -103,13 +103,13 @@ export function Report() {
             <p className="body" style={{ margin: 0, lineHeight: 1.65 }}>{fix[1]}</p>
           </section>
         )}
-        <section aria-label="Since you started" className="card" style={{ flex: "1 1 320px" }}>
-          <span className="label cyan">since you started</span>
-          {since.length
-            ? <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.8 }}>{since.map(f => <li key={f.metric} style={{ color: f.kind === "better" ? "var(--cyan)" : "var(--amber)" }}><span style={{ color: "var(--ink)" }}>{f.text}</span></li>)}</ul>
-            : <p className="muted" style={{ margin: 0, fontSize: 13, lineHeight: 1.6 }}>After six sessions over three days, this shows what has actually moved.</p>}
-        </section>
-      </div>
+        {since.length > 0 && (
+          <section aria-label="Since you started" className="card" style={{ flex: "1 1 320px" }}>
+            <span className="label cyan">since you started</span>
+            <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.8 }}>{since.map(f => <li key={f.metric} style={{ color: f.kind === "better" ? "var(--cyan)" : "var(--amber)" }}><span style={{ color: "var(--ink)" }}>{f.text}</span></li>)}</ul>
+          </section>
+        )}
+      </div>}
 
       <Coach r={r} />
 

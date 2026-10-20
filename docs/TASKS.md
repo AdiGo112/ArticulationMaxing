@@ -6,7 +6,7 @@ Where the work stands. Specs: [PRD.md](PRD.md) · design and build: [ARCHITECTUR
 Update this file in the same commit as the work: tick what's done, add what was found, move
 blocked items to **Waiting**. `[x]` done · `[~]` partly done (the line says what's left) · `[ ]` to do.
 
-**Last updated:** 2026-10-16 · **Branch:** `prod/phase-0-1` (on top of `refactor/es-modules`, neither merged to `main`)
+**Last updated:** 2026-10-20 · **Branch:** `prod/phase-0-1` (on top of `refactor/es-modules`, neither merged to `main`)
 
 The vanilla-JS app was retired on 2026-10-16 (D-023): the React app in `frontend/` is the app.
 Until the items under **Phase 2 → Back from the old app** land, it does less than the old one did.
@@ -133,10 +133,9 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
         - Each drill shows only what it scores: no Pace on Filler Hunt; nothing filler-related on
           Diction or Echo.
         - Show "—", not a red "0", before the take starts.
-  - [ ] **Report clutter.**
-        - Drop the "OUT OF 100" label (the score already says /100).
-        - Hide "Since you started" until it has facts.
-        - Shorten the take caption so it isn't cut off on phones.
+  - [x] **Report clutter** (2026-10-20): no "OUT OF 100" label (only "up / down N on last time" when
+        there is a last time); "Since you started" hidden until it has facts; take caption shortened to
+        "click to jump", shown only when there is audio to jump in.
   - [ ] **Timeline.** Keep filler pills off the waveform and the playhead.
   - [ ] **Booth before a run.**
         - Collapse the empty waveform to a thin strip until recording starts.

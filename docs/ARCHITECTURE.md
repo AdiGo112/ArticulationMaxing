@@ -187,7 +187,7 @@ appears in interim results.
 - **The take** — bar height is the loudest moment in each slice; fillers are pills and deliberate
   pauses ticks on the timeline below. Click the bars to hear that moment.
 - **Parts** — each component of the score, out of 100, coloured by band.
-- **One thing to fix** — the first of `coachNotes()`; **since you started** lists `facts()`.
+- **One thing to fix** — the first of `coachNotes()`; **since you started** lists `facts()`, and is hidden while there are none.
 
 ## Coaching
 
