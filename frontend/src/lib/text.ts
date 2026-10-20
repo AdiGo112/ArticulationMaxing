@@ -95,6 +95,19 @@ export function countFillers(text: string): FillerCount {
   return { hard, crutch, total: hard + crutch, found };
 }
 
+/* Which display tokens are fillers, one entry per tokens(text): the same
+   matcher, so a phrase like "you know" lights both of its tokens. For the
+   report's follow-along transcript, where each token is its own clickable word. */
+export function fillerKinds(text: string): ("hard" | "crutch" | null)[] {
+  const spans = [...text.matchAll(/\S+/g)].map(m => [m.index, m.index + m[0].length]);
+  const kinds: ("hard" | "crutch" | null)[] = spans.map(() => null);
+  for (const m of text.matchAll(FILLER_RE)) {
+    const a = m.index, b = a + m[0].length, kind = HARD.includes(m[0].toLowerCase().replace(/\s+/g, " ")) ? "hard" : "crutch";
+    spans.forEach(([s, e], i) => { if (s < b && e > a) kinds[i] = kind; });
+  }
+  return kinds;
+}
+
 /* longest common subsequence length — texts are short, O(n*m) is fine */
 function lcs(a: string[], b: string[]): number {
   const n = b.length;

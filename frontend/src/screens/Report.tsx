@@ -1,8 +1,9 @@
 /* Report — the run you just finished. DESIGN.md → Screens; the canvas's Report board. */
 
-import { useMemo, useRef, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import { drillById, facts, nextInPlan } from "../lib/drills.ts";
 import { coachNotes, verdict } from "../lib/scoring.ts";
+import { READ_LAG, fillerKinds, tokens, wordAt } from "../lib/text.ts";
 import { todayPlan } from "../lib/storage.ts";
 import { Bar, Marked, Reel, Timeline, Wave, scoreColor } from "../ui/parts.tsx";
 import { Shell } from "../app/Shell.tsx";
@@ -41,10 +42,10 @@ export function Report() {
   const since = facts(record.sessions, 3);
   const prev = record.sessions.filter(s => s.drill === r.drill.id).slice(-2, -1)[0];
 
-  const seek = (p: number) => {
+  const seek = (t: number) => {
     const a = audio.current;
     if (!a) return;
-    a.currentTime = p * r.elapsed; setPos(a.currentTime);
+    a.currentTime = t; setPos(a.currentTime);
     void a.play();
   };
   const toggle = () => { const a = audio.current; if (!a) return; if (a.paused) void a.play(); else a.pause(); };
@@ -85,10 +86,12 @@ export function Report() {
           {r.audioURL && <button type="button" className="btn ghost" style={{ padding: "10px 18px", borderRadius: 999 }} onClick={toggle}>
             {playing ? "❚❚ pause" : "▶ play"} · {fmt(r.elapsed)}</button>}
         </div>
-        <Wave levels={bars} height={110} at={pos != null ? pos / r.elapsed : 0} dimAfter onSeek={r.audioURL ? seek : undefined} />
+        <Wave levels={bars} height={110} at={pos != null ? pos / r.elapsed : 0} dimAfter onSeek={r.audioURL ? p => seek(p * r.elapsed) : undefined} />
         <Timeline marks={r.marks} dur={r.elapsed || 1} />
         {r.text
-          ? <p style={{ margin: 0, fontSize: 17, lineHeight: 1.75, maxWidth: 940 }}><Marked text={r.text} /></p>
+          ? r.audioURL && r.wordTimes.length
+            ? <Follow text={r.text} times={r.wordTimes} end={r.elapsed} at={pos} playing={playing} onJump={seek} />
+            : <p style={{ margin: 0, fontSize: 17, lineHeight: 1.75, maxWidth: 940 }}><Marked text={r.text} /></p>
           : <p className="faint" style={{ margin: 0 }}>No transcript for this take — the recording and the audio scores are all here.</p>}
         {r.audioURL && <audio ref={audio} src={r.audioURL} preload="metadata"
           onTimeUpdate={e => setPos(e.currentTarget.currentTime)} onPlay={() => setPlaying(true)}
@@ -120,5 +123,25 @@ export function Report() {
         <button type="button" className="btn ghost" onClick={() => { app.setAgain(r.run); go("drill/" + r.drill.id); }}>↻ same prompt again</button>
       </div>
     </Shell>
+  );
+}
+
+/* The transcript word by word: the word being spoken lights as the take plays,
+   and clicking a word plays from there. Words the recogniser never stamped
+   take the end of the take. */
+function Follow({ text, times, end, at, playing, onJump }: {
+  text: string; times: number[]; end: number; at: number | null; playing: boolean; onJump: (t: number) => void;
+}) {
+  const tk = tokens(text), kinds = fillerKinds(text), t = tk.map((_, i) => times[i] ?? end);
+  const cur = at == null ? -1 : wordAt(t, at);
+  return (
+    <p className={"follow" + (playing ? " playing" : "")} style={{ margin: 0, fontSize: 17, lineHeight: 1.75, maxWidth: 940 }}
+      onClick={e => { const i = (e.target as HTMLElement).dataset.i; if (i != null) onJump(Math.max(0, t[+i] - READ_LAG)); }}>
+      {tk.map((w, i) => (
+        <Fragment key={i}>
+          <span data-i={i} className={[kinds[i], i < cur && "past", i === cur && "now"].filter(Boolean).join(" ")}>{w}</span>{" "}
+        </Fragment>
+      ))}
+    </p>
   );
 }

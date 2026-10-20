@@ -216,6 +216,17 @@ test("display tokens stay 1:1 with the recorded word timings", () => {
   assert.deepStrictEqual(X.tokens("   "), []);
 });
 
+test("fillerKinds marks each display token, phrases across tokens, with the scoring matcher", () => {
+  const s = "Um, I was, you know, basically fine";
+  assert.deepStrictEqual(X.fillerKinds(s), ["hard", null, null, "crutch", "crutch", "crutch", null]);
+  assert.strictEqual(X.fillerKinds(s).length, X.tokens(s).length, "one kind per token, or the spans drift");
+  assert.deepStrictEqual(X.fillerKinds(""), []);
+  // the same count the score uses: every filler it counts lights at least one token
+  const t = "uh I mean it was sort of okay so anyway um";
+  const lit = X.fillerKinds(t).filter(Boolean).length, counted = X.countFillers(t).total;
+  assert.ok(lit >= counted, `${lit} tokens lit for ${counted} fillers`);
+});
+
 test("wordAt picks the last word spoken at or before the playhead", () => {
   const times = [0.5, 1.0, 2.0, 5.0];
   const L = X.READ_LAG;

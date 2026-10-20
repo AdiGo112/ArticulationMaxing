@@ -133,6 +133,13 @@ kbd { border: 1px solid #3A3833; border-bottom-width: 3px; border-radius: 6px; p
 mark.hard { background: transparent; color: var(--alert); border-bottom: 2px solid var(--alert); }
 mark.crutch { background: transparent; color: var(--amber); border-bottom: 2px dashed var(--amber); }
 .interim { color: var(--faint); font-style: italic; }
+/* the report's follow-along transcript: plain text at rest; while it plays, what's still ahead dims and the current word wins */
+.follow span { cursor: pointer; border-radius: 4px; }
+.follow span:hover { background: var(--track); }
+.follow span.hard { color: var(--alert); border-bottom: 2px solid var(--alert); }
+.follow span.crutch { color: var(--amber); border-bottom: 2px dashed var(--amber); }
+.follow.playing span:not(.past, .now, .hard, .crutch) { color: var(--faint); }
+.follow span.now { background: var(--amber); color: var(--ground); }
 
 /* ── path nodes ───────────────────────────────────────────────── */
 .node { flex: 0 0 auto; width: 68px; height: 68px; border-radius: 50%; display: flex; align-items: center; justify-content: center;

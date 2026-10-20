@@ -90,7 +90,12 @@ check("run: a second take starts", await until(`[...document.querySelectorAll("b
 await sleep(11000);
 await press("■ STOP");
 check("run: ends on the report with a score", await until(`location.hash === "#/report" && !!document.querySelector("[aria-label^='Score ']")`, 6000), await text());
-check("report: the heard 'um' is marked as a hard filler", await ev(`[...document.querySelectorAll("mark.hard")].some(m => m.textContent === "um")`));
+check("report: the heard 'um' is marked as a hard filler", await ev(`[...document.querySelectorAll(".follow span.hard")].some(m => m.textContent === "um")`));
+/* follow-along: a word clicked plays from there, and the word being spoken lights */
+await ev(`[...document.querySelectorAll(".follow span")].find(s => s.textContent === "kettle").click(), true`);
+check("report: clicking a word plays the take from there", await until(`!document.querySelector("audio").paused`, 3000));
+check("report: the transcript follows the playback", await until(`!!document.querySelector(".follow span.now")`, 3000), await ev(`document.querySelector(".follow")?.outerHTML.slice(0, 300)`));
+await ev(`document.querySelector("audio").pause(), true`);
 check("coach: on the report", await ev(`!!document.querySelector("[aria-label=Coach]")`));
 check("coach: the SDK is its own chunk", readdirSync(join(dir, "dist/assets")).some(f => f.startsWith("sdk-")));
 check("coach: the SDK isn't downloaded until someone asks", await ev(`!performance.getEntriesByType("resource").some(e => e.name.includes("/sdk-"))`));

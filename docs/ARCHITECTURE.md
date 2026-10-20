@@ -187,7 +187,10 @@ appears in interim results.
 - **The take** — bar height is the loudest moment in each slice; fillers are pills and deliberate
   pauses ticks (in their own lane above the pills) on the timeline below. Every filler gets a mark, at
   the time its phrase was heard; fillers from one phrase share a pill ("uh +1"), and a pill too close
-  to the last drops to a second row. Click the bars to hear that moment.
+  to the last drops to a second row. Click the bars to hear that moment. Under them, the transcript
+  follows along: each display token carries its `wordTimes` stamp, `wordAt()` lights the one being
+  spoken, and clicking a word plays from it (less `READ_LAG`). Fillers are marked per token by
+  `fillerKinds()`, the scoring matcher. With no recording or no stamps it is plain marked text.
 - **Parts** — each component of the score, out of 100, coloured by band.
 - **One thing to fix** — the first of `coachNotes()`; **since you started** lists `facts()`, and is hidden while there are none.
 

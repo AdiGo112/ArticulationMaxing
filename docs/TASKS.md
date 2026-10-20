@@ -99,8 +99,9 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
         device, booth settings (mic sensitivity is remembered), start over.
   - [x] Coach on the report: local findings, Chrome's on-device model, Claude review (own key), with
         the transcript wrapped as data; SDK bundled and lazy (D-024).
-  - [ ] Report: follow-along transcript (click a word to jump), the passage marked hit / missed /
-        unread on reading drills, the record line (`recordFor()`).
+  - [~] Report: follow-along transcript done (2026-10-20: the word being spoken lights during
+        playback, click a word to play from it; `fillerKinds()` marks fillers per word). Left: the
+        passage marked hit / missed / unread on reading drills, the record line (`recordFor()`).
   - [x] Booth: transcription errors (network, blocked, mic busy, Brave) shown while running, and a
         transcript chip that says starting / listening / hearing you / failing.
   - [ ] Booth: serve the most overdue diction twister.
