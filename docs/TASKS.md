@@ -6,7 +6,7 @@ Where the work stands. Specs: [PRD.md](PRD.md) · design and build: [ARCHITECTUR
 Update this file in the same commit as the work: tick what's done, add what was found, move
 blocked items to **Waiting**. `[x]` done · `[~]` partly done (the line says what's left) · `[ ]` to do.
 
-**Last updated:** 2026-10-20 · **Branch:** `prod/phase-0-1` (on top of `refactor/es-modules`, neither merged to `main`)
+**Last updated:** 2026-10-20 · **Branch:** `main` (`prod/phase-0-1` and `refactor/es-modules` merged 2026-10-20)
 
 The vanilla-JS app was retired on 2026-10-16 (D-023): the React app in `frontend/` is the app.
 Until the items under **Phase 2 → Back from the old app** land, it does less than the old one did.
