@@ -38,8 +38,8 @@ These need a person, an account or a microphone.
       confirms recording and decoding (headless can't).
 - [ ] Record and label **20 takes** with hand-counted fillers (Whisper gate, F9).
 - [ ] Record and label **~200 takes** over the coming weeks (F15 training data).
-- [ ] Decide whether to merge `refactor/es-modules` and `prod/phase-0-1` into `main`, and push —
-      CI (`.github/workflows/ci.yml`) runs once the branch is on GitHub; it hasn't run yet.
+- [x] Merged `prod/phase-0-1` (which carries `refactor/es-modules`) into `main` and pushed, 2026-10-20;
+      CI runs on GitHub and is green.
 - [ ] Cloudflare account for Web Analytics (DECISIONS D-016), then add its snippet and CSP origins.
 - [ ] Answer the open questions in DECISIONS: feedback channel, licence, domain.
 
@@ -58,7 +58,7 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
 
 ## Groundwork (not tied to a phase)
 
-- [x] CI: typecheck, Vitest, build and the browser smoke test on every push (not yet run on GitHub).
+- [x] CI: typecheck, Vitest, build and the browser smoke test on every push; green on GitHub since 2026-10-20.
 - [x] `scripts/smoke-frontend.mjs`: a real run on Chrome's fake mic, migration, phone widths, one Reel
       per screen, the label page.
 - [~] Backup and restore: validator, merge and persistent-storage request are in `lib/`; the buttons
