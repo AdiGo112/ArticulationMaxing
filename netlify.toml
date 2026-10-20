@@ -1,0 +1,21 @@
+# Netlify: builds the React app in frontend/ and publishes only its dist/.
+# Vite builds index.html alone, so the dev pages (label.html, mic-test.html)
+# and everything else in the repo never ship.
+[build]
+  base = "frontend"
+  command = "npm ci && npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Scripts, styles and fonts are all bundled and self-hosted: no third-party origin loads on a
+    # visit. api.anthropic.com is for opt-in Claude coaching with the user's own key, only when
+    # they press Review. 'unsafe-inline' for styles: React sets layout through style attributes.
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; connect-src 'self' https://api.anthropic.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'none'"
+    Permissions-Policy = "microphone=(self), camera=(), geolocation=()"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Content-Type-Options = "nosniff"
