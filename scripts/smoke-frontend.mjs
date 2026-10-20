@@ -96,6 +96,9 @@ await ev(`[...document.querySelectorAll(".follow span")].find(s => s.textContent
 check("report: clicking a word plays the take from there", await until(`!document.querySelector("audio").paused`, 3000));
 check("report: the transcript follows the playback", await until(`!!document.querySelector(".follow span.now")`, 3000), await ev(`document.querySelector(".follow")?.outerHTML.slice(0, 300)`));
 await ev(`document.querySelector("audio").pause(), true`);
+// a pause before play() resolves rejects it; "run: no script errors" below must still hold
+await ev(`(() => { [...document.querySelectorAll(".follow span")].find(s => s.textContent === "kettle").click(); document.querySelector("audio").pause(); return true; })()`);
+await sleep(300);
 check("coach: on the report", await ev(`!!document.querySelector("[aria-label=Coach]")`));
 check("coach: the SDK is its own chunk", readdirSync(join(dir, "dist/assets")).some(f => f.startsWith("sdk-")));
 check("coach: the SDK isn't downloaded until someone asks", await ev(`!performance.getEntriesByType("resource").some(e => e.name.includes("/sdk-"))`));

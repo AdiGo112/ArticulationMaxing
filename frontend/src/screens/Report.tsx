@@ -10,6 +10,8 @@ import { Shell } from "../app/Shell.tsx";
 import { go, useApp } from "../app/state.tsx";
 import { Coach } from "./Coach.tsx";
 
+/* A pause before playback starts rejects play() with AbortError; that is the listener's choice, not an error. */
+const play = (a: HTMLAudioElement) => { a.play().catch(() => {}); };
 const fmt = (s: number) => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
 
 /* The take's 20 Hz loudness, reduced to `n` bars by the loudest moment in each. */
@@ -47,9 +49,9 @@ export function Report() {
     const a = audio.current;
     if (!a) return;
     a.currentTime = t; setPos(a.currentTime);
-    void a.play();
+    play(a);
   };
-  const toggle = () => { const a = audio.current; if (!a) return; if (a.paused) void a.play(); else a.pause(); };
+  const toggle = () => { const a = audio.current; if (!a) return; if (a.paused) play(a); else a.pause(); };
 
   return (
     <Shell page="drills" sub={r.run.custom ? "texts" : "drill/" + r.drill.id}>
