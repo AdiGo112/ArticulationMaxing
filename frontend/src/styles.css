@@ -140,6 +140,10 @@ mark.crutch { background: transparent; color: var(--amber); border-bottom: 2px d
 .follow span.crutch { color: var(--amber); border-bottom: 2px dashed var(--amber); }
 .follow.playing span:not(.past, .now, .hard, .crutch) { color: var(--faint); }
 .follow span.now { background: var(--amber); color: var(--ground); }
+/* the passage you read: came through, missed (underlined, not colour alone), never reached */
+.passage .hit { color: var(--cyan); }
+.passage .miss { color: var(--alert); text-decoration: underline wavy var(--alert); text-underline-offset: 4px; }
+.passage .unread { color: var(--faint); }
 
 /* ── path nodes ───────────────────────────────────────────────── */
 .node { flex: 0 0 auto; width: 68px; height: 68px; border-radius: 50%; display: flex; align-items: center; justify-content: center;

@@ -48,6 +48,19 @@ export function readStats(spoken: string, target: string): ReadStats {
     covered, missed: covered - good, hit };
 }
 
+/* The passage as the report shows it: one mark per target token, and a line
+   saying what happened. Past where you got to is "unread" — not reaching a
+   word is not the same as it being misheard. */
+export function passageMarks(spoken: string, target: string) {
+  const st = readStats(spoken, target);
+  const marks = st.hit.map((h, i): "hit" | "miss" | "unread" => i >= st.covered ? "unread" : h ? "hit" : "miss");
+  const note = st.covered === 0 ? "Nothing came through"
+    : st.missed ? `${st.missed} word${st.missed > 1 ? "s" : ""} didn’t come through — usually a swallowed consonant`
+    : st.coverage < 100 ? "Every word you reached came through"
+    : "Every word came through";
+  return { marks, note };
+}
+
 /* Which words of a set passage were actually recognised, in order?
    One boolean per target token. A forward pointer with a short lookahead, so
    a dropped or inserted word costs you that word and not the rest of the

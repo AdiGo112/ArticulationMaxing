@@ -216,6 +216,19 @@ test("display tokens stay 1:1 with the recorded word timings", () => {
   assert.deepStrictEqual(X.tokens("   "), []);
 });
 
+test("passageMarks: hit, missed, and never reached are three different things", () => {
+  const target = "the quick brown fox jumps over";
+  const p = X.passageMarks("the quick fox jumps", target);
+  assert.deepStrictEqual(p.marks, ["hit", "hit", "miss", "hit", "hit", "unread"], "stopping early is unread, not missed");
+  assert.strictEqual(p.note, "1 word didn’t come through — usually a swallowed consonant");
+  assert.strictEqual(X.passageMarks("the quick brown fox", target).note, "Every word you reached came through");
+  assert.strictEqual(X.passageMarks(target, target).note, "Every word came through");
+  const none = X.passageMarks("", target);
+  assert.ok(none.marks.every(m => m === "unread"), "nothing said: nothing is a miss");
+  assert.strictEqual(none.note, "Nothing came through");
+  assert.strictEqual(X.passageMarks("", "").marks.length, 0);
+});
+
 test("fillerKinds marks each display token, phrases across tokens, with the scoring matcher", () => {
   const s = "Um, I was, you know, basically fine";
   assert.deepStrictEqual(X.fillerKinds(s), ["hard", null, null, "crutch", "crutch", "crutch", null]);

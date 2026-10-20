@@ -191,6 +191,9 @@ appears in interim results.
   follows along: each display token carries its `wordTimes` stamp, `wordAt()` lights the one being
   spoken, and clicking a word plays from it (less `READ_LAG`). Fillers are marked per token by
   `fillerKinds()`, the scoring matcher. With no recording or no stamps it is plain marked text.
+- **What you read** (reading drills only) — the passage with its breath marks, each word marked by
+  `passageMarks()` from `readStats()`: came through, missed, or past where you got to (unread, which
+  is not a miss), with a one-line note.
 - **Parts** — each component of the score, out of 100, coloured by band.
 - **One thing to fix** — the first of `coachNotes()`; **since you started** lists `facts()`, and is hidden while there are none.
 

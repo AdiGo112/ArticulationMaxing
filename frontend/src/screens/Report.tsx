@@ -3,7 +3,7 @@
 import { Fragment, useMemo, useRef, useState } from "react";
 import { drillById, facts, nextInPlan } from "../lib/drills.ts";
 import { coachNotes, verdict } from "../lib/scoring.ts";
-import { READ_LAG, fillerKinds, tokens, wordAt } from "../lib/text.ts";
+import { READ_LAG, fillerKinds, passageMarks, tokens, wordAt } from "../lib/text.ts";
 import { todayPlan } from "../lib/storage.ts";
 import { Bar, Marked, Reel, Timeline, Wave, scoreColor } from "../ui/parts.tsx";
 import { Shell } from "../app/Shell.tsx";
@@ -41,6 +41,7 @@ export function Report() {
   const fix = coachNotes(r.m, r.run)[0];
   const since = facts(record.sessions, 3);
   const prev = record.sessions.filter(s => s.drill === r.drill.id).slice(-2, -1)[0];
+  const passage = r.run.target ? passageMarks(r.text || "", r.run.target) : null;
 
   const seek = (t: number) => {
     const a = audio.current;
@@ -98,7 +99,15 @@ export function Report() {
           onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} />}
       </section>
 
-      {(fix || since.length > 0) && <div style={{ display: "flex", flexWrap: "wrap", gap: 24 }}>
+      {passage && (
+        <section aria-label="What you read" className="card">
+          <h2 className="rule">── WHAT YOU READ ──────────────</h2>
+          <p className="muted" style={{ margin: 0 }}>{passage.note}</p>
+          <Passage text={r.run.display || r.run.target!} marks={passage.marks} />
+        </section>
+      )}
+
+      {(fix || since.length > 0) &&<div style={{ display: "flex", flexWrap: "wrap", gap: 24 }}>
         {fix && (
           <section aria-label="Fix next" className="card amber" style={{ flex: "1 1 420px" }}>
             <span className="label amber">the one thing to fix</span>
@@ -123,6 +132,19 @@ export function Report() {
         <button type="button" className="btn ghost" onClick={() => { app.setAgain(r.run); go("drill/" + r.drill.id); }}>↻ same prompt again</button>
       </div>
     </Shell>
+  );
+}
+
+/* A set passage with each word marked as it came through, missed, or never
+   reached. Its "|" breath marks consume no mark, as in the booth. */
+function Passage({ text, marks }: { text: string; marks: ("hit" | "miss" | "unread")[] }) {
+  let i = 0;
+  return (
+    <p className="passage" style={{ margin: 0, fontSize: 17, lineHeight: 1.8, maxWidth: 940 }}>
+      {tokens(text).map((w, k) => w === "|"
+        ? <b key={k} role="img" style={{ color: "var(--amber)" }} aria-label="pause"> ‖ </b>
+        : <Fragment key={k}><span className={marks[i++]}>{w}</span>{" "}</Fragment>)}
+    </p>
   );
 }
 
