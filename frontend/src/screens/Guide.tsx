@@ -34,8 +34,8 @@ function Scale({ lo, hi, band, ends, unit }: { lo: number; hi: number; band: [nu
 export function Guide() {
   return (
     <Shell page="guide">
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div className="page-head-row">
+        <div className="page-head">
           <span className="label amber">// the drills are the easy part</span>
           <h1 className="h1">How to actually get better.</h1>
         </div>

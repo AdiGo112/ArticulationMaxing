@@ -65,7 +65,7 @@ export function Home() {
                 <a href={"#/drill/" + id} aria-current={now ? "step" : undefined}>
                   <span aria-hidden="true" className={"node" + (done ? " done" : now ? " now" : "")}>{done ? "✓" : now ? "▶" : i + 1}</span>
                   <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
-                    <span className={"label" + (now ? " amber" : "")} style={{ fontSize: 11 }}>{done ? "done" : now ? "now" : "up next"}</span>
+                    <span className={"label sm" + (now ? " amber" : "")}>{done ? "done" : now ? "now" : "up next"}</span>
                     <span className="h2" style={{ fontSize: 22, color: done ? "var(--muted)" : undefined }}>{d.name}</span>
                     <span className="muted" style={{ fontSize: 13 }}>{w ? `weakest: ${METRIC_NAME[w.metric] || w.metric} · ${w.score}` : d.tag.toLowerCase()}</span>
                   </span>
@@ -95,7 +95,7 @@ export function Home() {
           <span className="faint" style={{ fontSize: 12 }}>{plan.done.length ? "A new choice shapes tomorrow's plan." : "Shapes today's plan."}</span>
         </div>
         <div className="card" style={{ borderStyle: "dashed", borderColor: "#3A3833" }}>
-          <span className="label cyan" style={{ fontSize: 11 }}>privacy</span>
+          <span className="label cyan sm">privacy</span>
           <p className="body" style={{ margin: 0, fontSize: 12.5, lineHeight: 1.6 }}>Scoring happens on this device. Live captions in Chrome and Edge use the browser's speech service, which sends audio to Google. <a href="#/data">Details</a></p>
         </div>
       </section>

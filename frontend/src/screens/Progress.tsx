@@ -18,7 +18,7 @@ export function Progress() {
   const [only, setOnly] = useState("");
 
   const head = (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+    <div className="page-head">
       <span className="label amber">// your record · stored in this browser only</span>
       <h1 className="h1">What's actually changed.</h1>
     </div>
@@ -60,7 +60,7 @@ export function Progress() {
 
       <section aria-label="Headline numbers" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 14 }}>
         {stats.map(([v, k, c]) => (
-          <div key={k} className="card" style={{ gap: 6, padding: "16px 18px" }}>
+          <div key={k} className="card stat">
             <b className="big" style={{ fontSize: 40, color: c }}>{v}</b>
             <span className="muted" style={{ fontSize: 12.5 }}>{k}</span>
           </div>
@@ -73,7 +73,7 @@ export function Progress() {
             const d = f.drill ? drillById(f.drill) : null;
             return (
               <li key={f.metric} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <span className={"label " + (f.kind === "better" ? "cyan" : "amber")} style={{ fontSize: 11 }}>{f.kind === "better" ? "better" : "slipping"}</span>
+                <span className={"label sm " + (f.kind === "better" ? "cyan" : "amber")}>{f.kind === "better" ? "better" : "slipping"}</span>
                 <span className="h2" style={{ fontSize: 20 }}>{f.text}</span>
                 {d && <a href={"#/drill/" + d.id} style={{ fontSize: 13 }}>Train it: {d.name} →</a>}
               </li>
@@ -109,8 +109,8 @@ export function Progress() {
               const up = t!.delta > 2, down = t!.delta < -2, c = down ? "var(--amber)" : "var(--cyan)";
               const v = t!.values.slice(-12), lo = Math.min(...v), sp = Math.max(...v) - lo || 1;
               return (
-                <div key={k} className="card" style={{ gap: 8, padding: "16px 18px" }}>
-                  <span className="label" style={{ fontSize: 11 }}>{METRIC_NAME[k]}</span>
+                <div key={k} className="card stat">
+                  <span className="label sm">{METRIC_NAME[k]}</span>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
                     <b className="big" style={{ fontSize: 32 }}>{Math.round(t!.now)}</b>
                     <b style={{ color: c, fontSize: 14 }}>{up ? "↑" : down ? "↓" : "→"} {t!.delta > 0 ? "+" : t!.delta < 0 ? "−" : ""}{Math.abs(t!.delta)}</b>

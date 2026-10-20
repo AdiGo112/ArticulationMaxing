@@ -49,7 +49,7 @@ export function Coach({ r }: { r: RunResult }) {
           ? <p className="muted" style={{ margin: 0 }}>A set passage: the words are the author's, so only your delivery is scored above.</p>
           : findings.length
             ? <>
-                <span className="label" style={{ fontSize: 11 }}>read on this device · {findings.length} habit{findings.length > 1 ? "s" : ""} worth breaking</span>
+                <span className="label sm">read on this device · {findings.length} habit{findings.length > 1 ? "s" : ""} worth breaking</span>
                 <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 8, lineHeight: 1.6 }}>
                   {findings.map(f => <li key={f.id}><b>{f.title}.</b> <span className="body">{f.detail}</span></li>)}
                 </ul>
@@ -103,7 +103,7 @@ export function Coach({ r }: { r: RunResult }) {
 
         {view.kind === "done" && (
           <>
-            <span className="label" style={{ fontSize: 11 }}>{view.by}</span>
+            <span className="label sm">{view.by}</span>
             {view.sections.map((s, i) => (
               <div key={i} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {s.head && <h3 className="h2" style={{ fontSize: 19 }}>{s.head}</h3>}

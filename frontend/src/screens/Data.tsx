@@ -64,7 +64,7 @@ export function Data() {
   const sens = record.sens ?? 1;
   return (
     <Shell page="data">
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div className="page-head">
         <span className="label amber">// everything lives in this browser</span>
         <h1 className="h1">Your data, and where it goes.</h1>
       </div>
@@ -72,7 +72,7 @@ export function Data() {
       <div className="grid">
         <section className="card panel" aria-labelledby="bkTitle">
           <h2 id="bkTitle" className="h2">Keep a backup</h2>
-          <span className="label" style={{ fontSize: 11 }}>last backup: {ago(record.backedUpAt)}</span>
+          <span className="label sm">last backup: {ago(record.backedUpAt)}</span>
           <p className="body" style={{ margin: 0, lineHeight: 1.6 }}>Browsers delete site data — clearing it does, and Safari does after a week without a visit. A backup file is the copy that survives. Restoring merges; it never overwrites.</p>
           <div className="row">
             <button type="button" className="btn primary" onClick={download}>↓ DOWNLOAD A BACKUP</button>
@@ -119,11 +119,11 @@ export function Data() {
       <div className="grid">
         <section className="card" aria-labelledby="setTitle">
           <h2 id="setTitle" className="h2">Booth settings</h2>
-          <span className="label" style={{ fontSize: 11 }}>mic sensitivity</span>
+          <span className="label sm">mic sensitivity</span>
           <div className="row">
             {SENS.map(([l, v]) => <button key={v} type="button" className="pill" aria-pressed={sens === v} onClick={() => update(r => ({ ...r, sens: v }))}>{l}</button>)}
           </div>
-          <span className="label" style={{ fontSize: 11 }}>tick on “um”</span>
+          <span className="label sm">tick on “um”</span>
           <div className="row" style={{ gap: 18 }}>
             {BUZZ.map(d => {
               const on = buzzOn(record.buzz, d.id);

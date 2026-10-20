@@ -19,7 +19,7 @@ export function Drills() {
 
   return (
     <Shell page="drills">
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div className="page-head">
         <span className="label amber">// six drills · each trains one thing</span>
         <h1 className="h1">Pick the one you're worst at.</h1>
         <p className="muted" style={{ margin: 0 }}>practising for <b style={{ color: "var(--ink)" }}>{pack ? pack.name.toLowerCase() : "nothing special"}</b> · <a href="#/">change</a></p>
@@ -36,7 +36,7 @@ export function Drills() {
             <li key={d.id}>
               <a href={"#/drill/" + d.id} className="card" style={{ height: "100%", textDecoration: "none", color: "var(--ink)", borderColor: lit ? "var(--amber)" : undefined }}>
                 <div className="row" style={{ justifyContent: "space-between", minHeight: 24 }}>
-                  <span className="label" style={{ fontSize: 11 }}>{String(i + 1).padStart(2, "0")} · {d.tag}</span>
+                  <span className="label sm">{String(i + 1).padStart(2, "0")} · {d.tag}</span>
                   {badge && <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.1em", padding: "3px 9px", borderRadius: 999, color: badge[1], background: badge[2] }}>{badge[0]}</span>}
                 </div>
                 <span className="h2">{d.name}</span>

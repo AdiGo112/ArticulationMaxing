@@ -186,21 +186,21 @@ function BoothFor({ drill }: { drill: Drill }) {
         <section aria-label="Before you start" style={{ display: "flex", flexWrap: "wrap", gap: "10px 20px", alignItems: "center" }}>
           {!run.target && (
             <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <span className="label" style={{ fontSize: 11 }}>length</span>
+              <span className="label sm">length</span>
               <select value={dur} onChange={e => setDur(Number(e.target.value))}>
                 {lengths(run.dur).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </label>
           )}
           <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <span className="label" style={{ fontSize: 11 }}>mic</span>
+            <span className="label sm">mic</span>
             <select value={sens} onChange={e => setSens(Number(e.target.value))}>
               {SENS.map(([l, v]) => <option key={v} value={v}>{l}</option>)}
             </select>
           </label>
           {!run.target && (
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <span className="label" style={{ fontSize: 11 }}>tick on “um”</span>
+              <span className="label sm">tick on “um”</span>
               <button type="button" className="pill" aria-pressed={buzz} disabled={!listener.supported}
                 title={listener.supported ? undefined : "Needs live transcription — Chrome or Edge"}
                 onClick={() => update(r => ({ ...r, buzz: { ...r.buzz, [drill.id]: !buzz } }))}>{buzz ? "on" : "off"}</button>
@@ -212,7 +212,7 @@ function BoothFor({ drill }: { drill: Drill }) {
       {/* before a take there is nothing to draw: a thin strip, so Start sits right under the prompt */}
       <section aria-label="Your voice" className="card panel" style={{ gap: 10 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <span className="label" style={{ fontSize: 11 }}>voice · {running ? "live" : "waiting"}</span>
+          <span className="label sm">voice · {running ? "live" : "waiting"}</span>
           <span style={{ fontSize: 13 }}><b style={{ fontSize: 22 }}>{fmt(running && live ? live.left : total)}</b> {running ? "left" : "long"}</span>
         </div>
         {running

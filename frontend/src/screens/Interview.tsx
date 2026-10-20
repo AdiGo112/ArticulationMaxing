@@ -20,8 +20,8 @@ export function Interview() {
   const practise = () => { setAgain(buildRun("impromptu", { pool: "interview" })); go("drill/impromptu"); };
   return (
     <Shell page="interview">
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div className="page-head-row">
+        <div className="page-head">
           <span className="label amber">// coming next · interview mode</span>
           <h1 className="h1">A mock interview that talks back.</h1>
         </div>
@@ -33,7 +33,7 @@ export function Interview() {
         <ol className="grid" style={{ listStyle: "none", margin: 0, padding: 0, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 160px), 1fr))" }}>
           {STEPS.map(([t, d], i) => (
             <li key={t} className="card" style={{ gap: 8 }}>
-              <span className="label amber" style={{ fontSize: 11 }}>{String(i + 1).padStart(2, "0")}</span>
+              <span className="label amber sm">{String(i + 1).padStart(2, "0")}</span>
               <b style={{ fontFamily: "var(--display)", fontSize: 18 }}>{t}</b>
               <span className="body" style={{ fontSize: 13, lineHeight: 1.6 }}>{d}</span>
             </li>

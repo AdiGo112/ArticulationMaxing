@@ -35,7 +35,7 @@ export function Texts() {
 
   return (
     <Shell page="drills" sub="texts">
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div className="page-head">
         <span className="label amber">// your own words · runs like pace & pause</span>
         <h1 className="h1">Rehearse the talk you have to give.</h1>
       </div>
@@ -70,7 +70,7 @@ export function Texts() {
             : run && (
               <div style={{ display: "flex", flexDirection: "column", gap: 10, borderTop: "1px solid var(--line)", paddingTop: 14 }}>
                 <div className="row" style={{ justifyContent: "space-between" }}>
-                  <span className="label" style={{ fontSize: 11 }}>how it will run · breath marks placed for you</span>
+                  <span className="label sm">how it will run · breath marks placed for you</span>
                   <span className="muted" style={{ fontSize: 13 }}><b style={{ color: "var(--ink)" }}>{n} words</b> · about <b style={{ color: "var(--ink)" }}>{mmss(run.dur)}</b></span>
                 </div>
                 <p style={{ margin: 0, fontSize: 17, lineHeight: 1.8, maxHeight: 320, overflowY: "auto" }}>

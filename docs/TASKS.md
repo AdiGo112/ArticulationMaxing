@@ -144,8 +144,9 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
   - [x] **Booth before a run** (2026-10-20): the waveform is a thin strip and "What you're saying" is
         hidden until the take starts; length and mic are selects, so setup is one row on desktop (two
         on phones) and Start sits right under it.
-  - [ ] **Refactor.** Move repeated inline styles (page header, card label, stat tile) into CSS
-        classes before the redesign.
+  - [x] **Refactor** (2026-10-20): repeated inline styles are classes — `.page-head` (and
+        `.page-head-row` with Reel beside it) on six screens, `.label.sm` for 19 small labels,
+        `.card.stat` for Progress's number tiles.
 - **UI/UX review (2026-10-17)** — fixed: privacy wording (scoring local; live captions go to Google),
   Start sticks to the bottom of the booth, scores read /100 and low ones aren't red, chart has a y
   scale and no line under 3 points, drill list opens only inside DRILLS, drill-card badges aligned,
