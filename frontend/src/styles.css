@@ -155,7 +155,7 @@ mark.crutch { background: transparent; color: var(--amber); border-bottom: 2px d
 .path a { display: flex; align-items: center; gap: 22px; padding: 14px 0; text-decoration: none; color: var(--ink); }
 .path a:hover .h2 { color: var(--cream); }
 .home-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 18px; }
-.home-strip select { background: var(--panel); border: 1px solid var(--edge); border-radius: 10px; padding: 11px 12px; color: var(--ink); font: inherit; font-size: 14px; letter-spacing: 0; }
+select { background: var(--panel); border: 1px solid var(--edge); border-radius: 10px; padding: 11px 12px; color: var(--ink); font: inherit; font-size: 14px; letter-spacing: 0; }
 .week { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
 .week li { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
 .week span { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--edge); }

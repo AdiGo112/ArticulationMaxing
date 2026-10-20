@@ -141,17 +141,19 @@ Rough size: 14–18 weeks solo from Phase 2 to launch, slower part-time.
         shown, and the label said 5), and the mark's word lost every "s" (`/s+/` for `/\s+/`). Now
         every filler is marked; one phrase's fillers share a pill ("uh +1"); pauses have their own
         lane; edge pills stay inside the track; crowded pills drop to a second row (phones).
-  - [ ] **Booth before a run.**
-        - Collapse the empty waveform to a thin strip until recording starts.
-        - Fold length, mic and the "um" tick into one setup row, so the order is prompt, then Start.
+  - [x] **Booth before a run** (2026-10-20): the waveform is a thin strip and "What you're saying" is
+        hidden until the take starts; length and mic are selects, so setup is one row on desktop (two
+        on phones) and Start sits right under it.
   - [ ] **Refactor.** Move repeated inline styles (page header, card label, stat tile) into CSS
         classes before the redesign.
 - **UI/UX review (2026-10-17)** — fixed: privacy wording (scoring local; live captions go to Google),
   Start sticks to the bottom of the booth, scores read /100 and low ones aren't red, chart has a y
   scale and no line under 3 points, drill list opens only inside DRILLS, drill-card badges aligned,
   pause marks announced as "pause", disabled Rehearse says why. Still to do:
-  - [ ] Each drill shows only the meters it scores; "—" not "0" before the take starts.
-  - [ ] One source of truth for length and the um-tick (Word Forge shows no length chip selected).
+  - [x] Each drill shows only the meters it scores; "—" not "0" before the take starts (done as
+        Walkthrough fixes → Per-drill meters).
+  - [~] One source of truth for length and the um-tick. Length done: the select always lists the
+        drill's own length (Word Forge's 35 s). Left: the um-tick.
   - [ ] Echo: a replay button; hide the sentence until the first listen.
   - [ ] Today: path in order, done items ticked in place; pack list puts the current pack first.
   - [ ] Interview copy: no developer phrasing ("no key, no network"); lighter nav weight while "soon".

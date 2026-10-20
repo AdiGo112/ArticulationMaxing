@@ -17,6 +17,9 @@ import type { ReelState } from "../lib/reel.ts";
 const N = 90;                                       // waveform buckets across the run
 const fmt = (s: number) => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
 const LENGTHS = [[30, "30 s"], [60, "1 min"], [90, "90 s"], [120, "2 min"]] as const;
+/* The choices, with the drill's own length among them (Word Forge runs 35 s). */
+const lengths = (own: number) => LENGTHS.some(([v]) => v === own) ? LENGTHS
+  : [...LENGTHS, [own, own + " s"] as const].sort((a, b) => a[0] - b[0]);
 /* The live meters each drill shows: what scoreRun() weighs for it (Projection is always on). */
 const METERS: Record<string, string[]> = {
   impromptu: ["pace", "fillers", "pauses"], filler: ["fillers", "pauses"], word: ["pace", "fillers", "pauses"],
@@ -182,17 +185,21 @@ function BoothFor({ drill }: { drill: Drill }) {
       {!running && (
         <section aria-label="Before you start" style={{ display: "flex", flexWrap: "wrap", gap: "10px 20px", alignItems: "center" }}>
           {!run.target && (
-            <div role="group" aria-label="Length" style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <span className="label" style={{ fontSize: 11 }}>length</span>
-              {LENGTHS.map(([v, l]) => <button key={v} type="button" className="pill" aria-pressed={dur === v} onClick={() => setDur(v)}>{l}</button>)}
-            </div>
+              <select value={dur} onChange={e => setDur(Number(e.target.value))}>
+                {lengths(run.dur).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </label>
           )}
-          <div role="group" aria-label="Mic" style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <span className="label" style={{ fontSize: 11 }}>mic</span>
-            {SENS.map(([l, v]) => <button key={v} type="button" className="pill" aria-pressed={sens === v} onClick={() => setSens(v)}>{l}</button>)}
-          </div>
+            <select value={sens} onChange={e => setSens(Number(e.target.value))}>
+              {SENS.map(([l, v]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+          </label>
           {!run.target && (
-            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <span className="label" style={{ fontSize: 11 }}>tick on “um”</span>
               <button type="button" className="pill" aria-pressed={buzz} disabled={!listener.supported}
                 title={listener.supported ? undefined : "Needs live transcription — Chrome or Edge"}
@@ -202,24 +209,28 @@ function BoothFor({ drill }: { drill: Drill }) {
         </section>
       )}
 
+      {/* before a take there is nothing to draw: a thin strip, so Start sits right under the prompt */}
       <section aria-label="Your voice" className="card panel" style={{ gap: 10 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
           <span className="label" style={{ fontSize: 11 }}>voice · {running ? "live" : "waiting"}</span>
           <span style={{ fontSize: 13 }}><b style={{ fontSize: 22 }}>{fmt(running && live ? live.left : total)}</b> {running ? "left" : "long"}</span>
         </div>
-        <Wave levels={levels.current} at={running && live ? Math.min(1, live.elapsed / total) : 0} />
-        <Timeline marks={live?.marks ?? []} dur={total} />
+        {running
+          ? <><Wave levels={levels.current} at={live ? Math.min(1, live.elapsed / total) : 0} /><Timeline marks={live?.marks ?? []} dur={total} /></>
+          : <Wave levels={levels.current} height={12} at={0} />}
       </section>
 
-      <section aria-label="What you're saying" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <h2 className="rule">── WHAT YOU'RE SAYING ──────────────</h2>
-        <p aria-live="polite" style={{ margin: 0, fontSize: 19, lineHeight: 1.7, minHeight: 64 }}>
-          {live && (live.final || live.interim)
-            ? <><Marked text={live.final} /> <span className="interim">{live.interim}</span></>
-            : <span className="faint">{!listener.supported ? "No live words in this browser — the recording and meters still work."
-                : running ? "Listening… your words appear here as you speak." : "Your words will appear here."}</span>}
-        </p>
-      </section>
+      {running && (
+        <section aria-label="What you're saying" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <h2 className="rule">── WHAT YOU'RE SAYING ──────────────</h2>
+          <p aria-live="polite" style={{ margin: 0, fontSize: 19, lineHeight: 1.7, minHeight: 64 }}>
+            {live && (live.final || live.interim)
+              ? <><Marked text={live.final} /> <span className="interim">{live.interim}</span></>
+              : <span className="faint">{!listener.supported ? "No live words in this browser — the recording and meters still work."
+                  : "Listening… your words appear here as you speak."}</span>}
+          </p>
+        </section>
+      )}
 
       <div className="actionbar">
         {running
